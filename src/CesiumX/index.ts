@@ -72,6 +72,11 @@ export { default as PolylineVolumeCollection } from './Draw/PolylineVolume/Polyl
 export { defaultShapeParamsForType, parseShapeTypeKey } from './Draw/PolylineVolume'
 export { default as Plane } from './Draw/Plane'
 export { default as PlaneCollection } from './Draw/Plane/PlaneCollection'
+export {
+  PlaneMaterialType,
+  DEFAULT_PLANE_VIDEO,
+  normalizePlaneVideoOptions,
+} from './Draw/Plane'
 export type {
   PointCollectionAddItem,
   PointCollectionSnapshot,
@@ -317,9 +322,12 @@ export type {
 export type {
   AddPlaneOptions,
   PlaneCenterInput,
+  PlaneMaterialTypeValue,
   PlanePositionsTuple,
   PlaneSnapshot,
   PlaneStyleOptions,
+  PlaneVideoOptions,
+  LegacyPlaneVideoOptions,
   UpdatePlaneProperties,
 } from './Draw/Plane'
 export type {

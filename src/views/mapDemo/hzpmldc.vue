@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PlaneSnapshot } from '../../CesiumX'
+import {
+  DEFAULT_PLANE_VIDEO,
+  normalizePlaneVideoOptions,
+  type LegacyPlaneVideoOptions,
+  type MouseEventListenOptions,
+  type MouseEventPickPayload,
+  type PlaneMaterialTypeValue,
+  type PlaneSnapshot,
+  type PlaneVideoOptions,
+  type UpdatePlaneProperties,
+} from '../../CesiumX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -13,6 +23,12 @@ const title = '绘制（Plane）平面类（底层 entity）'
 
 const DEFAULT_FILL = '#00bcd4'
 const DEFAULT_OUTLINE = '#ffffff'
+
+const materialTypeOptions: { value: PlaneMaterialTypeValue; label: string }[] = [
+  { value: 'color', label: '纯色' },
+  { value: 'image', label: '图片' },
+  { value: 'video', label: '视频' },
+]
 
 const mapStore = useMapLayerStore()
 /** 与廊道/折线体示例一致：仅拾取中心点写入表单，「标绘」用当前表单提交 */
@@ -24,14 +40,25 @@ const form = reactive({
   longitude: 120.95,
   latitude: 23.75,
   height: 500,
-  width: 200,
-  planeHeight: 200,
+  width: 800,
+  planeHeight: 600,
   headingDegrees: 0,
   pitchDegrees: 0,
   rollDegrees: 0,
+  materialType: 'color' as PlaneMaterialTypeValue,
   showFill: true,
   color: DEFAULT_FILL,
   alpha: 0.85,
+  imageUrl: '',
+  videoUrl: '',
+  videoPlaying: DEFAULT_PLANE_VIDEO.playing,
+  videoLoop: DEFAULT_PLANE_VIDEO.loop,
+  videoMuted: DEFAULT_PLANE_VIDEO.muted,
+  videoPlaybackRate: DEFAULT_PLANE_VIDEO.playbackRate,
+  videoPlayCount: DEFAULT_PLANE_VIDEO.playCount,
+  videoShowControls: DEFAULT_PLANE_VIDEO.showControls,
+  repeatX: 1,
+  repeatY: 1,
   outline: false,
   outlineColor: DEFAULT_OUTLINE,
   outlineAlpha: 0.9,
@@ -47,6 +74,8 @@ let tableResizeObserver: ResizeObserver | null = null
 type MapMouseBinder = { listen: (options: MouseEventListenOptions) => void; destroy: () => void }
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+/** 本页创建的视频 blob URL，卸载前统一释放 */
+const createdVideoBlobUrls = new Set<string>()
 
 function hex6ForColorInput(css: string): string {
   const t = css.trim()
@@ -113,6 +142,42 @@ function fillFormFromSnapshot(s: PlaneSnapshot): void {
   form.outlineAlpha = tdOA ?? outP.alpha
   form.outlineWidth = s.outlineWidth ?? 1
   form.show = s.show !== false
+  const mt = s.materialType ?? (typeof td.materialType === 'string' ? (td.materialType as PlaneMaterialTypeValue) : undefined)
+  if (mt && materialTypeOptions.some((o) => o.value === mt)) {
+    form.materialType = mt
+  } else {
+    form.materialType = 'color'
+  }
+  form.imageUrl = typeof td.imageUrl === 'string' ? td.imageUrl : s.imageUrl ?? ''
+  form.videoUrl = typeof td.videoUrl === 'string' ? td.videoUrl : s.videoUrl ?? ''
+  const v = normalizePlaneVideoOptions(
+    (s.video ?? td.video) as LegacyPlaneVideoOptions | undefined,
+  )
+  if (form.materialType === 'video') {
+    form.videoPlaying = v.playing !== false
+    form.videoLoop = v.loop !== false
+    form.videoMuted = v.muted !== false
+    form.videoPlaybackRate = finiteNum(v.playbackRate, DEFAULT_PLANE_VIDEO.playbackRate)
+    form.videoPlayCount = Math.max(0, Math.floor(finiteNum(v.playCount, DEFAULT_PLANE_VIDEO.playCount)))
+    form.videoShowControls = v.showControls === true
+  }
+  const rep = s.imageRepeat ?? td.imageRepeat
+  if (rep && typeof rep === 'object') {
+    form.repeatX = finiteNum((rep as { x?: number }).x, 1)
+    form.repeatY = finiteNum((rep as { y?: number }).y, 1)
+  } else {
+    form.repeatX = 1
+    form.repeatY = 1
+  }
+}
+
+function applyDefaultVideoForm(): void {
+  form.videoPlaying = DEFAULT_PLANE_VIDEO.playing
+  form.videoLoop = DEFAULT_PLANE_VIDEO.loop
+  form.videoMuted = DEFAULT_PLANE_VIDEO.muted
+  form.videoPlaybackRate = DEFAULT_PLANE_VIDEO.playbackRate
+  form.videoPlayCount = DEFAULT_PLANE_VIDEO.playCount
+  form.videoShowControls = DEFAULT_PLANE_VIDEO.showControls
 }
 
 function resetFormToInitial(): void {
@@ -120,14 +185,20 @@ function resetFormToInitial(): void {
   form.longitude = 120.95
   form.latitude = 23.75
   form.height = 500
-  form.width = 200
-  form.planeHeight = 200
+  form.width = 800
+  form.planeHeight = 600
   form.headingDegrees = 0
   form.pitchDegrees = 0
   form.rollDegrees = 0
+  form.materialType = 'color'
   form.showFill = true
   form.color = DEFAULT_FILL
   form.alpha = 0.85
+  form.imageUrl = ''
+  form.videoUrl = ''
+  applyDefaultVideoForm()
+  form.repeatX = 1
+  form.repeatY = 1
   form.outline = false
   form.outlineColor = DEFAULT_OUTLINE
   form.outlineAlpha = 0.9
@@ -171,13 +242,165 @@ const primaryButtonType = computed(() => {
   return 'primary' as const
 })
 
-function planeTargetData() {
+function videoOptionsFromForm(): PlaneVideoOptions {
   return {
-    color: form.color,
-    alpha: form.alpha,
-    outlineColor: form.outlineColor,
-    outlineAlpha: form.outlineAlpha,
+    playing: form.videoPlaying,
+    loop: form.videoLoop,
+    muted: form.videoMuted,
+    playbackRate: finiteNum(form.videoPlaybackRate, DEFAULT_PLANE_VIDEO.playbackRate),
+    playCount: Math.max(0, Math.floor(finiteNum(form.videoPlayCount, DEFAULT_PLANE_VIDEO.playCount))),
+    showControls: form.videoShowControls,
   }
+}
+
+function validateMaterialForSubmit(): boolean {
+  if (form.materialType === 'image' && !form.imageUrl.trim()) {
+    message.warning('图片材质请先上传图片')
+    return false
+  }
+  if (form.materialType === 'video' && !form.videoUrl.trim()) {
+    message.warning('视频材质请先上传本地视频')
+    return false
+  }
+  return true
+}
+
+function planeEntityPayload(): UpdatePlaneProperties {
+  const dims = readPlaneDims()
+  const alpha = fillAlpha()
+  const heading = finiteNum(form.headingDegrees, 0)
+  const pitch = finiteNum(form.pitchDegrees, 0)
+  const roll = finiteNum(form.rollDegrees, 0)
+  const payload: UpdatePlaneProperties = {
+    longitude: finiteNum(form.longitude, 0),
+    latitude: finiteNum(form.latitude, 0),
+    height: finiteNum(form.height, 0),
+    dimensions: dims ? { width: dims.w, height: dims.ph } : undefined,
+    headingDegrees: heading,
+    pitchDegrees: pitch,
+    rollDegrees: roll,
+    materialType: form.materialType,
+    alpha,
+    color: form.color,
+    imageRepeat: { x: finiteNum(form.repeatX, 1), y: finiteNum(form.repeatY, 1) },
+    fill: form.showFill,
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: finiteNum(form.outlineAlpha, 0.9),
+    outlineWidth: finiteNum(form.outlineWidth, 1),
+    show: form.show,
+    targetData: {
+      materialType: form.materialType,
+      color: form.color,
+      alpha,
+      imageUrl: form.imageUrl || undefined,
+      videoUrl: form.videoUrl || undefined,
+      video: form.materialType === 'video' ? videoOptionsFromForm() : undefined,
+      imageRepeat: { x: finiteNum(form.repeatX, 1), y: finiteNum(form.repeatY, 1) },
+      outlineColor: form.outlineColor,
+      outlineAlpha: finiteNum(form.outlineAlpha, 0.9),
+      headingDegrees: heading,
+      pitchDegrees: pitch,
+      rollDegrees: roll,
+    },
+  }
+  if (form.materialType === 'image') payload.imageUrl = form.imageUrl.trim()
+  else if (form.materialType === 'video') {
+    payload.videoUrl = form.videoUrl.trim()
+    payload.video = videoOptionsFromForm()
+  }
+  return payload
+}
+
+function revokeVideoBlobIfUnused(url: string): void {
+  if (!url.startsWith('blob:')) return
+  const v = mapStore.getViewer()
+  const P = window.XGX?.Plane
+  if (!v || v.isDestroyed() || !P) {
+    URL.revokeObjectURL(url)
+    createdVideoBlobUrls.delete(url)
+    return
+  }
+  const used = P.getAllPlanes(v).some((s) => {
+    const u = (typeof s.targetData.videoUrl === 'string' && s.targetData.videoUrl) || s.videoUrl
+    return u === url
+  })
+  if (!used) {
+    URL.revokeObjectURL(url)
+    createdVideoBlobUrls.delete(url)
+  }
+}
+
+function onVideoFile(ev: Event): void {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('video/')) {
+    message.warning('请选择视频文件')
+    return
+  }
+  if (form.videoUrl.startsWith('blob:')) revokeVideoBlobIfUnused(form.videoUrl)
+  const url = URL.createObjectURL(file)
+  createdVideoBlobUrls.add(url)
+  form.videoUrl = url
+  message.success('视频已载入')
+}
+
+const planeApi = () => window.XGX?.Plane
+
+function onVideoPlay(): void {
+  const id = selectedId.value
+  if (!id) {
+    message.info('请先选中列表中的平面')
+    return
+  }
+  if (!planeApi()?.playPlaneVideo(id)) message.warning('播放失败（需为视频材质且已上传）')
+}
+
+function onVideoPause(): void {
+  const id = selectedId.value
+  if (!id) return
+  if (!planeApi()?.pausePlaneVideo(id)) message.warning('暂停失败')
+}
+
+function onVideoRestart(): void {
+  const id = selectedId.value
+  if (!id) return
+  if (!planeApi()?.restartPlaneVideo(id)) message.warning('重新播放失败')
+}
+
+function applyVideoOptionsToSelected(): void {
+  const id = selectedId.value
+  if (!id) {
+    message.info('请先选中列表中的平面')
+    return
+  }
+  if (form.materialType !== 'video') return
+  if (!planeApi()?.applyPlaneVideoOptions(id, videoOptionsFromForm())) {
+    message.warning('应用视频参数失败')
+    return
+  }
+  message.success('视频参数已应用')
+}
+
+function onImageFile(ev: Event): void {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    message.warning('请选择图片文件')
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    if (typeof reader.result === 'string') {
+      form.imageUrl = reader.result
+      message.success('图片已载入')
+    }
+  }
+  reader.readAsDataURL(file)
 }
 
 /** 平面宽、平面高（米）；无效返回 null */
@@ -190,32 +413,15 @@ function readPlaneDims(): { w: number; ph: number } | null {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const P = window.XGX?.Plane
+  const P = planeApi()
   const v = mapStore.getViewer()
   if (!id || !P || !v || v.isDestroyed()) return
-  const dims = readPlaneDims()
-  if (!dims) {
+  if (!readPlaneDims()) {
     message.warning('平面宽、高须为有效正数（米）')
     return
   }
-  const ok = P.updatePlane(id, {
-    longitude: finiteNum(form.longitude, 0),
-    latitude: finiteNum(form.latitude, 0),
-    height: finiteNum(form.height, 0),
-    dimensions: { width: dims.w, height: dims.ph },
-    headingDegrees: finiteNum(form.headingDegrees, 0),
-    pitchDegrees: finiteNum(form.pitchDegrees, 0),
-    rollDegrees: finiteNum(form.rollDegrees, 0),
-    color: form.color,
-    alpha: fillAlpha(),
-    fill: form.showFill,
-    outline: form.outline,
-    outlineColor: form.outlineColor,
-    outlineAlpha: finiteNum(form.outlineAlpha, 0.9),
-    outlineWidth: finiteNum(form.outlineWidth, 1),
-    show: form.show,
-    targetData: planeTargetData(),
-  })
+  if (!validateMaterialForSubmit()) return
+  const ok = P.updatePlane(id, planeEntityPayload())
   if (ok) {
     message.success('已保存修改')
     refreshTable()
@@ -224,33 +430,25 @@ function applyUpdateToSelected(): void {
 
 function addPlaneFromForm(): void {
   const v = mapStore.getViewer()
-  const P = window.XGX?.Plane
+  const P = planeApi()
   const dims = readPlaneDims()
   if (!v || v.isDestroyed() || !P) return
   if (!dims) {
     message.warning('平面宽、高须为有效正数（米）')
     return
   }
+  if (!validateMaterialForSubmit()) return
+  const payload = planeEntityPayload()
   const entity = P.add(v, {
     id: form.id.trim() || undefined,
     position: {
-      longitude: finiteNum(form.longitude, 0),
-      latitude: finiteNum(form.latitude, 0),
-      height: finiteNum(form.height, 0),
+      longitude: payload.longitude!,
+      latitude: payload.latitude!,
+      height: payload.height!,
     },
-    dimensions: { width: dims.w, height: dims.ph },
-    headingDegrees: finiteNum(form.headingDegrees, 0),
-    pitchDegrees: finiteNum(form.pitchDegrees, 0),
-    rollDegrees: finiteNum(form.rollDegrees, 0),
+    ...payload,
     color: form.color,
-    alpha: fillAlpha(),
-    fill: form.showFill,
-    outline: form.outline,
     outlineColor: form.outlineColor,
-    outlineAlpha: finiteNum(form.outlineAlpha, 0.9),
-    outlineWidth: finiteNum(form.outlineWidth, 1),
-    show: form.show,
-    targetData: planeTargetData(),
   })
   if (!entity) {
     message.error('添加失败：id 可能重复')
@@ -306,8 +504,10 @@ function bindMouse(v: Viewer): void {
 
 function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
   const el = ev.target as HTMLInputElement
-  const fb = field === 'color' ? DEFAULT_FILL : DEFAULT_OUTLINE
-  const hex = normalizeHex(el.value, fb)
+  const hex = normalizeHex(
+    el.value,
+    field === 'outlineColor' ? DEFAULT_OUTLINE : DEFAULT_FILL,
+  )
   if (field === 'color') form.color = hex
   else form.outlineColor = hex
 }
@@ -336,6 +536,15 @@ const columns: TableColumnType<PlaneSnapshot>[] = [
     width: 88,
     align: 'center',
     customRender: ({ record }) => `${record.width}×${record.planeHeight}`,
+  },
+  {
+    title: '材质',
+    dataIndex: 'materialType',
+    key: 'materialType',
+    width: 72,
+    align: 'center',
+    customRender: ({ text }) =>
+      materialTypeOptions.find((o) => o.value === text)?.label ?? String(text ?? '—'),
   },
   { title: '操作', key: 'action', width: 56, align: 'center', fixed: 'right' },
 ]
@@ -373,6 +582,8 @@ onBeforeUnmount(() => {
   if (v && !v.isDestroyed()) {
     window.XGX?.Plane?.clear(v)
   }
+  for (const url of createdVideoBlobUrls) URL.revokeObjectURL(url)
+  createdVideoBlobUrls.clear()
 })
 </script>
 
@@ -457,6 +668,9 @@ onBeforeUnmount(() => {
                     <a-input-number v-model:value="form.rollDegrees" class="hzd-control-fill" size="small" :step="1" :controls="true" />
                   </div>
                 </div>
+                <p class="hzd-muted hzd-field-footnote">
+                  航向绕上轴；俯仰绕东轴（正=抬头）；翻滚绕北轴（正=右倾）。支持正负角度。
+                </p>
 
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">显示填充</span>
@@ -465,25 +679,152 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
                 <div class="hzd-field-row">
-                  <span class="hzd-field-label">填充颜色</span>
+                  <span class="hzd-field-label">材质类型</span>
                   <div class="hzd-field-control">
-                    <label class="hzd-color-native">
-                      <span class="hzd-swatch" :style="{ backgroundColor: form.color }" aria-hidden="true" />
-                      <input
-                        type="color"
-                        class="hzd-color-hit"
-                        :value="hex6ForColorInput(form.color)"
-                        @input="onColorPick('color', $event)"
+                    <a-select
+                      v-model:value="form.materialType"
+                      class="hzd-control-fill hzd-select-like-input"
+                      size="small"
+                      popup-class-name="hzd-select-dropdown-dark"
+                      :options="materialTypeOptions"
+                    >
+                      <template #suffixIcon>
+                        <DownOutlined class="hzd-select-suffix-icon" />
+                      </template>
+                    </a-select>
+                  </div>
+                </div>
+
+                <template v-if="form.materialType === 'color'">
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">填充颜色</span>
+                    <div class="hzd-field-control">
+                      <label class="hzd-color-native">
+                        <span class="hzd-swatch" :style="{ backgroundColor: form.color }" aria-hidden="true" />
+                        <input
+                          type="color"
+                          class="hzd-color-hit"
+                          :value="hex6ForColorInput(form.color)"
+                          @input="onColorPick('color', $event)"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">填充透明度</span>
+                    <div class="hzd-field-control hzd-field-control--slider">
+                      <a-slider v-model:value="form.alpha" :min="0" :max="1" :step="0.05" class="hzd-slider-fill" />
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="form.materialType === 'image'">
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">上传图片</span>
+                    <div class="hzd-field-control hzd-field-control--file">
+                      <label class="hzd-file-btn">
+                        <span>选择图片</span>
+                        <input type="file" accept="image/*" class="hzd-file-hit" @change="onImageFile" />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">图片透明度</span>
+                    <div class="hzd-field-control hzd-field-control--slider">
+                      <a-slider v-model:value="form.alpha" :min="0" :max="1" :step="0.05" class="hzd-slider-fill" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">重复 X</span>
+                    <div class="hzd-field-control">
+                      <a-input-number v-model:value="form.repeatX" class="hzd-control-fill" size="small" :min="0.01" :step="0.5" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">重复 Y</span>
+                    <div class="hzd-field-control">
+                      <a-input-number v-model:value="form.repeatY" class="hzd-control-fill" size="small" :min="0.01" :step="0.5" />
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="form.materialType === 'video'">
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">上传视频</span>
+                    <div class="hzd-field-control hzd-field-control--file">
+                      <label class="hzd-file-btn">
+                        <span>选择视频</span>
+                        <input type="file" accept="video/*" class="hzd-file-hit" @change="onVideoFile" />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">视频透明度</span>
+                    <div class="hzd-field-control hzd-field-control--slider">
+                      <a-slider v-model:value="form.alpha" :min="0" :max="1" :step="0.05" class="hzd-slider-fill" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">播放</span>
+                    <div class="hzd-field-control">
+                      <a-switch v-model:checked="form.videoPlaying" size="small" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">循环</span>
+                    <div class="hzd-field-control">
+                      <a-switch v-model:checked="form.videoLoop" size="small" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">静音</span>
+                    <div class="hzd-field-control">
+                      <a-switch v-model:checked="form.videoMuted" size="small" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">原生控件</span>
+                    <div class="hzd-field-control">
+                      <a-switch v-model:checked="form.videoShowControls" size="small" />
+                    </div>
+                  </div>
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">倍速</span>
+                    <div class="hzd-field-control">
+                      <a-input-number
+                        v-model:value="form.videoPlaybackRate"
+                        class="hzd-control-fill"
+                        size="small"
+                        :min="0.25"
+                        :max="16"
+                        :step="0.25"
                       />
-                    </label>
+                    </div>
                   </div>
-                </div>
-                <div class="hzd-field-row">
-                  <span class="hzd-field-label">填充透明度</span>
-                  <div class="hzd-field-control hzd-field-control--slider">
-                    <a-slider v-model:value="form.alpha" :min="0" :max="1" :step="0.05" class="hzd-slider-fill" />
+                  <div class="hzd-field-row">
+                    <span class="hzd-field-label">播放次数</span>
+                    <div class="hzd-field-control">
+                      <a-input-number
+                        v-model:value="form.videoPlayCount"
+                        class="hzd-control-fill"
+                        size="small"
+                        :min="0"
+                        :max="9999"
+                        :step="1"
+                      />
+                    </div>
                   </div>
-                </div>
+                  <p class="hzd-muted hzd-field-footnote">播放次数为 0 表示不限制；&gt;0 时每次自然结束计 1 次，达到后暂停。</p>
+                  <div v-if="selectedId" class="hzd-field-row hzd-field-row--video-actions">
+                    <div class="hzd-actions-col hzd-actions-col--inline">
+                      <a-button size="small" @click="onVideoPlay">播放</a-button>
+                      <a-button size="small" @click="onVideoPause">暂停</a-button>
+                      <a-button size="small" @click="onVideoRestart">重新播放</a-button>
+                      <a-button size="small" type="primary" @click="applyVideoOptionsToSelected">应用视频参数</a-button>
+                    </div>
+                  </div>
+                  <p class="hzd-muted hzd-field-footnote">使用浏览器本地 blob URL；标绘/确定会写入材质，选中后可即时应用播放参数。</p>
+                </template>
 
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">轮廓线</span>
@@ -779,6 +1120,98 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
+.hzd-field-control :deep(.ant-select) {
+  width: 80% !important;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-selector) {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-inline-end: 28px !important;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-arrow),
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-suffix) {
+  opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  inset-inline-end: 8px !important;
+}
+
+.hzd-field-control .hzd-select-like-input :deep(.anticon) {
+  opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-selection-item),
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-selection-placeholder) {
+  line-height: 22px !important;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.hzd-field-control .hzd-select-like-input :deep(.ant-select:not(.ant-select-disabled):hover .ant-select-selector),
+.hzd-field-control .hzd-select-like-input :deep(.ant-select-focused .ant-select-selector) {
+  border-color: rgba(120, 180, 255, 0.45) !important;
+}
+
+.hzd-field-control--file {
+  justify-content: flex-end;
+}
+
+.hzd-file-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(120, 180, 255, 0.45);
+  background: rgba(30, 60, 95, 0.55);
+  color: rgba(230, 242, 255, 0.92);
+  cursor: pointer;
+  width: 80%;
+  max-width: 100%;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.hzd-file-btn:hover {
+  border-color: rgba(160, 210, 255, 0.75);
+  background: rgba(45, 85, 130, 0.65);
+}
+
+.hzd-file-hit {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.hzd-muted {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.hzd-field-footnote {
+  margin: 0 0 4px;
+  padding-left: 0;
+  text-align: left;
+  grid-column: 1 / -1;
+}
+
 .hzd-color-native {
   display: flex;
   align-items: center;
@@ -814,6 +1247,11 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 6px;
   align-items: stretch;
+}
+
+.hzd-actions-col--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
 .hzd-actions-primary-row {

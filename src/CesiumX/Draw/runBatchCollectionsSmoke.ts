@@ -11,6 +11,7 @@ import BoxCollection from './Box/BoxCollection'
 import PolylineVolumeCollection from './PolylineVolume/PolylineVolumeCollection'
 import { ShapeType } from './PolylineVolume/shape'
 import PlaneCollection from './Plane/PlaneCollection'
+import { buildPlaneModelMatrix } from './Plane/planeShared'
 
 const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><circle cx="24" cy="24" r="20" fill="#faad14" stroke="#222" stroke-width="3"/></svg>`
 
@@ -145,32 +146,62 @@ export async function runBatchCollectionsSmoke(viewer: Viewer): Promise<void> {
   pvc.destroy()
 
   const plc = new PlaneCollection()
+  const assertPlaneUp = (lng: number, lat2: number, alt: number, w: number, ph: number, hd = 0, pt = 0, rl = 0) => {
+    const c = Cesium.Cartesian3.fromDegrees(lng, lat2, alt)
+    const up = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(c, new Cesium.Cartesian3())
+    const m = buildPlaneModelMatrix(lng, lat2, alt, w, ph, hd, pt, rl)
+    const n = Cesium.Matrix3.getColumn(Cesium.Matrix4.getMatrix3(m, new Cesium.Matrix3()), 2, new Cesium.Cartesian3())
+    Cesium.Cartesian3.normalize(n, n)
+    if (Cesium.Cartesian3.dot(n, up) < 0.98) {
+      console.warn('PlaneCollection smoke: plane not horizontal', { lng, lat2, hd, pt, rl })
+    }
+  }
   const plIds = plc.addPlanes(viewer, [
     {
       id: 'smoke-plc-a',
       positions: [lon + 0.06, lat, h],
       dimensions: [120, 80],
       headingDegrees: 12,
+      materialType: 'color',
       color: '#e91e63',
       alpha: 0.88,
       targetData: { tag: 'smoke-plc' },
     },
     {
+      id: 'smoke-plc-b2',
       positions: [lon + 0.062, lat + 0.002, h + 30],
       dimensions: [100, 100],
       pitchDegrees: -5,
-      color: '#4caf50',
-      alpha: 1,
+      materialType: 'color',
+      color: '#2196f3',
+      alpha: 0.75,
     },
   ])
+  assertPlaneUp(lon + 0.06, lat, h, 120, 80, 12)
+  assertPlaneUp(lon + 0.062, lat + 0.002, h + 30, 100, 100, 0, -5)
   if (plIds[0]) {
-    plc.updatePlane(plIds[0]!, { alpha: 0.75, headingDegrees: 20 })
+    plc.updatePlane(plIds[0]!, { alpha: 0.75, headingDegrees: 20, rollDegrees: 8 })
     plc.getPlane(plIds[0]!)
   }
-  if (plIds.length >= 2 && plIds[1]) {
-    plc.updatePlanes([{ id: plIds[1]!, color: '#ff9800', dimensions: [110, 70] }])
-    plc.getPlane(plIds[1]!)
+  const videoId = 'smoke-plc-video'
+  const plVideoIds = plc.addPlanes(viewer, [
+    {
+      id: videoId,
+      positions: [lon + 0.064, lat - 0.002, h + 20],
+      dimensions: [90, 60],
+      materialType: 'video',
+      videoUrl:
+        'https://cesium.com/public/SandcastleSampleData/big-buck-bunny_trailer.mp4',
+      video: { playing: true, loop: true, muted: true, playbackRate: 1, playCount: 0 },
+    },
+  ])
+  const videoPlId = plVideoIds[0] ?? videoId
+  if (plc.getPlaneVideoElement(videoPlId)) {
+    plc.pausePlaneVideo(videoPlId)
+    plc.applyPlaneVideoOptions(videoPlId, { playing: true, loop: true, muted: true })
   }
+
+  if (videoPlId) plc.remove(videoPlId)
   plc.getAllPlanes(viewer)
   plc.getCount(viewer)
   plc.getAllIds(viewer)
