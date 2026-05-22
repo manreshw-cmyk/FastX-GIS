@@ -1,15 +1,8 @@
-export {
-  DEFAULT_PLAY_SPAN_SEC,
-  ZERO_HMS,
-  formatHmsFromSeconds,
-  formatHmsFromJulianDelta,
-  nowMs,
-  defaultPlayEndMs,
-  msToJulian,
-  julianToMs,
-  msFromIso,
-  resolvePlayClockWindowFromMs,
-  validatePlayClockRange,
-  syncViewerClock,
-} from './timelineClock'
-export type { PlayClockWindow } from './timelineClock'
+import * as timelineClock  from "./timelineClock";
+
+export type { PlayClockWindow } from "./timelineClock";
+
+/** 工具集统一入口（如 `Utils.timelineClock.syncViewerClock`） */
+export default {
+  timelineClock,
+};

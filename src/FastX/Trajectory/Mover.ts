@@ -203,7 +203,16 @@ export default class Mover {
     this.emitTimeUpdate()
 
     if (this.options.loop) {
-      if (this.getProgress() <= 0.02 && this.completedRuns > 0) {
+      const p = this.getProgress()
+      const stop = this.trajectory.getEndTime()
+      const atOrPastEnd =
+        p >= 0.999 || Cesium.JulianDate.greaterThanOrEquals(this.clock.currentTime, stop)
+      if (atOrPastEnd) {
+        this.completedRuns += 1
+        this.clock.currentTime = this.trajectory.getStartTime().clone()
+        if (!this.clock.shouldAnimate) {
+          this.clock.shouldAnimate = true
+        }
         this.callbacks.onLoop?.()
       }
       return

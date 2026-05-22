@@ -87,13 +87,21 @@ export function validatePlayClockRange(startMs: number, endMs: number): boolean 
 export function syncViewerClock(
   viewer: Cesium.Viewer,
   window: PlayClockWindow,
-  options?: { loop?: boolean; multiplier?: number; shouldAnimate?: boolean },
+  options?: {
+    loop?: boolean
+    multiplier?: number
+    shouldAnimate?: boolean
+    /** 为 false 时保留 currentTime（拖拽进度条时用） */
+    resetTime?: boolean
+  },
 ): void {
   const start = window.start.clone()
   const stop = window.end.clone()
   viewer.clock.startTime = start
   viewer.clock.stopTime = stop
-  viewer.clock.currentTime = start.clone()
+  if (options?.resetTime !== false) {
+    viewer.clock.currentTime = start.clone()
+  }
   viewer.clock.clockRange = options?.loop ? Cesium.ClockRange.LOOP_STOP : Cesium.ClockRange.CLAMPED
   if (options?.multiplier !== undefined && options.multiplier > 0) {
     viewer.clock.multiplier = options.multiplier

@@ -1,13 +1,11 @@
-<script setup lang="ts">
-/**
- * Path 示例：Trajectory + Mover（时钟）+ 单 Entity（position/path/model，对齐参考 HTML 时间轴写法）。
- */
+﻿<script setup lang="ts">
 import { ClearOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { Viewer } from 'cesium'
+import { FastX, Utils } from '../../FastX'
 import type {
   MouseEventListenOptions,
   MouseEventPickPayload,
@@ -15,9 +13,12 @@ import type {
   PlayClockWindow,
   TrajectoryLngLatKeyframe,
 } from '../../FastX'
-import {
-  Trajectory,
-  Mover,
+import type Trajectory from '../../FastX/Trajectory/Trajectory'
+import type Mover from '../../FastX/Trajectory/Mover'
+
+const TrajectoryApi = FastX.Trajectory
+const MoverApi = FastX.Mover
+const {
   DEFAULT_PLAY_SPAN_SEC,
   ZERO_HMS,
   formatHmsFromSeconds,
@@ -25,58 +26,25 @@ import {
   resolvePlayClockWindowFromMs,
   validatePlayClockRange,
   syncViewerClock,
-} from '../../FastX'
+} = Utils.timelineClock
 import dayjs, { type Dayjs } from 'dayjs'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
 
-/** SDK 目录无直升机模型，使用 J15.gltf（已复制到 public/models） */
 const DEMO_MODEL_REL = 'models/J15.gltf'
+const DEFAULT_TRAIL_COLOR = '#ffcc00'
+const DEFAULT_TRAIL_TIME = 25
+const DEFAULT_CLOCK_MULTIPLIER = 5
 
 function resolveDemoModelUri(): string {
   const base = import.meta.env.BASE_URL || '/'
   const rel = `${base.replace(/\/?$/, '/')}${DEMO_MODEL_REL}`
-  if (typeof window !== 'undefined') {
-    return new URL(rel, window.location.href).href
-  }
+  if (typeof window !== 'undefined') return new URL(rel, window.location.href).href
   return rel
 }
 
 const DEMO_MODEL_URI = resolveDemoModelUri()
-
-const playStart = ref<Dayjs>(dayjs())
-const playEnd = ref<Dayjs>(dayjs().add(DEFAULT_PLAY_SPAN_SEC, 'second'))
-
-function initDefaultPlayClock(): void {
-  playStart.value = dayjs()
-  playEnd.value = dayjs().add(DEFAULT_PLAY_SPAN_SEC, 'second')
-}
-
-/** 进入标绘：仅刷新开始时间为当前时刻，保留用户已设置的结束时间 */
-function armPlotClock(): void {
-  const endMs = playEnd.value.valueOf()
-  playStart.value = dayjs()
-  if (!validatePlayClockRange(playStart.value.valueOf(), endMs)) {
-    playEnd.value = dayjs().add(DEFAULT_PLAY_SPAN_SEC, 'second')
-  }
-}
-
-function resolvePlayClockWindow(): PlayClockWindow | null {
-  const win = resolvePlayClockWindowFromMs(playStart.value.valueOf(), playEnd.value.valueOf())
-  if (!win) message.warning('结束时间必须大于开始时间')
-  return win
-}
-
-function readClockMultiplier(): number {
-  const raw = form.clockMultiplier
-  const n = typeof raw === 'number' ? raw : Number(raw)
-  return Number.isFinite(n) && n > 0 ? n : 1
-}
-
-const title = '绘制（Path）路径类（底层entity）'
-const DEFAULT_TRAIL_COLOR = '#ffcc00'
-const mapStore = useMapLayerStore()
 
 interface PathKeyframeRow {
   key: string
@@ -90,6 +58,13 @@ interface TrajectorySceneSession {
   pathId: string
   routeId: string
   trajectory: Trajectory
+}
+
+type RowRecord = PathSnapshot & { keyframeCount: number }
+
+type MapMouseBinder = {
+  listen: (options: MouseEventListenOptions) => void
+  destroy: () => void
 }
 
 function createKeyframeRow(index: number, partial?: Partial<PathKeyframeRow>): PathKeyframeRow {
@@ -107,6 +82,20 @@ function routeIdFor(pathId: string): string {
   return `${pathId}__route`
 }
 
+function randomRouteLineColor(): string {
+  const h = Math.floor(Math.random() * 360)
+  return `hsl(${h}, 72%, 68%)`
+}
+
+const title = '绘制（Path）路径类（底层entity）'
+const mapStore = useMapLayerStore()
+
+const playStart = ref<Dayjs>(dayjs())
+const playEnd = ref<Dayjs>(dayjs().add(DEFAULT_PLAY_SPAN_SEC, 'second'))
+/** 驱动总进度条与播放；仅在完成路径 / 确定 / 删除时与表单同步 */
+const activePlayStart = ref(playStart.value)
+const activePlayEnd = ref(playEnd.value)
+
 const plotArmed = ref(false)
 const selectedId = ref<string | null>(null)
 const keyframeRows = ref<PathKeyframeRow[]>([])
@@ -117,74 +106,81 @@ const form = reactive({
   color: DEFAULT_TRAIL_COLOR,
   alpha: 0.85,
   leadTime: 0,
-  trailTime: 50,
+  trailTime: DEFAULT_TRAIL_TIME,
   resolution: 20,
   showRouteLine: true,
   autoPlay: true,
   playCount: 1,
-  loopPlayback: false,
-  clockMultiplier: 1,
+  loopPlayback: true,
+  clockMultiplier: DEFAULT_CLOCK_MULTIPLIER,
   show: true,
 })
 
 const playbackProgress = ref(0)
 const isScrubbing = ref(false)
 const timelineTrackRef = ref<HTMLElement | null>(null)
-let wasPlayingBeforeScrub = false
-let globalMover: Mover | null = null
-let clockProgressListener: ((clock: Cesium.Clock) => void) | null = null
-let scrubRenderRaf = 0
-
-const globalClockWindow = computed(() =>
-  resolvePlayClockWindowFromMs(playStart.value.valueOf(), playEnd.value.valueOf()),
-)
-
-const globalDurationSec = computed(() => globalClockWindow.value?.durationSec ?? 0)
-
-/** 列表有数据且已加载会话时可操作总进度条，不依赖选中行 */
-const timelineEnabled = computed(
-  () => tableData.value.length > 0 && sessions.size > 0 && globalDurationSec.value > 0,
-)
-
-const timelineCurrentHms = computed(() =>
-  timelineEnabled.value
-    ? formatHmsFromSeconds(globalDurationSec.value * playbackProgress.value)
-    : ZERO_HMS,
-)
-
-const timelineTotalHms = computed(() =>
-  timelineEnabled.value ? formatHmsFromSeconds(globalDurationSec.value) : ZERO_HMS,
-)
-
-const timelinePercent = computed(() =>
-  timelineEnabled.value ? Math.round(playbackProgress.value * 1000) / 10 : 0,
-)
-
-/** 全航线随机色（HSL，可读性较好） */
-function randomRouteLineColor(): string {
-  const h = Math.floor(Math.random() * 360)
-  return `hsl(${h}, 72%, 68%)`
-}
-
-type RowRecord = PathSnapshot & { keyframeCount: number }
-
 const tableData = ref<RowRecord[]>([])
 const tableShellRef = ref<HTMLElement | null>(null)
 const keyframeShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 const keyframeScrollY = ref(120)
-let tableResizeObserver: ResizeObserver | null = null
-let keyframeResizeObserver: ResizeObserver | null = null
 
 const sessions = new Map<string, TrajectorySceneSession>()
-
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
-}
-
+/** 驱动全局进度条与 Mover 的路径 id */
+const playbackMasterId = ref<string | null>(null)
+const playbackRevision = ref(0)
+let wasPlayingBeforeScrub = false
+let globalMover: Mover | null = null
+let scrubRenderRaf = 0
+let tableResizeObserver: ResizeObserver | null = null
+let keyframeResizeObserver: ResizeObserver | null = null
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+
+const globalClockWindow = computed((): PlayClockWindow | null => {
+  playbackRevision.value
+  const traj = getMasterTrajectory()
+  if (traj) {
+    return {
+      start: traj.getStartTime(),
+      end: traj.getEndTime(),
+      durationSec: traj.getDuration(),
+    }
+  }
+  return resolvePlayClockWindowFromMs(activePlayStart.value.valueOf(), activePlayEnd.value.valueOf())
+})
+const globalDurationSec = computed(() => globalClockWindow.value?.durationSec ?? 0)
+const timelineEnabled = computed(
+  () => tableData.value.length > 0 && sessions.size > 0 && globalDurationSec.value > 0,
+)
+const timelineCurrentHms = computed(() =>
+  timelineEnabled.value
+    ? formatHmsFromSeconds(globalDurationSec.value * playbackProgress.value)
+    : ZERO_HMS,
+)
+const timelineTotalHms = computed(() =>
+  timelineEnabled.value ? formatHmsFromSeconds(globalDurationSec.value) : ZERO_HMS,
+)
+const timelinePercent = computed(() =>
+  timelineEnabled.value ? Math.round(playbackProgress.value * 1000) / 10 : 0,
+)
+const showPlayCount = computed(() => !form.loopPlayback)
+const playCountDisabled = computed(() => form.loopPlayback || !form.autoPlay)
+
+const primaryButtonText = computed(() => {
+  if (selectedId.value) return '确定'
+  if (plotArmed.value) {
+    const n = rowsToLngLatKeyframes()?.length ?? 0
+    return n >= 2 ? '完成路径' : '取消标绘'
+  }
+  return '标绘'
+})
+const primaryButtonType = computed(() => {
+  if (plotArmed.value && !selectedId.value && (rowsToLngLatKeyframes()?.length ?? 0) < 2) {
+    return 'default' as const
+  }
+  return 'primary' as const
+})
 
 watch(
   () => form.loopPlayback,
@@ -193,39 +189,274 @@ watch(
   },
 )
 
-function updateTableScrollY(): void {
-  const shell = tableShellRef.value
-  if (!shell) return
-  const thead = shell.querySelector('.ant-table-thead') as HTMLElement | null
-  const headH = thead?.offsetHeight ?? 40
-  tableScrollY.value = Math.max(72, Math.floor(shell.clientHeight - headH - 6))
+function syncActiveClockFromForm(): void {
+  activePlayStart.value = playStart.value
+  activePlayEnd.value = playEnd.value
 }
 
-function updateKeyframeScrollY(): void {
-  const shell = keyframeShellRef.value
-  if (!shell) return
-  const thead = shell.querySelector('.ant-table-thead') as HTMLElement | null
-  const headH = thead?.offsetHeight ?? 28
-  keyframeScrollY.value = Math.max(64, Math.floor(shell.clientHeight - headH - 6))
+function initDefaultPlayClock(): void {
+  const s = dayjs()
+  const e = s.add(DEFAULT_PLAY_SPAN_SEC, 'second')
+  playStart.value = s
+  playEnd.value = e
+  activePlayStart.value = s
+  activePlayEnd.value = e
 }
 
-function toRows(snapshots: PathSnapshot[]): RowRecord[] {
-  return snapshots.map((s) => {
-    const kfs = s.targetData.keyframes
-    const count = Array.isArray(kfs) ? kfs.length : 0
-    return { ...s, keyframeCount: count }
+function armPlotClock(): void {
+  const endMs = playEnd.value.valueOf()
+  playStart.value = dayjs()
+  if (!validatePlayClockRange(playStart.value.valueOf(), endMs)) {
+    playEnd.value = dayjs().add(DEFAULT_PLAY_SPAN_SEC, 'second')
+  }
+}
+
+function resolveFormClockWindow() {
+  const win = resolvePlayClockWindowFromMs(playStart.value.valueOf(), playEnd.value.valueOf())
+  if (!win) message.warning('结束时间必须大于开始时间')
+  return win
+}
+
+type BuildClockSource = 'form' | 'active' | 'snapshot'
+
+function resolveBuildClockWindow(
+  snap: PathSnapshot | null | undefined,
+  source: BuildClockSource,
+): PlayClockWindow | null {
+  if (source === 'active') {
+    return resolvePlayClockWindowFromMs(activePlayStart.value.valueOf(), activePlayEnd.value.valueOf())
+  }
+  if (source === 'snapshot' && snap) {
+    const td = snap.targetData
+    const startMs =
+      typeof td.playStartMs === 'number'
+        ? td.playStartMs
+        : typeof td.clockStartIso === 'string'
+          ? msFromIso(td.clockStartIso)
+          : undefined
+    const endMs =
+      typeof td.playEndMs === 'number'
+        ? td.playEndMs
+        : typeof td.clockStopIso === 'string'
+          ? msFromIso(td.clockStopIso)
+          : undefined
+    const win = resolvePlayClockWindowFromMs(startMs, endMs)
+    if (win) return win
+  }
+  return resolveFormClockWindow()
+}
+
+function readClockMultiplier(): number {
+  const n = Number(form.clockMultiplier)
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_CLOCK_MULTIPLIER
+}
+
+function resetPlaybackProgress(): void {
+  playbackProgress.value = 0
+}
+
+function stopGlobalMover(): void {
+  globalMover?.stop()
+}
+
+function bumpPlaybackRevision(): void {
+  playbackRevision.value += 1
+}
+
+function getMasterSession(): TrajectorySceneSession | null {
+  if (playbackMasterId.value) {
+    const s = sessions.get(playbackMasterId.value)
+    if (s) return s
+  }
+  const firstId = tableData.value[0]?.id
+  if (firstId) {
+    const s = sessions.get(firstId)
+    if (s) return s
+  }
+  return sessions.values().next().value ?? null
+}
+
+function pickPlaybackMaster(): void {
+  if (playbackMasterId.value && sessions.has(playbackMasterId.value)) return
+  playbackMasterId.value = tableData.value[0]?.id ?? null
+}
+
+function scheduleScrubRender(viewer: Viewer): void {
+  if (scrubRenderRaf) return
+  scrubRenderRaf = requestAnimationFrame(() => {
+    scrubRenderRaf = 0
+    if (!viewer.isDestroyed()) viewer.scene.requestRender()
   })
 }
 
-function refreshTable(): void {
+function ensureGlobalMover(viewer: Viewer): Mover {
+  if (!globalMover) globalMover = MoverApi.fromViewer(viewer, { autoStart: false })
+  return globalMover
+}
+
+function getMasterTrajectory(): Trajectory | null {
+  return getMasterSession()?.trajectory ?? null
+}
+
+function disposeSession(pathId: string): void {
+  const session = sessions.get(pathId)
+  if (!session) return
+  window.FastX?.Path?.remove(pathId)
+  window.FastX?.PolyLine?.remove(session.routeId)
+  sessions.delete(pathId)
+  if (playbackMasterId.value === pathId) {
+    playbackMasterId.value = null
+  }
+  bumpPlaybackRevision()
+}
+
+function attachModelToPathEntity(entity: Cesium.Entity, position: Cesium.PositionProperty): void {
+  entity.orientation = new Cesium.VelocityOrientationProperty(position)
+  entity.model = new Cesium.ModelGraphics({
+    uri: DEMO_MODEL_URI,
+    scale: 0.35,
+    minimumPixelSize: 40,
+    runAnimations: false,
+    show: form.show !== false,
+  })
+}
+
+async function ensurePathEntityModelReady(viewer: Viewer): Promise<void> {
+  await Cesium.Resource.fetch({ url: DEMO_MODEL_URI })
+  await new Promise<void>((resolve) => {
+    let frames = 0
+    const remove = viewer.scene.postRender.addEventListener(() => {
+      frames += 1
+      if (frames >= 3) {
+        remove()
+        resolve()
+      }
+    })
+  })
+}
+
+function bindGlobalTimelineCallbacks(mover: Mover): void {
+  mover.setCallbacks({
+    onTimeUpdate: (_t: Cesium.JulianDate, p: number) => {
+      if (!isScrubbing.value) playbackProgress.value = p
+    },
+    onComplete: () => {
+      playbackProgress.value = 1
+    },
+  })
+}
+
+function seekGlobalProgress(progress: number): void {
+  const mover = globalMover
   const v = mapStore.getViewer()
-  const P = window.FastX?.Path
-  if (!v || v.isDestroyed() || !P) {
-    tableData.value = []
+  if (!mover || !v || v.isDestroyed() || !getMasterTrajectory()) return
+  const p = Math.max(0, Math.min(1, progress))
+  playbackProgress.value = p
+  mover.seekToProgress(p)
+  if (isScrubbing.value) scheduleScrubRender(v)
+  else v.scene.requestRender()
+}
+
+function progressFromClientX(clientX: number): number {
+  const track = timelineTrackRef.value
+  if (!track) return 0
+  const rect = track.getBoundingClientRect()
+  if (rect.width <= 0) return 0
+  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+}
+
+function endTimelineScrub(): void {
+  const mover = globalMover
+  const v = mapStore.getViewer()
+  isScrubbing.value = false
+  if (wasPlayingBeforeScrub && form.autoPlay && mover) {
+    mover.resume()
+  }
+  if (v && !v.isDestroyed()) v.scene.requestRender()
+}
+
+function onTimelinePointerDown(e: MouseEvent): void {
+  if (!timelineEnabled.value) return
+  e.preventDefault()
+  const mover = globalMover
+  if (!mover || !getMasterTrajectory()) return
+  isScrubbing.value = true
+  wasPlayingBeforeScrub = mover.getState().isPlaying && !mover.getState().isPaused
+  if (wasPlayingBeforeScrub) mover.pause()
+  seekGlobalProgress(progressFromClientX(e.clientX))
+  const onMove = (ev: MouseEvent) => seekGlobalProgress(progressFromClientX(ev.clientX))
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    endTimelineScrub()
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
+function applyGlobalPlayback(resetProgress = false): void {
+  const v = mapStore.getViewer()
+  const traj = getMasterTrajectory()
+  const win = globalClockWindow.value
+  if (!v || v.isDestroyed() || !win || !traj) {
+    stopGlobalMover()
     return
   }
-  tableData.value = toRows(P.getAllPaths(v))
-  void nextTick(() => updateTableScrollY())
+  if (resetProgress) {
+    stopGlobalMover()
+    resetPlaybackProgress()
+  }
+
+  const mover = ensureGlobalMover(v)
+  bindGlobalTimelineCallbacks(mover)
+  mover.setLoop(form.loopPlayback)
+  mover.setPlayCount(form.playCount)
+  mover.setSpeed(readClockMultiplier())
+  mover.setTrajectory(traj)
+  syncViewerClock(v, win, {
+    loop: form.loopPlayback,
+    multiplier: readClockMultiplier(),
+    shouldAnimate: false,
+    resetTime: resetProgress,
+  })
+  mover.seekToProgress(playbackProgress.value)
+  playbackProgress.value = mover.getProgress()
+
+  if (form.autoPlay) {
+    mover.start()
+  } else {
+    mover.stop()
+  }
+  v.scene.requestRender()
+}
+
+/** 多路径时按当前活动时钟重建，保证与全局进度条一致 */
+async function unifySessionsToActiveClock(): Promise<void> {
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed() || tableData.value.length < 2) return
+  for (const row of tableData.value) {
+    const snap = window.FastX?.Path?.getPath(row.id)
+    if (!snap) continue
+    const kfs = readStoredKeyframes(snap)
+    if (kfs.length < 2) continue
+    const keep =
+      typeof snap.targetData.routeLineColor === 'string'
+        ? String(snap.targetData.routeLineColor)
+        : undefined
+    disposeSession(row.id)
+    await buildTrajectoryScene(v, row.id, kfs, keep, true, 'active')
+  }
+  bumpPlaybackRevision()
+}
+
+/** 完成路径 / 确定 / 删除：提交表单时钟 → 重置进度 → 从起点重播 */
+async function restartGlobalPlayback(): Promise<void> {
+  syncActiveClockFromForm()
+  if (tableData.value.length > 1) {
+    await unifySessionsToActiveClock()
+  }
+  pickPlaybackMaster()
+  applyGlobalPlayback(true)
 }
 
 function rowsToLngLatKeyframes(): TrajectoryLngLatKeyframe[] | undefined {
@@ -270,251 +501,31 @@ function readStoredKeyframes(snap: PathSnapshot): TrajectoryLngLatKeyframe[] {
     }))
 }
 
-function stopGlobalMover(): void {
-  globalMover?.stop()
-  detachClockProgressSync()
-}
-
-function syncProgressFromViewerClock(): void {
-  const win = globalClockWindow.value
-  const v = mapStore.getViewer()
-  if (!win || !v || v.isDestroyed()) return
-  const elapsed = Cesium.JulianDate.secondsDifference(v.clock.currentTime, win.start)
-  playbackProgress.value =
-    win.durationSec > 0 ? Math.max(0, Math.min(1, elapsed / win.durationSec)) : 0
-}
-
-function attachClockProgressSync(viewer: Viewer): void {
-  detachClockProgressSync()
-  clockProgressListener = () => {
-    if (isScrubbing.value) return
-    syncProgressFromViewerClock()
-  }
-  viewer.clock.onTick.addEventListener(clockProgressListener)
-}
-
-function scheduleScrubRender(viewer: Viewer): void {
-  if (scrubRenderRaf) return
-  scrubRenderRaf = requestAnimationFrame(() => {
-    scrubRenderRaf = 0
-    if (!viewer.isDestroyed()) viewer.scene.requestRender()
-  })
-}
-
-function detachClockProgressSync(): void {
-  const v = mapStore.getViewer()
-  if (clockProgressListener && v && !v.isDestroyed()) {
-    v.clock.onTick.removeEventListener(clockProgressListener)
-  }
-  clockProgressListener = null
-}
-
-function ensureGlobalMover(viewer: Viewer): Mover {
-  if (!globalMover) {
-    globalMover = Mover.fromViewer(viewer, { autoStart: false })
-  }
-  return globalMover
-}
-
-function getMasterTrajectory(): Trajectory | null {
-  const first = sessions.values().next().value
-  return first?.trajectory ?? null
-}
-
-function disposeSession(pathId: string): void {
-  const session = sessions.get(pathId)
-  if (!session) return
-  window.FastX?.Path?.remove(pathId)
-  window.FastX?.PolyLine?.remove(session.routeId)
-  sessions.delete(pathId)
-}
-
-/**
- * 参考 HTML：同一 Entity 上 position + path + model，由 clock 驱动位置（非手动改 modelMatrix）。
- */
-function attachModelToPathEntity(entity: Cesium.Entity, position: Cesium.PositionProperty): void {
-  entity.orientation = new Cesium.VelocityOrientationProperty(position)
-  entity.model = new Cesium.ModelGraphics({
-    uri: DEMO_MODEL_URI,
-    scale: 0.35,
-    minimumPixelSize: 40,
-    runAnimations: false,
-    show: form.show !== false,
-  })
-}
-
-/** 预取 glb 并等待数帧，模型挂到 Entity 后再开时钟 */
-async function ensurePathEntityModelReady(viewer: Viewer): Promise<void> {
-  await Cesium.Resource.fetch({ url: DEMO_MODEL_URI })
-  await new Promise<void>((resolve) => {
-    let frames = 0
-    const remove = viewer.scene.postRender.addEventListener(() => {
-      frames += 1
-      if (frames >= 3) {
-        remove()
-        resolve()
-      }
-    })
-  })
-}
-
-function bindGlobalTimelineCallbacks(mover: Mover): void {
-  mover.setCallbacks({
-    onTimeUpdate: (_t, p) => {
-      if (!isScrubbing.value) playbackProgress.value = p
-    },
-    onComplete: () => {
-      playbackProgress.value = 1
-    },
-  })
-}
-
-/** 拖动总进度条：仅改 currentTime，避免每帧 syncViewerClock 导致卡顿与打断播放 */
-function seekGlobalProgress(progress: number): void {
-  const win = globalClockWindow.value
-  const v = mapStore.getViewer()
-  if (!win || !v || v.isDestroyed()) return
-  const p = Math.max(0, Math.min(1, progress))
-  playbackProgress.value = p
-  v.clock.currentTime = Cesium.JulianDate.addSeconds(
-    win.start,
-    win.durationSec * p,
-    new Cesium.JulianDate(),
-  )
-  globalMover?.seekToProgress(p)
-  if (isScrubbing.value) scheduleScrubRender(v)
-  else v.scene.requestRender()
-}
-
-function progressFromClientX(clientX: number): number {
-  const track = timelineTrackRef.value
-  if (!track) return 0
-  const rect = track.getBoundingClientRect()
-  if (rect.width <= 0) return 0
-  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-}
-
-function endTimelineScrub(): void {
-  const mover = globalMover
-  const v = mapStore.getViewer()
-  isScrubbing.value = false
-  if (wasPlayingBeforeScrub && form.autoPlay && mover) {
-    mover.resume()
-    if (v && !v.isDestroyed()) attachClockProgressSync(v)
-  } else if (v && !v.isDestroyed()) {
-    v.scene.requestRender()
-  }
-}
-
-function onTimelinePointerDown(e: MouseEvent): void {
-  if (!timelineEnabled.value) return
-  e.preventDefault()
-  const mover = globalMover
-  if (!mover) return
-  isScrubbing.value = true
-  wasPlayingBeforeScrub = mover.getState().isPlaying && !mover.getState().isPaused
-  if (wasPlayingBeforeScrub) mover.pause()
-  seekGlobalProgress(progressFromClientX(e.clientX))
-  const onMove = (ev: MouseEvent) => seekGlobalProgress(progressFromClientX(ev.clientX))
-  const onUp = () => {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-    endTimelineScrub()
-  }
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
-}
-
-/** 仅在三处调用且传入 true：新增标绘成功、选中行点确定、删除列表数据 */
-function resetPlaybackProgress(): void {
-  playbackProgress.value = 0
-}
-
-function applyGlobalPlayback(resetProgress = false): void {
-  const v = mapStore.getViewer()
-  const win = globalClockWindow.value
-  const traj = getMasterTrajectory()
-  if (!v || v.isDestroyed() || !win || !traj) {
-    stopGlobalMover()
-    return
-  }
-  if (resetProgress) stopGlobalMover()
-
-  const mover = ensureGlobalMover(v)
-  bindGlobalTimelineCallbacks(mover)
-  mover.setTrajectory(traj)
-  mover.setLoop(form.loopPlayback)
-  mover.setPlayCount(form.playCount)
-  mover.setSpeed(readClockMultiplier())
-  syncViewerClock(v, win, {
-    loop: form.loopPlayback,
-    multiplier: readClockMultiplier(),
-    shouldAnimate: false,
-  })
-  if (resetProgress) resetPlaybackProgress()
-  mover.seekToProgress(playbackProgress.value)
-  syncProgressFromViewerClock()
-  if (form.autoPlay) {
-    mover.start()
-    attachClockProgressSync(v)
-  } else {
-    detachClockProgressSync()
-    mover.stop()
-  }
-  v.scene.requestRender()
-}
-
-async function ensureAllSessions(): Promise<void> {
-  const v = mapStore.getViewer()
-  if (!v || v.isDestroyed()) return
-  for (const row of tableData.value) {
-    await ensureSession(row.id)
-  }
-}
-
-/** 起止时间变更后按当前表单时钟重建所有路径，保证采样时刻与进度条一致 */
-async function rebuildAllSessions(): Promise<void> {
-  const v = mapStore.getViewer()
-  if (!v || v.isDestroyed() || tableData.value.length === 0) return
-  const ids = tableData.value.map((r) => r.id)
-  for (const id of ids) {
-    const snap = window.FastX?.Path?.getPath(id)
-    if (!snap) continue
-    const kfs = readStoredKeyframes(snap)
-    if (kfs.length < 2) continue
-    const keep =
-      typeof snap.targetData.routeLineColor === 'string'
-        ? String(snap.targetData.routeLineColor)
-        : undefined
-    await buildTrajectoryScene(v, id, kfs, keep, true)
-  }
-  applyGlobalPlayback(true)
-}
-
 async function buildTrajectoryScene(
   viewer: Viewer,
   pathId: string,
   lngLatKeyframes: TrajectoryLngLatKeyframe[],
   keepRouteLineColor?: string,
   deferPlayback = false,
+  clockSource: BuildClockSource = 'form',
 ): Promise<boolean> {
   const PathApi = window.FastX?.Path
   const PolyLineApi = window.FastX?.PolyLine
   if (!PathApi || !PolyLineApi) return false
 
+  const snapForClock = window.FastX?.Path?.getPath(pathId)
   disposeSession(pathId)
-
-  const clock = resolvePlayClockWindow()
+  const clock = resolveBuildClockWindow(snapForClock ?? undefined, clockSource)
   if (!clock) return false
 
   const { start: clockStart, end: clockEnd, durationSec } = clock
   const trailTime =
-    form.trailTime > 0 ? Math.min(form.trailTime, durationSec) : Math.min(durationSec, 50)
+    form.trailTime > 0 ? Math.min(form.trailTime, durationSec) : Math.min(durationSec, DEFAULT_TRAIL_TIME)
   const routeLineColor = keepRouteLineColor ?? randomRouteLineColor()
 
   let trajectory: Trajectory
   try {
-    trajectory = Trajectory.fromLngLatKeyframes(lngLatKeyframes, durationSec, {
+    trajectory = TrajectoryApi.fromLngLatKeyframes(lngLatKeyframes, durationSec, {
       startTime: clockStart.clone(),
       endTime: clockEnd.clone(),
       durationSeconds: durationSec,
@@ -525,7 +536,6 @@ async function buildTrajectoryScene(
 
   const position = trajectory.getPositionProperty()
   const rId = routeIdFor(pathId)
-
   const targetData = {
     keyframes: lngLatKeyframes.map((k) => ({ ...k })),
     durationSeconds: durationSec,
@@ -544,12 +554,11 @@ async function buildTrajectoryScene(
   }
 
   if (form.showRouteLine) {
-    const positions = lngLatKeyframes.map(
-      (k) => [k.longitude, k.latitude, k.height ?? 0] as [number, number, number],
-    )
     PolyLineApi.add(viewer, {
       id: rId,
-      positions,
+      positions: lngLatKeyframes.map(
+        (k) => [k.longitude, k.latitude, k.height ?? 0] as [number, number, number],
+      ),
       lineKind: 'solid',
       color: routeLineColor,
       alpha: 0.55,
@@ -576,8 +585,7 @@ async function buildTrajectoryScene(
     return false
   }
 
-  const ent = PathApi.getEntity(pathId) ?? pathEntity
-  attachModelToPathEntity(ent, position)
+  attachModelToPathEntity(PathApi.getEntity(pathId) ?? pathEntity, position)
 
   try {
     await ensurePathEntityModelReady(viewer)
@@ -590,8 +598,9 @@ async function buildTrajectoryScene(
   }
 
   sessions.set(pathId, { pathId, routeId: rId, trajectory })
-
-  if (!deferPlayback) applyGlobalPlayback(true)
+  playbackMasterId.value = pathId
+  bumpPlaybackRevision()
+  if (!deferPlayback) void restartGlobalPlayback()
   viewer.scene.requestRender()
   return true
 }
@@ -607,36 +616,71 @@ async function ensureSession(pathId: string): Promise<void> {
     typeof snap.targetData.routeLineColor === 'string'
       ? String(snap.targetData.routeLineColor)
       : undefined
-  await buildTrajectoryScene(v, pathId, kfs, keep, true)
+  await buildTrajectoryScene(v, pathId, kfs, keep, true, 'snapshot')
 }
 
-function hex6ForColorInput(css: string): string {
-  const t = css.trim()
-  if (t.startsWith('#') && t.length >= 7) return t.slice(0, 7)
-  return '#000000'
+async function ensureAllSessions(): Promise<void> {
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) return
+  for (const row of tableData.value) {
+    await ensureSession(row.id)
+  }
 }
 
-function onColorPick(ev: Event): void {
-  const el = ev.target as HTMLInputElement
-  form.color = normalizeHex(el.value, DEFAULT_TRAIL_COLOR)
+function toRows(snapshots: PathSnapshot[]): RowRecord[] {
+  return snapshots.map((s) => {
+    const kfs = s.targetData.keyframes
+    const count = Array.isArray(kfs) ? kfs.length : 0
+    return { ...s, keyframeCount: count }
+  })
+}
+
+function refreshTable(): void {
+  const v = mapStore.getViewer()
+  const P = window.FastX?.Path
+  if (!v || v.isDestroyed() || !P) {
+    tableData.value = []
+    return
+  }
+  tableData.value = toRows(P.getAllPaths(v))
+  void nextTick(() => updateTableScrollY())
+}
+
+function syncBodyScrollY(
+  shell: HTMLElement | null,
+  scrollY: { value: number },
+  min: number,
+  headFallback: number,
+): void {
+  if (!shell) return
+  const head = shell.querySelector('.ant-table-thead') as HTMLElement | null
+  scrollY.value = Math.max(min, Math.floor(shell.clientHeight - (head?.offsetHeight ?? headFallback) - 6))
+}
+
+function updateTableScrollY(): void {
+  syncBodyScrollY(tableShellRef.value, tableScrollY, 72, 40)
+}
+
+function updateKeyframeScrollY(): void {
+  syncBodyScrollY(keyframeShellRef.value, keyframeScrollY, 64, 28)
 }
 
 function fillFormFromSnapshot(s: PathSnapshot, opts?: { skipClock?: boolean }): void {
-  form.id = s.id
   const td = s.targetData
-  const storedTrail = td.trailTime
+  form.id = s.id
   form.trailTime =
-    typeof storedTrail === 'number' && Number.isFinite(storedTrail) && storedTrail > 0
-      ? storedTrail
+    typeof td.trailTime === 'number' && Number.isFinite(td.trailTime) && td.trailTime > 0
+      ? td.trailTime
       : typeof s.trailTime === 'number' && Number.isFinite(s.trailTime) && s.trailTime > 0
         ? s.trailTime
-        : 50
-  const fillCss =
-    s.colorCss ?? (typeof td.color === 'string' && td.color.trim() ? String(td.color) : undefined)
-  const fillP = parseCssColorForForm(fillCss, DEFAULT_TRAIL_COLOR)
+        : DEFAULT_TRAIL_TIME
+  const fillP = parseCssColorForForm(
+    s.colorCss ?? (typeof td.color === 'string' ? String(td.color) : undefined),
+    DEFAULT_TRAIL_COLOR,
+  )
   form.color = fillP.hex
-  const tdA = typeof td.alpha === 'number' && Number.isFinite(td.alpha) ? td.alpha : undefined
-  form.alpha = tdA ?? fillP.alpha
+  form.alpha =
+    (typeof td.alpha === 'number' && Number.isFinite(td.alpha) ? td.alpha : undefined) ?? fillP.alpha
   form.width = s.width
   form.leadTime = s.leadTime
   form.resolution = s.resolution
@@ -647,7 +691,7 @@ function fillFormFromSnapshot(s: PathSnapshot, opts?: { skipClock?: boolean }): 
   form.clockMultiplier =
     typeof td.clockMultiplier === 'number' && Number.isFinite(td.clockMultiplier)
       ? td.clockMultiplier
-      : 1
+      : DEFAULT_CLOCK_MULTIPLIER
   if (!opts?.skipClock) {
     const startMs =
       typeof td.playStartMs === 'number'
@@ -675,26 +719,24 @@ function resetFormToInitial(): void {
   form.color = DEFAULT_TRAIL_COLOR
   form.alpha = 0.85
   form.leadTime = 0
-  form.trailTime = 50
+  form.trailTime = DEFAULT_TRAIL_TIME
   form.resolution = 20
   form.showRouteLine = true
   form.autoPlay = true
   form.playCount = 1
-  form.loopPlayback = false
-  form.clockMultiplier = 1
+  form.loopPlayback = true
+  form.clockMultiplier = DEFAULT_CLOCK_MULTIPLIER
   initDefaultPlayClock()
   form.show = true
   keyframeRows.value = []
 }
 
-/** 标绘成功后：参数详情与关键帧恢复默认（含起止时间） */
 function resetFormAfterPlotSuccess(): void {
   selectedId.value = null
   plotArmed.value = false
   resetFormToInitial()
 }
 
-/** 开始标绘时仅清空 id/关键帧，保留用户已填的时长、倍速、尾迹等参数 */
 function resetPlotDraftOnly(): void {
   form.id = ''
   keyframeRows.value = []
@@ -703,12 +745,13 @@ function resetPlotDraftOnly(): void {
 async function onRowClick(record: RowRecord): Promise<void> {
   plotArmed.value = false
   selectedId.value = record.id
+  playbackMasterId.value = record.id
   const snap = window.FastX?.Path?.getPath(record.id)
   if (snap) fillFormFromSnapshot(snap)
   await ensureSession(record.id)
 }
 
-function onDeleteRow(id: string, e: Event): void {
+async function onDeleteRow(id: string, e: Event): Promise<void> {
   e.stopPropagation()
   disposeSession(id)
   if (selectedId.value === id) {
@@ -721,27 +764,17 @@ function onDeleteRow(id: string, e: Event): void {
     resetPlaybackProgress()
     stopGlobalMover()
   } else {
-    void ensureAllSessions().then(() => applyGlobalPlayback(true))
+    await ensureAllSessions()
+    pickPlaybackMaster()
+    await restartGlobalPlayback()
   }
   message.success('已删除')
 }
 
-/** 取消选中：仅清空表单草稿，不重置全局时钟/进度/已在播的路径 */
 function onCancelSelect(): void {
   selectedId.value = null
   plotArmed.value = false
   resetPlotDraftOnly()
-}
-
-function onDeleteKeyframe(key: string): void {
-  keyframeRows.value = keyframeRows.value.filter((r) => r.key !== key)
-  keyframeRows.value.forEach((r, i) => {
-    r.label = `#${i + 1}`
-  })
-}
-
-function onClearKeyframes(): void {
-  keyframeRows.value = []
 }
 
 async function applyUpdateToSelected(): Promise<void> {
@@ -754,16 +787,15 @@ async function applyUpdateToSelected(): Promise<void> {
     return
   }
   const snapBefore = window.FastX?.Path?.getPath(pathId)
-  const keepRoute =
+  const keep =
     snapBefore && typeof snapBefore.targetData.routeLineColor === 'string'
       ? String(snapBefore.targetData.routeLineColor)
       : undefined
-  const ok = await buildTrajectoryScene(v, pathId, lngLatKeyframes, keepRoute)
+  const ok = await buildTrajectoryScene(v, pathId, lngLatKeyframes, keep)
   if (ok) {
     message.success('已保存修改')
     refreshTable()
-    const snap = window.FastX?.Path?.getPath(pathId)
-    if (snap) fillFormFromSnapshot(snap)
+    fillFormFromSnapshot(window.FastX!.Path!.getPath(pathId)!, { skipClock: true })
   } else {
     message.error('保存失败，请确认关键帧与 id 有效')
   }
@@ -788,25 +820,6 @@ async function finishDraftPath(): Promise<void> {
   refreshTable()
   resetFormAfterPlotSuccess()
 }
-
-const primaryButtonText = computed(() => {
-  if (selectedId.value) return '确定'
-  if (plotArmed.value) {
-    const n = rowsToLngLatKeyframes()?.length ?? 0
-    if (n >= 2) return '完成路径'
-    return '取消标绘'
-  }
-  return '标绘'
-})
-
-const primaryButtonType = computed(() => {
-  if (plotArmed.value && !selectedId.value && (rowsToLngLatKeyframes()?.length ?? 0) < 2) {
-    return 'default' as const
-  }
-  return 'primary' as const
-})
-
-const playCountDisabled = computed(() => form.loopPlayback || !form.autoPlay)
 
 function onPrimaryClick(): void {
   if (selectedId.value) {
@@ -856,10 +869,36 @@ function bindMouse(v: Viewer): void {
   }
   mouseBinder?.destroy()
   const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
+  binder.listen({ onLeftClick: onMapLeftClick })
   mouseBinder = binder
+}
+
+function hex6ForColorInput(css: string): string {
+  const t = css.trim()
+  return t.startsWith('#') && t.length >= 7 ? t.slice(0, 7) : '#000000'
+}
+
+function onColorPick(ev: Event): void {
+  form.color = normalizeHex((ev.target as HTMLInputElement).value, DEFAULT_TRAIL_COLOR)
+}
+
+function onDeleteKeyframe(key: string): void {
+  keyframeRows.value = keyframeRows.value.filter((r) => r.key !== key)
+  keyframeRows.value.forEach((r, i) => {
+    r.label = `#${i + 1}`
+  })
+}
+
+function onClearKeyframes(): void {
+  keyframeRows.value = []
+}
+
+function tableRowClassName(record: RowRecord): string {
+  return record.id === selectedId.value ? 'hzd-path-row--active' : ''
+}
+
+function customTableRow(record: RowRecord) {
+  return { onClick: () => onRowClick(record) }
 }
 
 const keyframeColumns: TableColumnType<PathKeyframeRow>[] = [
@@ -893,7 +932,6 @@ const columns: TableColumnType<RowRecord>[] = [
   },
   {
     title: '循环',
-    dataIndex: 'loopPlayback',
     key: 'loopPlayback',
     width: 40,
     align: 'center',
@@ -901,16 +939,6 @@ const columns: TableColumnType<RowRecord>[] = [
   },
   { title: '操作', key: 'action', width: 48, align: 'center', fixed: 'right' },
 ]
-
-function tableRowClassName(record: RowRecord): string {
-  return record.id === selectedId.value ? 'hzd-path-row--active' : ''
-}
-
-function customTableRow(record: RowRecord) {
-  return {
-    onClick: () => onRowClick(record),
-  }
-}
 
 onMounted(async () => {
   initDefaultPlayClock()
@@ -923,7 +951,8 @@ onMounted(async () => {
   refreshTable()
   if (tableData.value.length > 0) {
     await ensureAllSessions()
-    applyGlobalPlayback(true)
+    pickPlaybackMaster()
+    await restartGlobalPlayback()
   }
   bindMouse(v)
   await nextTick()
@@ -937,24 +966,15 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
-  tableResizeObserver = null
   keyframeResizeObserver?.disconnect()
-  keyframeResizeObserver = null
   mouseBinder?.destroy()
-  mouseBinder = null
-  for (const pathId of [...sessions.keys()]) {
-    disposeSession(pathId)
-  }
-  detachClockProgressSync()
+  for (const pathId of [...sessions.keys()]) disposeSession(pathId)
   if (scrubRenderRaf) cancelAnimationFrame(scrubRenderRaf)
-  scrubRenderRaf = 0
   globalMover?.dispose()
   globalMover = null
   const v = viewerRef
   viewerRef = null
-  if (v && !v.isDestroyed()) {
-    window.FastX?.Path?.clear(v)
-  }
+  if (v && !v.isDestroyed()) window.FastX?.Path?.clear(v)
 })
 </script>
 
@@ -1036,7 +1056,7 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
 
-                <div class="hzd-field-row">
+                <div v-if="showPlayCount" class="hzd-field-row">
                   <span class="hzd-field-label">播放次数</span>
                   <div class="hzd-field-control">
                     <a-input-number
