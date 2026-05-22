@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { ModelSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../CesiumX'
+import type { ModelSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './useCoordinateDemo'
 
@@ -51,7 +51,7 @@ let mouseBinder: MapMouseBinder | null = null
 function revokeBlobIfUnused(url: string | null): void {
   if (!url || !url.startsWith('blob:')) return
   const v = mapStore.getViewer()
-  const M = window.XGX?.Model
+  const M = window.FastX?.Model
   if (!v || v.isDestroyed() || !M) {
     URL.revokeObjectURL(url)
     createdBlobUrls.delete(url)
@@ -77,7 +77,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const M = window.XGX?.Model
+  const M = window.FastX?.Model
   if (!v || v.isDestroyed() || !M) {
     tableData.value = []
     return
@@ -152,13 +152,13 @@ function onModelFile(ev: Event): void {
 function onRowClick(record: ModelSnapshot): void {
   plotArmed.value = false
   selectedId.value = record.id
-  const snap = window.XGX?.Model?.getModel(record.id)
+  const snap = window.FastX?.Model?.getModel(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Model?.remove(id)
+  window.FastX?.Model?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     plotArmed.value = false
@@ -181,7 +181,7 @@ const primaryButtonType = computed(() => {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const M = window.XGX?.Model
+  const M = window.FastX?.Model
   const v = mapStore.getViewer()
   if (!id || !M || !v || v.isDestroyed()) return
   if (!form.modelUri.trim()) {
@@ -235,7 +235,7 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
     message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
     return
   }
-  const M = window.XGX?.Model
+  const M = window.FastX?.Model
   const v = mapStore.getViewer()
   if (!M || !v || v.isDestroyed()) return
 
@@ -270,9 +270,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -347,7 +347,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Model?.clear(v)
+    window.FastX?.Model?.clear(v)
   }
   for (const u of [...createdBlobUrls]) {
     try {

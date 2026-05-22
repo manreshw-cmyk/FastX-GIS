@@ -5,10 +5,10 @@ import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PolylineVolumeSnapshot } from '../../CesiumX'
-import { defaultShapeParamsForType, parseShapeTypeKey, resolveShapeParamsFromTargetData } from '../../CesiumX/Draw/PolylineVolume/index'
-import type { ShapeParams } from '../../CesiumX/Draw/PolylineVolume/shape'
-import { ShapeType } from '../../CesiumX/Draw/PolylineVolume/shape'
+import type { MouseEventListenOptions, MouseEventPickPayload, PolylineVolumeSnapshot } from '../../FastX'
+import { defaultShapeParamsForType, parseShapeTypeKey, resolveShapeParamsFromTargetData } from '../../FastX/Draw/PolylineVolume/index'
+import type { ShapeParams } from '../../FastX/Draw/PolylineVolume/shape'
+import { ShapeType } from '../../FastX/Draw/PolylineVolume/shape'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './useCoordinateDemo'
 
@@ -113,7 +113,7 @@ function updateVertexTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const P = window.XGX?.PolylineVolume
+  const P = window.FastX?.PolylineVolume
   if (!v || v.isDestroyed() || !P) {
     tableEntity.value = []
     return
@@ -273,13 +273,13 @@ function disarmPick(): void {
 function onEntityRowClick(record: PolylineVolumeSnapshot): void {
   disarmPick()
   selectedEntityId.value = record.id
-  const snap = window.XGX?.PolylineVolume?.getPolylineVolume(record.id)
+  const snap = window.FastX?.PolylineVolume?.getPolylineVolume(record.id)
   if (snap) fillFormEntityFromSnapshot(snap)
 }
 
 function onDeleteEntityRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.PolylineVolume?.remove(id)
+  window.FastX?.PolylineVolume?.remove(id)
   if (selectedEntityId.value === id) {
     selectedEntityId.value = null
     disarmPick()
@@ -303,7 +303,7 @@ const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '�
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
-  const P = window.XGX?.PolylineVolume
+  const P = window.FastX?.PolylineVolume
   const v = mapStore.getViewer()
   if (!id || !P || !v || v.isDestroyed()) return
   if (draftVertices.value.length < 2) {
@@ -342,7 +342,7 @@ function addEntityFromForm(): void {
     message.warning('请至少添加 2 个路径顶点')
     return
   }
-  const P = window.XGX?.PolylineVolume
+  const P = window.FastX?.PolylineVolume
   const v = mapStore.getViewer()
   if (!P || !v || v.isDestroyed()) return
   disarmPick()
@@ -415,9 +415,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -498,7 +498,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.PolylineVolume?.clear(v)
+    window.FastX?.PolylineVolume?.clear(v)
   }
 })
 </script>

@@ -10,7 +10,7 @@ import type {
   RunwayFlowBandStyle,
   RunwayMaterialMode,
   RunwaySnapshot,
-} from '../../CesiumX'
+} from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -174,7 +174,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const R = window.XGX?.Runway
+  const R = window.FastX?.Runway
   if (!v || v.isDestroyed() || !R) {
     tableData.value = []
     return
@@ -307,13 +307,13 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
 function onRowClick(record: RunwaySnapshot): void {
   disarmRunwayPick()
   selectedId.value = record.id
-  const snap = window.XGX?.Runway?.getRunway(record.id)
+  const snap = window.FastX?.Runway?.getRunway(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Runway?.remove(id)
+  window.FastX?.Runway?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     disarmRunwayPick()
@@ -357,7 +357,7 @@ function runwayStylePayload() {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const R = window.XGX?.Runway
+  const R = window.FastX?.Runway
   const v = mapStore.getViewer()
   if (!id || !R || !v || v.isDestroyed()) return
   const p0 = runwayPoints.value[0]!
@@ -414,7 +414,7 @@ function addRunwayFromForm(): void {
     message.warning('流动贴图模式下请先上传本地图片')
     return
   }
-  const R = window.XGX?.Runway
+  const R = window.FastX?.Runway
   const v = mapStore.getViewer()
   if (!R || !v || v.isDestroyed()) return
 
@@ -490,9 +490,9 @@ function onFlowImageFile(ev: Event): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -605,7 +605,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Runway?.clear(v)
+    window.FastX?.Runway?.clear(v)
   }
 })
 </script>

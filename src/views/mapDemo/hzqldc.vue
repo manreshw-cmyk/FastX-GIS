@@ -19,9 +19,9 @@ import type {
   MouseEventPickPayload,
   UpdateWallProperties,
   WallSnapshot,
-} from '../../CesiumX'
+} from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './drawFormColor'
+import { normaFastX, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
 
 const title = '绘制（Wall）墙类（底层entity）'
@@ -117,7 +117,7 @@ function updateVertexTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const W = window.XGX?.Wall
+  const W = window.FastX?.Wall
   if (!v || v.isDestroyed() || !W) {
     tableData.value = []
     return
@@ -421,13 +421,13 @@ function disarmPick(): void {
 function onWallRowClick(record: WallSnapshot): void {
   disarmPick()
   selectedId.value = record.id
-  const snap = window.XGX?.Wall?.getWall(record.id)
+  const snap = window.FastX?.Wall?.getWall(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteWallRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Wall?.remove(id)
+  window.FastX?.Wall?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     disarmPick()
@@ -488,9 +488,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -534,7 +534,7 @@ function echoTargetDataForApi(): Record<string, unknown> {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const W = window.XGX?.Wall
+  const W = window.FastX?.Wall
   const v = mapStore.getViewer()
   if (!id || !W || !v || v.isDestroyed()) return
   if (draftVertices.value.length < 2) {
@@ -567,7 +567,7 @@ function addWallFromForm(): void {
     message.warning('请先添加至少 2 个轮廓顶点（可拾取或手输）')
     return
   }
-  const W = window.XGX?.Wall
+  const W = window.FastX?.Wall
   const v = mapStore.getViewer()
   if (!W || !v || v.isDestroyed()) return
   disarmPick()
@@ -677,7 +677,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Wall?.clear(v)
+    window.FastX?.Wall?.clear(v)
   }
 })
 </script>

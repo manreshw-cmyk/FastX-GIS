@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, RectangleSnapshot } from '../../CesiumX'
+import type { MouseEventListenOptions, MouseEventPickPayload, RectangleSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -53,7 +53,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const R = window.XGX?.Rectangle
+  const R = window.FastX?.Rectangle
   if (!v || v.isDestroyed() || !R) {
     tableData.value = []
     return
@@ -134,13 +134,13 @@ function disarmPick(): void {
 function onRowClick(record: RectangleSnapshot): void {
   disarmPick()
   selectedId.value = record.id
-  const snap = window.XGX?.Rectangle?.getRectangle(record.id)
+  const snap = window.FastX?.Rectangle?.getRectangle(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Rectangle?.remove(id)
+  window.FastX?.Rectangle?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     disarmPick()
@@ -169,7 +169,7 @@ function boundsReady(): boolean {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const R = window.XGX?.Rectangle
+  const R = window.FastX?.Rectangle
   const v = mapStore.getViewer()
   if (!id || !R || !v || v.isDestroyed()) return
   if (!boundsReady()) {
@@ -204,7 +204,7 @@ function addRectangleFromForm(): void {
     message.warning('请填写或拾取西、南、东、北边界后再标绘')
     return
   }
-  const R = window.XGX?.Rectangle
+  const R = window.FastX?.Rectangle
   const v = mapStore.getViewer()
   if (!R || !v || v.isDestroyed()) return
 
@@ -276,9 +276,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -361,7 +361,7 @@ onBeforeUnmount(() => {
   mouseBinder = null
   const v = viewerRef
   viewerRef = null
-  if (v && !v.isDestroyed()) window.XGX?.Rectangle?.clear(v)
+  if (v && !v.isDestroyed()) window.FastX?.Rectangle?.clear(v)
 })
 </script>
 

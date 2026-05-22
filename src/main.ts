@@ -6,12 +6,12 @@ import pinia from './stores'
 import './assets/styles/default.scss'
 import 'ant-design-vue/dist/reset.css'
 import App from './App.vue'
-import { installXGXToWindow, XGX } from './CesiumX'
+import { installXGXToWindow, FastX } from './FastX'
 
 installXGXToWindow()
 
 const app = createApp(App)
-XGX.registerCesiumXVueComponents(app)
+FastX.registerCesiumXVueComponents(app)
 
 Object.entries(Icons).forEach(([key, component]) => {
   app.component(key, component)

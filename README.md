@@ -6,7 +6,7 @@
 快览天地万象，速筑数字空间。  
 高性能三维引擎，毫秒响应，实景漫游无卡顿。
 
-FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `CesiumX`（`window.XGX`），提供图层、坐标、鼠标事件、Entity / Primitive 标绘等 API，并在 `/mapDemo` 中逐项演示。
+FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `FastX`（`window.FastX`），提供图层、坐标、鼠标事件、Entity / Primitive 标绘等 API，并在 `/mapDemo` 中逐项演示。
 
 ---
 
@@ -47,8 +47,8 @@ npm run preview   # 预览构建结果
 | 功能 | 状态 |
 |------|------|
 | 登录与地图演示框架（`/mapDemo`） | ✅ |
-| CesiumX 全局 API（`window.XGX`） | ✅ |
-| Layer 图层引擎 API（地形 / 影像 / 矢量等，见 `src/CesiumX/Layer`） | ✅ |
+| FastX 全局 API（`window.FastX`） | ✅ |
+| Layer 图层引擎 API（地形 / 影像 / 矢量等，见 `src/FastX/Layer`） | ✅ |
 | Draw Primitive 批量（`*Collection` 高性能路径） | ✅ |
 
 ### 坐标（Coordinates）8
@@ -194,7 +194,7 @@ npm run preview   # 预览构建结果
 ## 说明
 
 1. **✅ / ❌ 判定**：以 `src/views/mapDemo` 演示页为准；页面仍为「功能内容开发中」记为 ❌。
-2. **图层类**：上表图层演示为 ❌，但 `Layer` 类 API 已在 `CesiumX` 中实现（二三维、鹰眼、大气光照、地形与 WMTS/WMS/TMS/UrlTemplate/GeoJSON/KML/CZML 等接口），待演示页对接。
+2. **图层类**：上表图层演示为 ❌，但 `Layer` 类 API 已在 `FastX` 中实现（二三维、鹰眼、大气光照、地形与 WMTS/WMS/TMS/UrlTemplate/GeoJSON/KML/CZML 等接口），待演示页对接。
 3. **Primitive 批量**：Point / Line / 面 / 体等 `*Collection` 已导出，无单独菜单卡片，与 Entity 演示配合使用。
 4. **配置**：地图服务地址见 `src/config/map-runtime`；能力卡片注册见 `src/views/mapDemo/component-map.json`。
 5. **版本**：产品发布 **V1.0.1**；`package.json` 版本号 `0.0.0` 仅作工程标识。

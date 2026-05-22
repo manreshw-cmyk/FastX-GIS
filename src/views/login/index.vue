@@ -55,7 +55,7 @@ const handleLogin = async () => {
       <div class="login-logo-wrap">
         <img src="../../assets/images/logo.png" alt="logo" class="login-logo" />
       </div>
-      <a-typography-title :level="4" class="login-title">CesiumX GIS</a-typography-title>
+      <a-typography-title :level="4" class="login-title">FastX GIS</a-typography-title>
 
       <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <a-form-item name="username" label="用户名">

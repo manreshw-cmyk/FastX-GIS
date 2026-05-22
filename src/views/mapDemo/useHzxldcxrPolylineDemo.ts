@@ -9,7 +9,7 @@ import type {
   MouseEventPickPayload,
   PolylineLineKind,
   PolylineSnapshot,
-} from '../../CesiumX'
+} from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -126,7 +126,7 @@ export function useHzxldcxrPolylineDemo() {
 
   function refreshTable(): void {
     const v = mapStore.getViewer()
-    const PL = window.XGX?.PolyLine
+    const PL = window.FastX?.PolyLine
     if (!v || v.isDestroyed() || !PL) {
       tableData.value = []
       return
@@ -403,7 +403,7 @@ export function useHzxldcxrPolylineDemo() {
   }
 
   function syncPreviewPolyline(v: Viewer): void {
-    const PL = window.XGX?.PolyLine
+    const PL = window.FastX?.PolyLine
     if (!PL || draftVertices.value.length < 2) return
     const tuples = draftVertices.value.map(
       (p) => [p.longitude, p.latitude, p.height] as [number, number, number],
@@ -428,7 +428,7 @@ export function useHzxldcxrPolylineDemo() {
 
   function clearPreview(): void {
     const v = mapStore.getViewer()
-    const PL = window.XGX?.PolyLine
+    const PL = window.FastX?.PolyLine
     const pid = previewLineId.value
     if (v && !v.isDestroyed() && PL && pid) {
       PL.remove(pid)
@@ -441,13 +441,13 @@ export function useHzxldcxrPolylineDemo() {
     plotArmed.value = false
     clearPreview()
     selectedId.value = record.id
-    const snap = window.XGX?.PolyLine?.getPolyline(record.id)
+    const snap = window.FastX?.PolyLine?.getPolyline(record.id)
     if (snap) fillFormFromSnapshot(snap)
   }
 
   function onDeleteRow(id: string, e: Event): void {
     e.stopPropagation()
-    window.XGX?.PolyLine?.remove(id)
+    window.FastX?.PolyLine?.remove(id)
     if (selectedId.value === id) {
       selectedId.value = null
       clearPreview()
@@ -467,7 +467,7 @@ export function useHzxldcxrPolylineDemo() {
 
   function applyUpdateToSelected(): void {
     const id = selectedId.value
-    const PL = window.XGX?.PolyLine
+    const PL = window.FastX?.PolyLine
     const v = mapStore.getViewer()
     if (!id || !PL || !v || v.isDestroyed()) return
     const ok = PL.updatePolyline(id, buildPlOptionsBase(false))
@@ -481,7 +481,7 @@ export function useHzxldcxrPolylineDemo() {
 
   function finishDraftPolyline(): void {
     const v = mapStore.getViewer()
-    const PL = window.XGX?.PolyLine
+    const PL = window.FastX?.PolyLine
     if (!v || v.isDestroyed() || !PL) return
     if (draftVertices.value.length < 2) {
       message.warning('至少需要 2 个顶点')
@@ -565,9 +565,9 @@ export function useHzxldcxrPolylineDemo() {
   }
 
   function bindMouse(v: Viewer): void {
-    const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+    const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
     if (!Ctor) {
-      message.error('window.XGX.MouseEvent 未就绪')
+      message.error('window.FastX.MouseEvent 未就绪')
       return
     }
     mouseBinder?.destroy()
@@ -657,7 +657,7 @@ export function useHzxldcxrPolylineDemo() {
     const v = viewerRef
     viewerRef = null
     if (v && !v.isDestroyed()) {
-      window.XGX?.PolyLine?.clear(v)
+      window.FastX?.PolyLine?.clear(v)
     }
   })
 

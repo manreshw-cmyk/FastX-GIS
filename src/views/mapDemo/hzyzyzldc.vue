@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { CylinderSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../CesiumX'
+import type { CylinderSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './useCoordinateDemo'
 
@@ -64,7 +64,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const C = window.XGX?.Cylinder
+  const C = window.FastX?.Cylinder
   if (!v || v.isDestroyed() || !C) {
     tableEntity.value = []
     return
@@ -211,7 +211,7 @@ const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '�
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
-  const C = window.XGX?.Cylinder
+  const C = window.FastX?.Cylinder
   const v = mapStore.getViewer()
   if (!id || !C || !v || v.isDestroyed()) return
   if (!centerReady()) {
@@ -251,7 +251,7 @@ function addEntityFromForm(): void {
     message.warning('请填写或拾取轴心后再标绘')
     return
   }
-  const C = window.XGX?.Cylinder
+  const C = window.FastX?.Cylinder
   const v = mapStore.getViewer()
   if (!C || !v || v.isDestroyed()) return
   coordPickArmed.value = false
@@ -318,13 +318,13 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 function onEntityRowClick(record: CylinderSnapshot): void {
   coordPickArmed.value = false
   selectedEntityId.value = record.id
-  const snap = window.XGX?.Cylinder?.getCylinder(record.id)
+  const snap = window.FastX?.Cylinder?.getCylinder(record.id)
   if (snap) fillFormEntityFromSnapshot(snap)
 }
 
 function onDeleteEntityRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Cylinder?.remove(id)
+  window.FastX?.Cylinder?.remove(id)
   if (selectedEntityId.value === id) {
     selectedEntityId.value = null
     resetFormEntity()
@@ -334,9 +334,9 @@ function onDeleteEntityRow(id: string, e: Event): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -401,7 +401,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Cylinder?.clear(v)
+    window.FastX?.Cylinder?.clear(v)
   }
 })
 </script>

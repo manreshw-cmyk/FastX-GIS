@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions } from '../../CesiumX/MouseEvent'
+import type { MouseEventListenOptions } from '../../FastX/MouseEvent'
 import { waitForMapViewer } from './useCoordinateDemo'
 
 type MouseBinder = {
@@ -12,7 +12,7 @@ type MouseBinder = {
 type MouseBinderCtor = new (viewer: Viewer) => MouseBinder
 
 /**
- * 等地图就绪后通过 `window.XGX.MouseEvent` 绑定；切换菜单导致组件卸载时会 `destroy`，避免上一页事件残留。
+ * 等地图就绪后通过 `window.FastX.MouseEvent` 绑定；切换菜单导致组件卸载时会 `destroy`，避免上一页事件残留。
  */
 export function useMapMouseEventPage(
   getOptions: () => MouseEventListenOptions,
@@ -26,9 +26,9 @@ export function useMapMouseEventPage(
       message.warning('地图未能在预期时间内就绪')
       return
     }
-    const Ctor = window.XGX?.MouseEvent as MouseBinderCtor | undefined
+    const Ctor = window.FastX?.MouseEvent as MouseBinderCtor | undefined
     if (!Ctor) {
-      message.error('window.XGX.MouseEvent 未就绪')
+      message.error('window.FastX.MouseEvent 未就绪')
       return
     }
     binder = new Ctor(viewer)

@@ -9,7 +9,7 @@ import HomeSidebar from '../../components/HomeSidebar/index.vue'
 import { homeMenuTree } from '../../common/home-content'
 import { mapDemoComponentMetaMap } from './component-map'
 import { resolveMapBaseUrls } from '../../config/map-runtime'
-import type { XMapConfig } from '../../CesiumX/components/x-map.types'
+import type { XMapConfig } from '../../FastX/components/x-map.types'
 
 const router = useRouter()
 const mapLayerStore = useMapLayerStore()
@@ -47,6 +47,8 @@ const xMapConfig = reactive<XMapConfig>({
   terrainUrl: urls.terrainUrl,
   initialCamera: { useAnimation: true, duration: 2.5 },
   depthTestAgainstTerrain: false,
+  /** 启动时显示经纬网格，便于标绘对照 */
+  showGridAtStartup: false,
   /** 未传时 `XMap` 亦默认开启；此处显式写出便于对照文档 */
   antialias: true,
 })
@@ -93,73 +95,73 @@ watch(activeMenuKey, () => {
   mapLayerStore.resetSharedMapDemoUiState()
   const v = mapLayerStore.getViewer()
   if (v && !v.isDestroyed()) {
-    window.XGX?.Point?.clear(v)
-    window.XGX?.PointCollection?.removeAll(v)
-    window.XGX?.Label?.clear(v)
-    window.XGX?.LabelCollection?.removeAll(v)
-    window.XGX?.PolyLine?.clear(v)
-    window.XGX?.PolyLineCollection?.clear(v)
-    window.XGX?.Circle?.clear(v)
-    window.XGX?.CircleCollection?.clear(v)
-    window.XGX?.Polygon?.clear(v)
-    window.XGX?.PolygonCollection?.clear(v)
-    window.XGX?.Sector?.clear(v)
-    window.XGX?.SectorCollection?.clear(v)
-    window.XGX?.Rectangle?.clear(v)
-    window.XGX?.RectangleCollection?.clear(v)
-    window.XGX?.Cylinder?.clear(v)
-    window.XGX?.CylinderCollection?.clear(v)
-    window.XGX?.Corridor?.clear(v)
-    window.XGX?.CorridorCollection?.clear(v)
-    window.XGX?.Runway?.clear(v)
-    window.XGX?.RunwayCollection?.clear(v)
-    window.XGX?.Ellipsoid?.clear(v)
-    window.XGX?.EllipsoidCollection?.clear(v)
-    window.XGX?.Wall?.clear(v)
-    window.XGX?.Billboard?.clear(v)
-    window.XGX?.BillboardCollection?.clear(v)
-    window.XGX?.Model?.clear(v)
-    window.XGX?.ModelCollection?.clear(v)
-    window.XGX?.Box?.clear(v)
-    window.XGX?.BoxCollection?.clear(v)
-    window.XGX?.PolylineVolume?.clear(v)
-    window.XGX?.PolylineVolumeCollection?.clear(v)
-    window.XGX?.Plane?.clear(v)
-    window.XGX?.PlaneCollection?.clear(v)
+    window.FastX?.Point?.clear(v)
+    window.FastX?.PointCollection?.removeAll(v)
+    window.FastX?.Label?.clear(v)
+    window.FastX?.LabelCollection?.removeAll(v)
+    window.FastX?.PolyLine?.clear(v)
+    window.FastX?.PolyLineCollection?.clear(v)
+    window.FastX?.Circle?.clear(v)
+    window.FastX?.CircleCollection?.clear(v)
+    window.FastX?.Polygon?.clear(v)
+    window.FastX?.PolygonCollection?.clear(v)
+    window.FastX?.Sector?.clear(v)
+    window.FastX?.SectorCollection?.clear(v)
+    window.FastX?.Rectangle?.clear(v)
+    window.FastX?.RectangleCollection?.clear(v)
+    window.FastX?.Cylinder?.clear(v)
+    window.FastX?.CylinderCollection?.clear(v)
+    window.FastX?.Corridor?.clear(v)
+    window.FastX?.CorridorCollection?.clear(v)
+    window.FastX?.Runway?.clear(v)
+    window.FastX?.RunwayCollection?.clear(v)
+    window.FastX?.Ellipsoid?.clear(v)
+    window.FastX?.EllipsoidCollection?.clear(v)
+    window.FastX?.Wall?.clear(v)
+    window.FastX?.Billboard?.clear(v)
+    window.FastX?.BillboardCollection?.clear(v)
+    window.FastX?.Model?.clear(v)
+    window.FastX?.ModelCollection?.clear(v)
+    window.FastX?.Box?.clear(v)
+    window.FastX?.BoxCollection?.clear(v)
+    window.FastX?.PolylineVolume?.clear(v)
+    window.FastX?.PolylineVolumeCollection?.clear(v)
+    window.FastX?.Plane?.clear(v)
+    window.FastX?.PlaneCollection?.clear(v)
   }
-  window.XGX?.Point?.pruneInvalid()
-  window.XGX?.PointCollection?.pruneInvalid()
-  window.XGX?.Label?.pruneInvalid()
-  window.XGX?.LabelCollection?.pruneInvalid()
-  window.XGX?.PolyLine?.pruneInvalid()
-  window.XGX?.PolyLineCollection?.pruneInvalid()
-  window.XGX?.Circle?.pruneInvalid()
-  window.XGX?.CircleCollection?.pruneInvalid()
-  window.XGX?.Polygon?.pruneInvalid()
-  window.XGX?.PolygonCollection?.pruneInvalid()
-  window.XGX?.Sector?.pruneInvalid()
-  window.XGX?.SectorCollection?.pruneInvalid()
-  window.XGX?.Rectangle?.pruneInvalid()
-  window.XGX?.RectangleCollection?.pruneInvalid()
-  window.XGX?.Cylinder?.pruneInvalid()
-  window.XGX?.CylinderCollection?.pruneInvalid()
-  window.XGX?.Corridor?.pruneInvalid()
-  window.XGX?.CorridorCollection?.pruneInvalid()
-  window.XGX?.Runway?.pruneInvalid()
-  window.XGX?.RunwayCollection?.pruneInvalid()
-  window.XGX?.Ellipsoid?.pruneInvalid()
-  window.XGX?.EllipsoidCollection?.pruneInvalid()
-  window.XGX?.Wall?.pruneInvalid()
-  window.XGX?.Billboard?.pruneInvalid()
-  window.XGX?.BillboardCollection?.pruneInvalid()
-  window.XGX?.Model?.pruneInvalid()
-  window.XGX?.ModelCollection?.pruneInvalid()
-  window.XGX?.Box?.pruneInvalid()
-  window.XGX?.BoxCollection?.pruneInvalid()
-  window.XGX?.PolylineVolume?.pruneInvalid()
-  window.XGX?.PolylineVolumeCollection?.pruneInvalid()
-  window.XGX?.Plane?.pruneInvalid()
-  window.XGX?.PlaneCollection?.pruneInvalid()
+  window.FastX?.Point?.pruneInvalid()
+  window.FastX?.PointCollection?.pruneInvalid()
+  window.FastX?.Label?.pruneInvalid()
+  window.FastX?.LabelCollection?.pruneInvalid()
+  window.FastX?.PolyLine?.pruneInvalid()
+  window.FastX?.PolyLineCollection?.pruneInvalid()
+  window.FastX?.Circle?.pruneInvalid()
+  window.FastX?.CircleCollection?.pruneInvalid()
+  window.FastX?.Polygon?.pruneInvalid()
+  window.FastX?.PolygonCollection?.pruneInvalid()
+  window.FastX?.Sector?.pruneInvalid()
+  window.FastX?.SectorCollection?.pruneInvalid()
+  window.FastX?.Rectangle?.pruneInvalid()
+  window.FastX?.RectangleCollection?.pruneInvalid()
+  window.FastX?.Cylinder?.pruneInvalid()
+  window.FastX?.CylinderCollection?.pruneInvalid()
+  window.FastX?.Corridor?.pruneInvalid()
+  window.FastX?.CorridorCollection?.pruneInvalid()
+  window.FastX?.Runway?.pruneInvalid()
+  window.FastX?.RunwayCollection?.pruneInvalid()
+  window.FastX?.Ellipsoid?.pruneInvalid()
+  window.FastX?.EllipsoidCollection?.pruneInvalid()
+  window.FastX?.Wall?.pruneInvalid()
+  window.FastX?.Billboard?.pruneInvalid()
+  window.FastX?.BillboardCollection?.pruneInvalid()
+  window.FastX?.Model?.pruneInvalid()
+  window.FastX?.ModelCollection?.pruneInvalid()
+  window.FastX?.Box?.pruneInvalid()
+  window.FastX?.BoxCollection?.pruneInvalid()
+  window.FastX?.PolylineVolume?.pruneInvalid()
+  window.FastX?.PolylineVolumeCollection?.pruneInvalid()
+  window.FastX?.Plane?.pruneInvalid()
+  window.FastX?.PlaneCollection?.pruneInvalid()
 })
 
 const handleSelectMenu = (key: string) => {
@@ -857,6 +859,94 @@ function onMapReady() {
 }
 
 .map-demo-panel .map-tool-float--hzd-sector .hzd-table .hzd-del-btn.ant-btn-text:hover {
+  color: #ffccc7 !important;
+  background: rgba(255, 80, 80, 0.12) !important;
+}
+
+/* —— Path 绘制弹窗：与 Sector 同套深色表单/表格皮肤 —— */
+.map-demo-panel .map-tool-float--hzd-path .hzd-field-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-input,
+.map-demo-panel .map-tool-float--hzd-path .ant-input-affix-wrapper,
+.map-demo-panel .map-tool-float--hzd-path .ant-input-number,
+.map-demo-panel .map-tool-float--hzd-path .ant-input-number-input,
+.map-demo-panel .map-tool-float--hzd-path textarea.ant-input {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-input::placeholder,
+.map-demo-panel .map-tool-float--hzd-path textarea.ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-input-number-handler-wrap {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-input-number-handler {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-slider-rail {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-slider-track {
+  background: rgba(100, 180, 255, 0.65);
+}
+
+.map-demo-panel .map-tool-float--hzd-path .ant-slider-handle::after {
+  box-shadow: 0 0 0 2px rgba(120, 190, 255, 0.45);
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table.ant-table-wrapper .ant-table,
+.map-demo-panel .map-tool-float--hzd-path .hzd-table.ant-table-wrapper .ant-table-container {
+  background: transparent !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-thead > tr > th {
+  background: rgba(0, 0, 0, 0.35) !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-tbody > tr > td {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-size: 12px;
+  text-align: center !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: rgba(255, 255, 255, 0.055) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-tbody > tr:hover > td {
+  background: rgba(64, 150, 255, 0.12) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-tbody > tr.hzd-path-row--active > td {
+  background: rgba(64, 150, 255, 0.22) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .ant-table-cell-scrollbar {
+  box-shadow: none;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .hzd-del-btn.ant-btn-text {
+  color: rgba(255, 140, 140, 0.92) !important;
+}
+
+.map-demo-panel .map-tool-float--hzd-path .hzd-table .hzd-del-btn.ant-btn-text:hover {
   color: #ffccc7 !important;
   background: rgba(255, 80, 80, 0.12) !important;
 }

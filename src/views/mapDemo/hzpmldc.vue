@@ -14,7 +14,7 @@ import {
   type PlaneSnapshot,
   type PlaneVideoOptions,
   type UpdatePlaneProperties,
-} from '../../CesiumX'
+} from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -99,7 +99,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const P = window.XGX?.Plane
+  const P = window.FastX?.Plane
   if (!v || v.isDestroyed() || !P) {
     tableData.value = []
     return
@@ -219,13 +219,13 @@ function onCancelSelect(): void {
 function onRowClick(record: PlaneSnapshot): void {
   disarmPick()
   selectedId.value = record.id
-  const snap = window.XGX?.Plane?.getPlane(record.id)
+  const snap = window.FastX?.Plane?.getPlane(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Plane?.remove(id)
+  window.FastX?.Plane?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     disarmPick()
@@ -315,7 +315,7 @@ function planeEntityPayload(): UpdatePlaneProperties {
 function revokeVideoBlobIfUnused(url: string): void {
   if (!url.startsWith('blob:')) return
   const v = mapStore.getViewer()
-  const P = window.XGX?.Plane
+  const P = window.FastX?.Plane
   if (!v || v.isDestroyed() || !P) {
     URL.revokeObjectURL(url)
     createdVideoBlobUrls.delete(url)
@@ -347,7 +347,7 @@ function onVideoFile(ev: Event): void {
   message.success('视频已载入')
 }
 
-const planeApi = () => window.XGX?.Plane
+const planeApi = () => window.FastX?.Plane
 
 function onVideoPlay(): void {
   const id = selectedId.value
@@ -491,9 +491,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -580,7 +580,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Plane?.clear(v)
+    window.FastX?.Plane?.clear(v)
   }
   for (const url of createdVideoBlobUrls) URL.revokeObjectURL(url)
   createdVideoBlobUrls.clear()

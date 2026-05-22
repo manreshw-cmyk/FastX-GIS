@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PolygonSnapshot } from '../../CesiumX'
+import type { MouseEventListenOptions, MouseEventPickPayload, PolygonSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -85,7 +85,7 @@ function updateVertexTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const P = window.XGX?.Polygon
+  const P = window.FastX?.Polygon
   if (!v || v.isDestroyed() || !P) {
     tableData.value = []
     return
@@ -187,13 +187,13 @@ function disarmVertexPick(): void {
 function onRowClick(record: PolygonSnapshot): void {
   disarmVertexPick()
   selectedId.value = record.id
-  const snap = window.XGX?.Polygon?.getPolygon(record.id)
+  const snap = window.FastX?.Polygon?.getPolygon(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Polygon?.remove(id)
+  window.FastX?.Polygon?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     disarmVertexPick()
@@ -223,7 +223,7 @@ function draftToPositions(): [number, number, number][] {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const P = window.XGX?.Polygon
+  const P = window.FastX?.Polygon
   const v = mapStore.getViewer()
   if (!id || !P || !v || v.isDestroyed()) return
   if (draftVertices.value.length < 3) {
@@ -255,7 +255,7 @@ function addPolygonFromForm(): void {
     message.warning('请先在地图上添加至少 3 个外环顶点，或选中列表项进行编辑')
     return
   }
-  const P = window.XGX?.Polygon
+  const P = window.FastX?.Polygon
   const v = mapStore.getViewer()
   if (!P || !v || v.isDestroyed()) return
 
@@ -328,9 +328,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -433,7 +433,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Polygon?.clear(v)
+    window.FastX?.Polygon?.clear(v)
   }
 })
 </script>

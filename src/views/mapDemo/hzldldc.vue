@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { CorridorSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../CesiumX'
+import type { CorridorSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './useCoordinateDemo'
 
@@ -84,7 +84,7 @@ function updateVertexTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const C = window.XGX?.Corridor
+  const C = window.FastX?.Corridor
   if (!v || v.isDestroyed() || !C) {
     tableEntity.value = []
     return
@@ -233,13 +233,13 @@ function disarmPick(): void {
 function onEntityRowClick(record: CorridorSnapshot): void {
   disarmPick()
   selectedEntityId.value = record.id
-  const snap = window.XGX?.Corridor?.getCorridor(record.id)
+  const snap = window.FastX?.Corridor?.getCorridor(record.id)
   if (snap) fillFormEntityFromSnapshot(snap)
 }
 
 function onDeleteEntityRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Corridor?.remove(id)
+  window.FastX?.Corridor?.remove(id)
   if (selectedEntityId.value === id) {
     selectedEntityId.value = null
     disarmPick()
@@ -263,7 +263,7 @@ const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '�
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
-  const C = window.XGX?.Corridor
+  const C = window.FastX?.Corridor
   const v = mapStore.getViewer()
   if (!id || !C || !v || v.isDestroyed()) return
   if (draftVertices.value.length < 2) {
@@ -296,7 +296,7 @@ function addEntityFromForm(): void {
     message.warning('请至少添加 2 个中心线顶点')
     return
   }
-  const C = window.XGX?.Corridor
+  const C = window.FastX?.Corridor
   const v = mapStore.getViewer()
   if (!C || !v || v.isDestroyed()) return
   disarmPick()
@@ -363,9 +363,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -454,7 +454,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Corridor?.clear(v)
+    window.FastX?.Corridor?.clear(v)
   }
 })
 </script>

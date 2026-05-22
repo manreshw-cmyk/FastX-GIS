@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { shallowRef } from 'vue'
 import type { Viewer } from 'cesium'
-import type { Layer } from '../../CesiumX/Layer'
-import type { LayerCameraOrientation, LayerCenter } from '../../CesiumX/Layer/types'
+import type { Layer } from '../../FastX/Layer'
+import type { LayerCameraOrientation, LayerCenter } from '../../FastX/Layer/types'
 
 /**
  * 当前应用内主地图 `Layer` 单例（由 `XMap` 在挂载后绑定、卸载前解绑）。
@@ -36,6 +36,10 @@ export const useMapLayerStore = defineStore('mapLayer', () => {
     return layer.value?.getViewer() ?? null
   }
 
+  function getMapName(): string | undefined {
+    return layer.value?.getMapName()
+  }
+
   function clearAllMapEntities(): void {
     layer.value?.clearAllMapEntities()
   }
@@ -58,6 +62,7 @@ export const useMapLayerStore = defineStore('mapLayer', () => {
     clearIfCurrent,
     getLayer,
     getViewer,
+    getMapName,
     clearAllMapEntities,
     resetSharedMapDemoUiState,
     setInitialMapView,

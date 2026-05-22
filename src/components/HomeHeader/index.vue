@@ -45,7 +45,7 @@ const handleLogout = () => {
   <a-layout-header class="home-header">
     <div class="brand">
       <img src="../../assets/images/logo.png" alt="logo" class="brand-logo" />
-      <span class="brand-name">CesiumX GIS</span>
+      <span class="brand-name">FastX GIS</span>
     </div>
 
     <div class="user-actions">

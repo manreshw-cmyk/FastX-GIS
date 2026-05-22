@@ -6,6 +6,6 @@ interface Window {
     imageryProvider?: string
     terrainProvider?: string
   }
-  /** `main.ts` 中 `installXGXToWindow()` 注入，如 `window.XGX.Coordinates.screenClientXYToLngLatHeight(...)` */
-  XGX?: import('./CesiumX').XGXGlobal
+  /** `main.ts` 中 `installXGXToWindow()` 注入，如 `window.FastX.Coordinates.screenClientXYToLngLatHeight(...)` */
+  FastX?: import('./FastX').XGXGlobal
 }

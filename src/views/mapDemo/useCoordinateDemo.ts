@@ -1,12 +1,12 @@
 import { message } from 'ant-design-vue'
 import type { Viewer } from 'cesium'
-import type { CoordinatesApi } from '../../CesiumX'
+import type { CoordinatesApi } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 
 export function useXGXCoordinates(): CoordinatesApi | null {
-  const c = window.XGX?.Coordinates
+  const c = window.FastX?.Coordinates
   if (!c) {
-    message.error('window.XGX 未就绪')
+    message.error('window.FastX 未就绪')
     return null
   }
   return c

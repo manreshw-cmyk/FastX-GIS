@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, LabelSnapshot } from '../../CesiumX'
+import type { MouseEventListenOptions, MouseEventPickPayload, LabelSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
@@ -65,7 +65,7 @@ function updateTableScrollY(): void {
 
 function refreshTable(): void {
   const v = mapStore.getViewer()
-  const L = window.XGX?.Label
+  const L = window.FastX?.Label
   if (!v || v.isDestroyed() || !L) {
     tableData.value = []
     return
@@ -160,13 +160,13 @@ function onColorPick(field: 'color' | 'outlineColor' | 'backgroundColor', ev: Ev
 function onRowClick(record: LabelSnapshot): void {
   plotArmed.value = false
   selectedId.value = record.id
-  const snap = window.XGX?.Label?.getLabel(record.id)
+  const snap = window.FastX?.Label?.getLabel(record.id)
   if (snap) fillFormFromSnapshot(snap)
 }
 
 function onDeleteRow(id: string, e: Event): void {
   e.stopPropagation()
-  window.XGX?.Label?.remove(id)
+  window.FastX?.Label?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
     plotArmed.value = false
@@ -189,7 +189,7 @@ const primaryButtonType = computed(() => {
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
-  const L = window.XGX?.Label
+  const L = window.FastX?.Label
   const v = mapStore.getViewer()
   if (!id || !L || !v || v.isDestroyed()) return
   const ok = L.updateLabel(id, {
@@ -239,7 +239,7 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
     message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
     return
   }
-  const L = window.XGX?.Label
+  const L = window.FastX?.Label
   const v = mapStore.getViewer()
   if (!L || !v || v.isDestroyed()) return
 
@@ -277,9 +277,9 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function bindMouse(v: Viewer): void {
-  const Ctor = window.XGX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
+  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
   if (!Ctor) {
-    message.error('window.XGX.MouseEvent 未就绪')
+    message.error('window.FastX.MouseEvent 未就绪')
     return
   }
   mouseBinder?.destroy()
@@ -362,7 +362,7 @@ onBeforeUnmount(() => {
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
-    window.XGX?.Label?.clear(v)
+    window.FastX?.Label?.clear(v)
   }
 })
 </script>

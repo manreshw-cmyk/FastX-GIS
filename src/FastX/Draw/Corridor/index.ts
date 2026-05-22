@@ -1,0 +1,660 @@
+import * as Cesium from 'cesium'
+import type { Color, Entity, Property, Viewer } from 'cesium'
+import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
+
+/** 廊道中心线顶点：[经度, 纬度, 高度?]（度 / 米） */
+export type CorridorLngLatTuple = readonly [lng: number, lat: number, height?: number]
+
+/** 顶点：笛卡尔、经纬高对象或三元组 */
+export type CorridorVertexInput = Cesium.Cartesian3 | LngLatHeight | CorridorLngLatTuple
+
+export interface CorridorStyleOptions {
+  granularity?: number
+  shadows?: Cesium.ShadowMode
+  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
+  classificationType?: Cesium.ClassificationType
+  zIndex?: number
+}
+
+/**
+ * 添加廊道（`Entity` + `CorridorGraphics`）。
+ * - `positions`：中心线顶点，至少 2 个。
+ * - `width`：廊道半宽之和（米），即两侧边之间的总宽度。
+ * - `height` / `extrudedHeight`：与 Cesium 一致；与 `HeightReference.NONE` 及绝对坐标中心线配合使用。
+ */
+export interface AddCorridorOptions {
+  id?: string
+  positions: CorridorVertexInput[]
+  width: number
+  height?: number
+  extrudedHeight?: number
+  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
+  style?: CorridorStyleOptions
+  color?: string
+  alpha?: number
+  showFill?: boolean
+  outline?: boolean
+  outlineColor?: string
+  outlineAlpha?: number
+  outlineWidth?: number
+  show?: boolean
+  description?: string
+  targetData?: Record<string, unknown>
+}
+
+export interface UpdateCorridorProperties {
+  positions?: CorridorVertexInput[]
+  width?: number
+  height?: number
+  extrudedHeight?: number
+  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
+  color?: string | Color
+  alpha?: number
+  showFill?: boolean
+  outline?: boolean
+  outlineColor?: string | Color
+  outlineAlpha?: number
+  outlineWidth?: number
+  show?: boolean
+  description?: string
+  targetData?: Record<string, unknown>
+  style?: CorridorStyleOptions
+}
+
+export interface CorridorSnapshot {
+  id: string
+  positions: number[][]
+  vertexCount: number
+  width: number
+  height: number
+  extrudedHeight: number
+  cornerType?: string
+  colorCss?: string
+  showFill: boolean
+  outline?: boolean
+  outlineColorCss?: string
+  outlineWidth?: number
+  show: boolean
+  targetData: Record<string, unknown>
+  description?: string
+}
+
+interface CorridorRecord {
+  viewer: Viewer
+  entity: Entity
+  targetData: Record<string, unknown>
+}
+
+function colorFromString(css: string, alpha = 1): Color {
+  return Cesium.Color.fromCssColorString(css).withAlpha(alpha)
+}
+
+function toColor(c: string | Color | undefined, alpha?: number): Color | undefined {
+  if (c === undefined) return undefined
+  if (c instanceof Cesium.Color) {
+    return alpha !== undefined ? c.withAlpha(alpha) : c
+  }
+  return colorFromString(c, alpha ?? 1)
+}
+
+function vertexToCartesian3(v: CorridorVertexInput, result = new Cesium.Cartesian3()): Cesium.Cartesian3 {
+  if (v instanceof Cesium.Cartesian3) {
+    return Cesium.Cartesian3.clone(v, result)
+  }
+  if (Array.isArray(v)) {
+    const h = v[2] ?? 0
+    return Cesium.Cartesian3.fromDegrees(Number(v[0]), Number(v[1]), Number(h), undefined, result)
+  }
+  const p = v as { longitude: number; latitude: number; height?: number }
+  const h = p.height ?? 0
+  return Cesium.Cartesian3.fromDegrees(p.longitude, p.latitude, h, undefined, result)
+}
+
+function lineToCartesian3Array(line: CorridorVertexInput[]): Cesium.Cartesian3[] | undefined {
+  if (!Array.isArray(line) || line.length < 2) return undefined
+  return line.map((p) => vertexToCartesian3(p))
+}
+
+/** 从 `targetData.positions` 还原为 `number[][]`（与 `getValue` 采样失败时作回退） */
+function positionsFromTargetData(td: Record<string, unknown>): number[][] {
+  const raw = td.positions
+  if (!Array.isArray(raw) || raw.length === 0) return []
+  const out: number[][] = []
+  for (const row of raw) {
+    if (!Array.isArray(row) || row.length < 2) continue
+    const a = row as unknown[]
+    const lng = Number(a[0])
+    const lat = Number(a[1])
+    const h = row.length > 2 ? Number(a[2]) : 0
+    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+      out.push([lng, lat, Number.isFinite(h) ? h : 0])
+    }
+  }
+  return out
+}
+
+function cornerTypeSnapshotFromRecord(
+  sampled: Cesium.CornerType | undefined,
+  td: Record<string, unknown>,
+): string | undefined {
+  if (sampled !== undefined) return cornerTypeToKey(sampled)
+  const raw = td.cornerType
+  if (raw === 'ROUNDED' || raw === 'MITERED' || raw === 'BEVELED') return raw
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return cornerTypeToKey(raw as Cesium.CornerType)
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    return cornerTypeToKey(parseCornerType(raw as keyof typeof Cesium.CornerType))
+  }
+  return undefined
+}
+
+function lineToNumberTuples(line: CorridorVertexInput[]): number[][] {
+  const out: number[][] = []
+  for (const v of line) {
+    if (v instanceof Cesium.Cartesian3) {
+      const c = Cesium.Cartographic.fromCartesian(v)
+      out.push([
+        Cesium.Math.toDegrees(c.longitude),
+        Cesium.Math.toDegrees(c.latitude),
+        c.height,
+      ])
+    } else if (Array.isArray(v)) {
+      out.push([Number(v[0]), Number(v[1]), Number(v[2] ?? 0)])
+    } else {
+      const p = v as { longitude: number; latitude: number; height?: number }
+      out.push([p.longitude, p.latitude, p.height ?? 0])
+    }
+  }
+  return out
+}
+
+function parseCornerType(
+  s: keyof typeof Cesium.CornerType | Cesium.CornerType | undefined,
+): Cesium.CornerType {
+  if (s === undefined) return Cesium.CornerType.ROUNDED
+  if (typeof s === 'number') return s
+  return Cesium.CornerType[s] ?? Cesium.CornerType.ROUNDED
+}
+
+function cornerTypeToKey(ct: Cesium.CornerType | undefined): string | undefined {
+  if (ct === undefined) return undefined
+  const e = Cesium.CornerType
+  if (ct === e.ROUNDED) return 'ROUNDED'
+  if (ct === e.MITERED) return 'MITERED'
+  if (ct === e.BEVELED) return 'BEVELED'
+  return String(ct)
+}
+
+function sampleProperty<T>(p: Property | undefined, time = Cesium.JulianDate.now()): T | undefined {
+  if (!p || typeof (p as Cesium.Property).getValue !== 'function') return undefined
+  return (p as Cesium.Property).getValue(time) as T | undefined
+}
+
+function colorToCss(c: Color | undefined): string | undefined {
+  if (!c) return undefined
+  return typeof (c as { toCssColorString?: () => string }).toCssColorString === 'function'
+    ? (c as Color & { toCssColorString: () => string }).toCssColorString()
+    : undefined
+}
+
+function readCorridorMaterialColor(corridor: Cesium.CorridorGraphics): Color | undefined {
+  const mat = corridor.material
+  if (!mat || !(mat instanceof Cesium.ColorMaterialProperty)) return undefined
+  return sampleProperty<Color>(mat.color)
+}
+
+function mergeCorridorGraphics(
+  cg: Cesium.CorridorGraphics,
+  opts: {
+    positions: Cesium.Cartesian3[]
+    width: number
+    height: number
+    extrudedHeight?: number
+    cornerType: Cesium.CornerType
+    fillColor: Color
+    showFill: boolean
+    outline: boolean
+    outlineColor: Color
+    outlineWidth: number
+    style?: CorridorStyleOptions
+  },
+  isCreate: boolean,
+): void {
+  cg.positions = new Cesium.ConstantProperty(opts.positions)
+  cg.width = new Cesium.ConstantProperty(opts.width)
+  cg.height = new Cesium.ConstantProperty(opts.height)
+  cg.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  cg.extrudedHeightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+
+  if (opts.extrudedHeight !== undefined && Number.isFinite(opts.extrudedHeight)) {
+    cg.extrudedHeight = new Cesium.ConstantProperty(opts.extrudedHeight)
+  } else {
+    cg.extrudedHeight = undefined
+  }
+
+  cg.cornerType = new Cesium.ConstantProperty(opts.cornerType)
+  if (opts.style?.granularity !== undefined) {
+    cg.granularity = new Cesium.ConstantProperty(opts.style.granularity)
+  } else if (isCreate) {
+    cg.granularity = undefined
+  }
+  cg.fill = new Cesium.ConstantProperty(opts.showFill)
+  cg.material = new Cesium.ColorMaterialProperty(opts.fillColor)
+  cg.outline = new Cesium.ConstantProperty(opts.outline)
+  cg.outlineColor = new Cesium.ConstantProperty(opts.outlineColor)
+  cg.outlineWidth = new Cesium.ConstantProperty(opts.outlineWidth)
+
+  const st = opts.style
+  if (st?.shadows !== undefined) cg.shadows = new Cesium.ConstantProperty(st.shadows)
+  if (st?.distanceDisplayCondition !== undefined) {
+    cg.distanceDisplayCondition = new Cesium.ConstantProperty(st.distanceDisplayCondition)
+  }
+  if (st?.classificationType !== undefined) {
+    cg.classificationType = new Cesium.ConstantProperty(st.classificationType)
+  }
+  if (st?.zIndex !== undefined) cg.zIndex = new Cesium.ConstantProperty(st.zIndex)
+}
+
+/**
+ * 廊道（`Entity` + `CorridorGraphics`）。单例：首参传入 `viewer`。
+ */
+export default class Corridor {
+  private readonly data = new Map<string, CorridorRecord>()
+
+  private isRecordAlive(rec: CorridorRecord): boolean {
+    if (rec.viewer.isDestroyed()) return false
+    return rec.viewer.entities.contains(rec.entity)
+  }
+
+  private takeIfAlive(id: string): CorridorRecord | undefined {
+    const rec = this.data.get(id)
+    if (!rec) return undefined
+    if (!this.isRecordAlive(rec)) {
+      this.data.delete(id)
+      return undefined
+    }
+    return rec
+  }
+
+  private cloneTargetData(data?: Record<string, unknown>): Record<string, unknown> {
+    if (!data || typeof data !== 'object') return {}
+    return { ...data }
+  }
+
+  add(viewer: Viewer, options: AddCorridorOptions): Entity | undefined {
+    if (!viewer || viewer.isDestroyed()) return undefined
+    const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('cor')
+    if (this.data.has(id) || viewer.entities.getById(id)) return undefined
+
+    const w = Number(options.width)
+    if (!Number.isFinite(w) || w <= 0) return undefined
+
+    const cartesianLine = lineToCartesian3Array(options.positions)
+    if (!cartesianLine) return undefined
+
+    const showFill = options.showFill !== false
+    const alpha = options.alpha ?? 1
+    const fillColor =
+      toColor(options.color ?? '#00b96b', showFill ? alpha : 0) ??
+      Cesium.Color.LIME.withAlpha(showFill ? alpha : 0)
+    const outline = options.outline !== false
+    const outlineColor =
+      toColor(options.outlineColor ?? '#ffffff', options.outlineAlpha ?? 1) ?? Cesium.Color.WHITE
+    const outlineWidth = options.outlineWidth ?? 2
+    const height = options.height ?? 0
+    const extrudedHeight = options.extrudedHeight
+    const cornerType = parseCornerType(options.cornerType)
+
+    const corridor = new Cesium.CorridorGraphics()
+    mergeCorridorGraphics(
+      corridor,
+      {
+        positions: cartesianLine,
+        width: w,
+        height,
+        extrudedHeight:
+          extrudedHeight !== undefined && Number.isFinite(extrudedHeight) ? extrudedHeight : undefined,
+        cornerType,
+        fillColor,
+        showFill,
+        outline,
+        outlineColor,
+        outlineWidth,
+        style: options.style,
+      },
+      true,
+    )
+
+    const entity = new Cesium.Entity({
+      id,
+      corridor,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    viewer.entities.add(entity)
+
+    const td = this.cloneTargetData(options.targetData)
+    td.positions = lineToNumberTuples(options.positions)
+    td.width = w
+    td.height = height
+    td.extrudedHeight = extrudedHeight ?? 0
+    td.cornerType = cornerType
+    td.color = options.color ?? '#00b96b'
+    td.alpha = alpha
+    td.showFill = showFill
+    td.outline = outline
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = outlineWidth
+    if (options.style) td.styleSnapshot = { ...options.style }
+
+    this.data.set(id, { viewer, entity, targetData: td })
+    return entity
+  }
+
+  addCorridors(viewer: Viewer, items: AddCorridorOptions[]): string[] {
+    if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
+    const ids: string[] = []
+    for (let i = 0; i < items.length; i++) {
+      try {
+        const item = items[i]!
+        const rid = item.id?.trim() ? item.id.trim() : createRandomXgxId('cor')
+        const e = this.add(viewer, { ...item, id: rid })
+        if (e) ids.push(rid)
+      } catch (e) {
+        console.error(`[FastX.Draw.Corridor] addCorridors 第 ${i} 项失败:`, e)
+      }
+    }
+    return ids
+  }
+
+  updateCorridor(id: string, properties: UpdateCorridorProperties): boolean {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return false
+    const p = properties
+    const td = rec.targetData
+
+    if (p.targetData !== undefined) Object.assign(td, p.targetData)
+
+    if (p.positions !== undefined) {
+      const line = lineToCartesian3Array(p.positions)
+      if (!line) return false
+      td.positions = lineToNumberTuples(p.positions)
+    }
+    if (p.width !== undefined) td.width = p.width
+    if (p.height !== undefined) td.height = p.height
+    if (p.extrudedHeight !== undefined) td.extrudedHeight = p.extrudedHeight
+    if (p.cornerType !== undefined) td.cornerType = parseCornerType(p.cornerType)
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+
+    const cg = rec.entity.corridor ?? (rec.entity.corridor = new Cesium.CorridorGraphics())
+    const needRebuild = p.positions !== undefined
+
+    const positionsNums = td.positions as number[][] | undefined
+    const lineCartesian =
+      needRebuild && positionsNums
+        ? lineToCartesian3Array(
+            positionsNums.map((t) => [Number(t[0]), Number(t[1]), Number(t[2] ?? 0)] as CorridorLngLatTuple),
+          )
+        : undefined
+
+    const showFill = td.showFill !== false
+    const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+    const fillColor =
+      toColor(String(td.color ?? '#00b96b'), showFill ? alpha : 0) ??
+      Cesium.Color.LIME.withAlpha(showFill ? alpha : 0)
+    const outline = td.outline !== false
+    const outlineColor =
+      toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+      Cesium.Color.WHITE
+    const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+    const width = typeof td.width === 'number' ? td.width : sampleProperty<number>(cg.width) ?? 1
+    const height = typeof td.height === 'number' ? td.height : sampleProperty<number>(cg.height) ?? 0
+    const extrRaw = td.extrudedHeight
+    const extrudedHeight =
+      typeof extrRaw === 'number' && Number.isFinite(extrRaw) ? extrRaw : sampleProperty<number>(cg.extrudedHeight)
+    const cornerType =
+      typeof td.cornerType === 'number'
+        ? (td.cornerType as Cesium.CornerType)
+        : parseCornerType(td.cornerType as keyof typeof Cesium.CornerType)
+
+    const needCorridor =
+      needRebuild ||
+      p.width !== undefined ||
+      p.height !== undefined ||
+      p.extrudedHeight !== undefined ||
+      p.cornerType !== undefined ||
+      p.color !== undefined ||
+      p.alpha !== undefined ||
+      p.showFill !== undefined ||
+      p.outline !== undefined ||
+      p.outlineColor !== undefined ||
+      p.outlineAlpha !== undefined ||
+      p.outlineWidth !== undefined ||
+      p.style !== undefined
+
+    if (needCorridor) {
+      let positions: Cesium.Cartesian3[] | undefined
+      if (lineCartesian) {
+        positions = lineCartesian
+      } else {
+        const arr = sampleProperty<Cesium.Cartesian3[]>(cg.positions)
+        if (!arr?.length) return false
+        positions = arr
+      }
+      mergeCorridorGraphics(
+        cg,
+        {
+          positions,
+          width,
+          height,
+          extrudedHeight:
+            extrudedHeight !== undefined && Number.isFinite(extrudedHeight) ? extrudedHeight : undefined,
+          cornerType,
+          fillColor,
+          showFill,
+          outline,
+          outlineColor,
+          outlineWidth,
+          style: td.styleSnapshot as CorridorStyleOptions | undefined,
+        },
+        false,
+      )
+    }
+
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
+  updateCorridors(updates: Array<{ id: string } & UpdateCorridorProperties>): Array<{ id: string; success: boolean }> {
+    return updates.map(({ id, ...rest }) => ({ id, success: this.updateCorridor(id, rest) }))
+  }
+
+  getTargetData(id: string): Record<string, unknown> | undefined {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return undefined
+    return { ...rec.targetData }
+  }
+
+  setTargetData(id: string, targetData: Record<string, unknown>): boolean {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return false
+    rec.targetData = { ...targetData }
+    return true
+  }
+
+  mergeTargetData(id: string, patch: Record<string, unknown>): boolean {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return false
+    rec.targetData = { ...rec.targetData, ...patch }
+    return true
+  }
+
+  getCorridor(id: string): CorridorSnapshot | null {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return null
+    const cg = rec.entity.corridor
+    const posArr = cg ? sampleProperty<Cesium.Cartesian3[]>(cg.positions) : undefined
+    const positions: number[][] = []
+    if (posArr?.length) {
+      for (const c of posArr) {
+        const carto = Cesium.Cartographic.fromCartesian(c)
+        positions.push([
+          Cesium.Math.toDegrees(carto.longitude),
+          Cesium.Math.toDegrees(carto.latitude),
+          carto.height,
+        ])
+      }
+    }
+    if (positions.length === 0) {
+      const fb = positionsFromTargetData(rec.targetData)
+      for (const row of fb) positions.push(row)
+    }
+    const fillCol = cg ? readCorridorMaterialColor(cg) : undefined
+    const outline = cg ? sampleProperty<boolean>(cg.outline) : undefined
+    const outlineColor = cg ? sampleProperty<Color>(cg.outlineColor) : undefined
+    const outlineWidth = cg ? sampleProperty<number>(cg.outlineWidth) : undefined
+    const width = cg ? sampleProperty<number>(cg.width) : undefined
+    const height = cg ? sampleProperty<number>(cg.height) : undefined
+    const extruded = cg ? sampleProperty<number>(cg.extrudedHeight) : undefined
+    const cornerTypeSampled = cg ? sampleProperty<Cesium.CornerType>(cg.cornerType) : undefined
+    const cornerKey = cornerTypeSnapshotFromRecord(cornerTypeSampled, rec.targetData)
+    const desc = sampleProperty<string>(rec.entity.description)
+    const rawShowFill = rec.targetData.showFill
+
+    return {
+      id: rec.entity.id,
+      positions,
+      vertexCount: positions.length,
+      width: typeof width === 'number' ? width : Number(rec.targetData.width) || 0,
+      height: typeof height === 'number' ? height : Number(rec.targetData.height) || 0,
+      extrudedHeight:
+        typeof extruded === 'number' ? extruded : Number(rec.targetData.extrudedHeight) || 0,
+      cornerType: cornerKey,
+      colorCss: colorToCss(fillCol),
+      showFill: typeof rawShowFill === 'boolean' ? rawShowFill : true,
+      outline,
+      outlineColorCss: colorToCss(outlineColor),
+      outlineWidth,
+      show: rec.entity.show,
+      targetData: { ...rec.targetData },
+      description: desc,
+    }
+  }
+
+  getAllCorridors(viewer?: Viewer): CorridorSnapshot[] {
+    const out: CorridorSnapshot[] = []
+    for (const id of this.getIds(viewer)) {
+      const s = this.getCorridor(id)
+      if (s) out.push(s)
+    }
+    return out
+  }
+
+  getCount(viewer?: Viewer): number {
+    return this.getIds(viewer).length
+  }
+
+  getAllIds(viewer?: Viewer): string[] {
+    return this.getIds(viewer)
+  }
+
+  setAllVisibility(show: boolean, viewer?: Viewer): void {
+    for (const [, r] of this.data) {
+      if (!this.isRecordAlive(r)) continue
+      if (viewer !== undefined && r.viewer !== viewer) continue
+      r.entity.show = show
+    }
+  }
+
+  setSpecifyVisibility(id: string, show: boolean): boolean {
+    return this.setVisible(id, show)
+  }
+
+  removeAll(viewer?: Viewer): void {
+    this.clear(viewer)
+  }
+
+  getEntity(id: string): Entity | undefined {
+    return this.takeIfAlive(id)?.entity
+  }
+
+  has(id: string): boolean {
+    return this.takeIfAlive(id) !== undefined
+  }
+
+  getIds(viewer?: Viewer): string[] {
+    const out: string[] = []
+    for (const [id, rec] of this.data) {
+      if (!this.isRecordAlive(rec)) continue
+      if (viewer !== undefined && rec.viewer !== viewer) continue
+      out.push(id)
+    }
+    return out
+  }
+
+  setVisible(id: string, visible: boolean): boolean {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return false
+    rec.entity.show = visible
+    return true
+  }
+
+  remove(id: string): boolean {
+    const rec = this.data.get(id)
+    if (!rec) return false
+    this.data.delete(id)
+    if (!rec.viewer.isDestroyed() && rec.viewer.entities.contains(rec.entity)) {
+      rec.viewer.entities.remove(rec.entity)
+    }
+    return true
+  }
+
+  removeBatch(ids: string[]): number {
+    let n = 0
+    for (const id of ids) {
+      if (this.remove(id)) n += 1
+    }
+    return n
+  }
+
+  clear(viewer?: Viewer): void {
+    const toRemove: string[] = []
+    for (const [id, rec] of this.data) {
+      if (viewer !== undefined && rec.viewer !== viewer) continue
+      toRemove.push(id)
+    }
+    for (const id of toRemove) this.remove(id)
+  }
+
+  pruneInvalid(): number {
+    let n = 0
+    for (const [id, rec] of this.data) {
+      if (!this.isRecordAlive(rec)) {
+        this.data.delete(id)
+        n += 1
+      }
+    }
+    return n
+  }
+
+  destroy(): void {
+    this.clear()
+  }
+}
