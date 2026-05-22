@@ -1,8 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { CopyOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { copyResult, useXGXCoordinates } from './useCoordinateDemo'
+import { copyResult, useXGXCoordinates } from './components/common/useCoordinateDemo'
 
 const title = '世界坐标转换经纬度（度）坐标'
 const wx = ref(-2171400)

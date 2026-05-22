@@ -29,8 +29,8 @@ const {
 } = Utils.timelineClock
 import dayjs, { type Dayjs } from 'dayjs'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './drawFormColor'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const DEMO_MODEL_REL = 'models/J15.gltf'
 const DEFAULT_TRAIL_COLOR = '#ffcc00'

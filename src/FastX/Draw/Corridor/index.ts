@@ -2,82 +2,14 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
 
+import type { AddCorridorOptions, CorridorSnapshot, CorridorStyleOptions, UpdateCorridorProperties } from '../../Types'
+export type { AddCorridorOptions, CorridorSnapshot, CorridorStyleOptions, UpdateCorridorProperties }
+
 /** 廊道中心线顶点：[经度, 纬度, 高度?]（度 / 米） */
 export type CorridorLngLatTuple = readonly [lng: number, lat: number, height?: number]
 
 /** 顶点：笛卡尔、经纬高对象或三元组 */
 export type CorridorVertexInput = Cesium.Cartesian3 | LngLatHeight | CorridorLngLatTuple
-
-export interface CorridorStyleOptions {
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  classificationType?: Cesium.ClassificationType
-  zIndex?: number
-}
-
-/**
- * 添加廊道（`Entity` + `CorridorGraphics`）。
- * - `positions`：中心线顶点，至少 2 个。
- * - `width`：廊道半宽之和（米），即两侧边之间的总宽度。
- * - `height` / `extrudedHeight`：与 Cesium 一致；与 `HeightReference.NONE` 及绝对坐标中心线配合使用。
- */
-export interface AddCorridorOptions {
-  id?: string
-  positions: CorridorVertexInput[]
-  width: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  style?: CorridorStyleOptions
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateCorridorProperties {
-  positions?: CorridorVertexInput[]
-  width?: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: CorridorStyleOptions
-}
-
-export interface CorridorSnapshot {
-  id: string
-  positions: number[][]
-  vertexCount: number
-  width: number
-  height: number
-  extrudedHeight: number
-  cornerType?: string
-  colorCss?: string
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
 
 interface CorridorRecord {
   viewer: Viewer

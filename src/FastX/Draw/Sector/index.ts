@@ -5,80 +5,10 @@ import type { CircleCenterInput, CircleCenterTuple } from '../Circle'
 import type { PolygonStyleOptions } from '../Polygon'
 import { computeSectorCartesianRing } from './sectorWedge'
 
+import type { AddSectorOptions, SectorSnapshot, UpdateSectorProperties } from '../../Types'
+export type { AddSectorOptions, SectorSnapshot, UpdateSectorProperties }
+
 export type { PolygonStyleOptions as SectorStyleOptions } from '../Polygon'
-
-/** 扇心：与 `Circle` 一致，`position` / `center` / `positions` 三选一 */
-export interface AddSectorOptions {
-  id?: string
-  position?: CircleCenterInput
-  center?: CircleCenterInput
-  positions?: CircleCenterTuple
-  /** 半径（米），必填且 &gt; 0 */
-  radius: number
-  /** 起始方位角（度），自北顺时针 */
-  startAzimuthDegrees: number
-  /** 结束方位角（度），自北顺时针；可小于起始角，内部按跨越 360° 展开 */
-  endAzimuthDegrees: number
-  /** 圆弧分段数，越大弧边越平滑，默认 32 */
-  arcSegments?: number
-  style?: PolygonStyleOptions
-  extrudedHeight?: number
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateSectorProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  position?: CircleCenterInput
-  center?: CircleCenterInput
-  positions?: CircleCenterTuple
-  radius?: number
-  startAzimuthDegrees?: number
-  endAzimuthDegrees?: number
-  arcSegments?: number
-  extrudedHeight?: number
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: PolygonStyleOptions
-}
-
-export interface SectorSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  radius: number
-  startAzimuthDegrees: number
-  endAzimuthDegrees: number
-  arcSegments: number
-  extrudedHeight: number
-  colorCss?: string
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
 
 interface SectorRecord {
   viewer: Viewer

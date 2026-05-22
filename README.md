@@ -116,7 +116,7 @@ npm run preview   # 预览构建结果
 | Model 模型（Entity） | ✅ |
 | Box 盒子 / 立方体（Entity） | ✅ |
 | Tileset 3D Tiles（Entity） | ❌ |
-| Path 路径（Entity） | ❌ |
+| Path 路径（Entity） | ✅ |
 | 等高线 | ❌ |
 | 二维热力图 | ❌ |
 | 三维热力图 | ❌ |
@@ -197,4 +197,4 @@ npm run preview   # 预览构建结果
 2. **图层类**：上表图层演示为 ❌，但 `Layer` 类 API 已在 `FastX` 中实现（二三维、鹰眼、大气光照、地形与 WMTS/WMS/TMS/UrlTemplate/GeoJSON/KML/CZML 等接口），待演示页对接。
 3. **Primitive 批量**：Point / Line / 面 / 体等 `*Collection` 已导出，无单独菜单卡片，与 Entity 演示配合使用。
 4. **配置**：地图服务地址见 `src/config/map-runtime`；能力卡片注册见 `src/views/mapDemo/component-map.json`。
-5. **版本**：产品发布 **V1.0.1**；`package.json` 版本号 `0.0.0` 仅作工程标识。
+5. **版本**：产品发布 **V1.1.2**；

@@ -3,78 +3,11 @@ import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 import { createShape, ShapeType, type ShapeParams, type ShapeVertices } from './shape'
 
+import type { AddPolylineVolumeOptions, PolylineVolumeSnapshot, PolylineVolumeStyleOptions, UpdatePolylineVolumeProperties } from '../../Types'
+export type { AddPolylineVolumeOptions, PolylineVolumeSnapshot, PolylineVolumeStyleOptions, UpdatePolylineVolumeProperties }
+
 /** 折线路径顶点：[经度, 纬度, 高度(米)?]，至少 2 点 */
 export type PolylineVolumeLngLatTuple = readonly [lng: number, lat: number, height?: number]
-
-export interface PolylineVolumeStyleOptions {
-  cornerType?: Cesium.CornerType
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-}
-
-/**
- * 添加折线体（`Entity` + `PolylineVolumeGraphics`）。
- * - `positions`：经纬度路径，**至少 2 个点**。
- * - 截面形状由 `shapeType` + `shapeParams`（或 `targetData` 内同名字段）经 `shape.ts` 的 `createShape` 生成。
- */
-export interface AddPolylineVolumeOptions {
-  id?: string
-  /** 路径顶点（度 / 米），至少 2 项 */
-  positions: PolylineVolumeLngLatTuple[] | number[][]
-  shapeType?: ShapeType | string
-  /** 传给 `createShape` 的参数；缺省时按 `shapeType` 使用内置默认尺寸 */
-  shapeParams?: ShapeParams
-  style?: PolylineVolumeStyleOptions
-  cornerType?: keyof typeof Cesium.CornerType
-  granularity?: number
-  /** 填充色 CSS */
-  color?: string
-  alpha?: number
-  fill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdatePolylineVolumeProperties {
-  positions?: PolylineVolumeLngLatTuple[] | number[][]
-  shapeType?: ShapeType | string
-  shapeParams?: ShapeParams
-  cornerType?: keyof typeof Cesium.CornerType
-  granularity?: number
-  color?: string | Color
-  alpha?: number
-  fill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: PolylineVolumeStyleOptions
-}
-
-export interface PolylineVolumeSnapshot {
-  id: string
-  /** 路径顶点 [lng, lat, h?][] */
-  positions: number[][]
-  positionsCount: number
-  shapeType: string
-  show: boolean
-  fill?: boolean
-  outline?: boolean
-  colorCss?: string
-  outlineColorCss?: string
-  outlineWidth?: number
-  targetData: Record<string, unknown>
-  description?: string
-}
 
 interface PolylineVolumeRecord {
   viewer: Viewer

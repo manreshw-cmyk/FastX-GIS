@@ -40,16 +40,10 @@ import Path from "./Draw/Path";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
 import Utils from "./Utils";
+import Types from "./Types";
 
-export { Utils };
-export type { PlayClockWindow } from "./Utils";
-export type {
-  TrajectoryKeyframe,
-  TrajectoryLngLatKeyframe,
-  TrajectoryOptions,
-  MoverCallbacks,
-  MoverOptions,
-} from "./Trajectory";
+export { Utils, Types };
+export type * from "./Types";
 
 export { Layer, Coordinates, MouseEvent, registerCesiumXVueComponents };
 export { createRandomXgxId } from "./Coordinates";
@@ -415,6 +409,7 @@ function resolveMapLayer(mapName?: string): Layer | null {
  */
 export const FastX = {
   Utils,
+  Types,
   Trajectory,
   Mover,
   Coordinates,

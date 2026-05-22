@@ -1,12 +1,12 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
 import type { BoxSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './drawFormColor'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（Box）盒子/立方体类（底层entity）'
 

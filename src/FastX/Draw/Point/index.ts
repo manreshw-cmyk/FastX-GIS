@@ -1,88 +1,22 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
-import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
+import { createRandomXgxId } from '../../Coordinates'
 
-/** 与 `PointCollection` 一致：[经度, 纬度, 高度?]（度 / 米） */
-export type PointPositionsTuple = readonly [lng: number, lat: number, height?: number]
-
-/** 点位置：世界坐标或经纬度（度）+ 高（米） */
-export type PointPositionInput = Cesium.Cartesian3 | LngLatHeight
-
-/** 点图元样式（与 `PointGraphics` 常用字段对齐） */
-export interface PointStyleOptions {
-  pixelSize?: number
-  color?: Color
-  outlineColor?: Color
-  outlineWidth?: number
-  heightReference?: Cesium.HeightReference
-  disableDepthTestDistance?: number
-  scaleByDistance?: Cesium.NearFarScalar
-  translucencyByDistance?: Cesium.NearFarScalar
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-}
-
-/**
- * 添加点参数（`Entity` + `PointGraphics`）。
- * - 位置：`position` 或 `positions` 二选一（`positions` 与旧版 PointCollection 一致）。
- * - `id` 可省略，将自动生成。
- * - `color` / `outlineColor` 支持 CSS 色串，配合 `alpha` / `outlineAlpha`。
- * - `targetData`：业务自定义属性，内部深拷贝合并，不参与 Cesium 渲染。
- */
-export interface AddPointOptions {
-  id?: string
-  position?: PointPositionInput
-  positions?: PointPositionsTuple
-  style?: PointStyleOptions
-  /** CSS 颜色，如 `#ff0000` */
-  color?: string
-  alpha?: number
-  pixelSize?: number
-  /** 是否绘制轮廓；`false` 时等效 `outlineWidth: 0` */
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  /** 自定义业务数据（对应原 `primitive._targetData`） */
-  targetData?: Record<string, unknown>
-}
-
-/** `updatePoint` / `updatePoints` 可写字段 */
-export interface UpdatePointProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  /** 优先于 lon/lat/height */
-  position?: PointPositionInput
-  positions?: PointPositionsTuple
-  color?: string | Color
-  alpha?: number
-  pixelSize?: number
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: PointStyleOptions
-}
-
-/** `getPoint` / `getAllPoints` 返回的纯数据快照 */
-export interface PointSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  colorCss?: string
-  pixelSize?: number
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
+import type {
+  AddPointOptions,
+  PointPositionInput,
+  PointPositionsTuple,
+  PointSnapshot,
+  PointStyleOptions,
+  UpdatePointProperties,
+} from '../../Types'
+export type {
+  AddPointOptions,
+  PointPositionInput,
+  PointPositionsTuple,
+  PointSnapshot,
+  PointStyleOptions,
+  UpdatePointProperties,
 }
 
 interface PointRecord {

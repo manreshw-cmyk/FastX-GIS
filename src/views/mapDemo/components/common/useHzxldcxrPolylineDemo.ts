@@ -9,8 +9,8 @@ import type {
   MouseEventPickPayload,
   PolylineLineKind,
   PolylineSnapshot,
-} from '../../FastX'
-import { useMapLayerStore } from '../../stores/modules/mapLayer'
+} from '../../../../FastX'
+import { useMapLayerStore } from '../../../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './drawFormColor'
 import { waitForMapViewer } from './useCoordinateDemo'
 

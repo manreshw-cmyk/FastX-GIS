@@ -2,62 +2,19 @@ import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-/** 与 `Model`（Entity）示例约定一致：航向顺时针 0° 朝北；俯仰正抬头；横滚正右倾 */
-export interface ModelCollectionAddItem {
-  id?: string
-  positions: number[]
-  uri: string
-  show?: boolean
-  scale?: number
-  minimumPixelSize?: number
-  maximumScale?: number
-  heightReference?: keyof typeof Cesium.HeightReference
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface ModelCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  uri?: string
-  scale?: number
-  minimumPixelSize?: number
-  maximumScale?: number
-  heightReference?: keyof typeof Cesium.HeightReference
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface ModelCollectionUpdateEntry extends ModelCollectionUpdateProps {
-  id: string
-}
-
-export interface ModelCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  uri: string
-  scale: number
-  minimumPixelSize: number
-  maximumScale?: number
-  show: boolean
-  headingDegrees: number
-  pitchDegrees: number
-  rollDegrees: number
-  targetData: Record<string, unknown>
-}
-
-export type ModelCollectionOrientationDegrees = {
-  heading: number
-  pitch: number
-  roll: number
+import type {
+  ModelCollectionAddItem,
+  ModelCollectionOrientationDegrees,
+  ModelCollectionSnapshot,
+  ModelCollectionUpdateEntry,
+  ModelCollectionUpdateProps,
+} from '../../Types'
+export type {
+  ModelCollectionAddItem,
+  ModelCollectionOrientationDegrees,
+  ModelCollectionSnapshot,
+  ModelCollectionUpdateEntry,
+  ModelCollectionUpdateProps,
 }
 
 type ModelMeta = {

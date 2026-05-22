@@ -1,6 +1,6 @@
 import * as Cesium from "cesium";
 import type { Color, Entity, Property, Viewer } from "cesium";
-import { createRandomXgxId, type LngLatHeight } from "../../Coordinates";
+import { createRandomXgxId } from "../../Coordinates";
 import {
   DEFAULT_ENTITY_PLANE,
   DEFAULT_IMAGE_REPEAT,
@@ -20,6 +20,9 @@ import {
   type VideoEndedListener,
 } from "./planeShared";
 
+import type { AddPlaneOptions, PlaneCenterInput, PlanePositionsTuple, PlaneSnapshot, PlaneStyleOptions, UpdatePlaneProperties } from '../../Types'
+export type { AddPlaneOptions, PlaneCenterInput, PlanePositionsTuple, PlaneSnapshot, PlaneStyleOptions, UpdatePlaneProperties }
+
 export {
   PlaneMaterialType,
   DEFAULT_PLANE_VIDEO,
@@ -31,115 +34,6 @@ export type {
   PlaneMaterialTypeValue,
   PlaneVideoOptions,
 } from "./planeShared";
-
-/** 平面中心：[经度, 纬度, 高度?]（度 / 米） */
-export type PlanePositionsTuple = readonly [
-  lng: number,
-  lat: number,
-  height?: number,
-];
-
-export type PlaneCenterInput = Cesium.Cartesian3 | LngLatHeight;
-
-export interface PlaneStyleOptions {
-  materialType?: PlaneMaterialTypeValue;
-  /** 图片 / 视频 URL（`image` / `video`） */
-  imageUrl?: string;
-  videoUrl?: string;
-  /** 视频播放参数（仅 `video`） */
-  video?: PlaneVideoOptions;
-  /** 图片平铺重复（仅 `image`） */
-  imageRepeat?: { x: number; y: number };
-  shadows?: Cesium.ShadowMode;
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition;
-}
-
-/**
- * 添加平面（`Entity` + `PlaneGraphics`）。
- * - 中心：`position` 或 `positions`（`[lng,lat,h?]`）二选一。
- * - `dimensions`：平面宽、高（米），默认 `200×200`；平面默认落在 ENU 的东–北水平面，法向朝上。
- * - `headingDegrees` / `pitchDegrees` / `rollDegrees`：航向绕上轴；俯仰绕东轴（抬头为正）；翻滚绕北轴（右倾为正）；支持正负。
- */
-export interface AddPlaneOptions {
-  id?: string;
-  position?: PlaneCenterInput;
-  positions?: PlanePositionsTuple;
-  /** 平面宽、高（米） */
-  dimensions?: { width: number; height: number };
-  headingDegrees?: number;
-  pitchDegrees?: number;
-  rollDegrees?: number;
-  style?: PlaneStyleOptions;
-  /** 填充材质类型，默认 `color` */
-  materialType?: PlaneMaterialTypeValue;
-  color?: string;
-  alpha?: number;
-  imageUrl?: string;
-  videoUrl?: string;
-  video?: PlaneVideoOptions;
-  imageRepeat?: { x: number; y: number };
-  fill?: boolean;
-  outline?: boolean;
-  outlineColor?: string;
-  outlineAlpha?: number;
-  outlineWidth?: number;
-  show?: boolean;
-  description?: string;
-  targetData?: Record<string, unknown>;
-}
-
-export interface UpdatePlaneProperties {
-  longitude?: number;
-  latitude?: number;
-  height?: number;
-  position?: PlaneCenterInput;
-  positions?: PlanePositionsTuple;
-  dimensions?: { width: number; height: number };
-  headingDegrees?: number;
-  pitchDegrees?: number;
-  rollDegrees?: number;
-  materialType?: PlaneMaterialTypeValue;
-  color?: string | Color;
-  alpha?: number;
-  imageUrl?: string;
-  videoUrl?: string;
-  video?: PlaneVideoOptions;
-  imageRepeat?: { x: number; y: number };
-  fill?: boolean;
-  outline?: boolean;
-  outlineColor?: string | Color;
-  outlineAlpha?: number;
-  outlineWidth?: number;
-  show?: boolean;
-  description?: string;
-  targetData?: Record<string, unknown>;
-  style?: PlaneStyleOptions;
-}
-
-export interface PlaneSnapshot {
-  id: string;
-  longitude: number;
-  latitude: number;
-  height: number;
-  width: number;
-  planeHeight: number;
-  headingDegrees: number;
-  pitchDegrees: number;
-  rollDegrees: number;
-  materialType: PlaneMaterialTypeValue;
-  colorCss?: string;
-  imageUrl?: string;
-  videoUrl?: string;
-  video?: PlaneVideoOptions;
-  imageRepeat?: { x: number; y: number };
-  fill?: boolean;
-  outline?: boolean;
-  outlineColorCss?: string;
-  outlineWidth?: number;
-  show: boolean;
-  targetData: Record<string, unknown>;
-  description?: string;
-}
 
 interface PlaneRecord {
   viewer: Viewer;

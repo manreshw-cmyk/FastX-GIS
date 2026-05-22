@@ -13,6 +13,21 @@
 
 import * as Cesium from "cesium";
 
+import type {
+  CapsuleShapeOptions,
+  IShapeOptions,
+  LShapeOptions,
+  PolygonShapeOptions,
+  RingShapeOptions,
+} from "../../Types";
+export type {
+  CapsuleShapeOptions,
+  IShapeOptions,
+  LShapeOptions,
+  PolygonShapeOptions,
+  RingShapeOptions,
+};
+
 /**
  * 形状顶点数组类型
  */
@@ -248,15 +263,6 @@ export function createCrossShape(
 }
 
 /**
- * 胶囊形横截面参数接口
- */
-export interface CapsuleShapeOptions {
-  width: number; // 总宽度（单位：米）
-  height: number; // 总高度（单位：米）
-  segments?: number; // 半圆的分段数，默认 16
-}
-
-/**
  * 创建胶囊形横截面（两端半圆 + 矩形中部）
  * @param width - 总宽度（单位：米）
  * @param height - 总高度（单位：米）
@@ -298,15 +304,6 @@ export function createCapsuleShape(
 
   vertices.push(vertices[0]);
   return vertices;
-}
-
-/**
- * 工字形横截面参数接口
- */
-export interface IShapeOptions {
-  width: number; // 总宽度（单位：米）
-  height: number; // 总高度（单位：米）
-  flangeWidth: number; // 翼缘宽度（单位：米）
 }
 
 /**
@@ -353,15 +350,6 @@ export function createIShape(
 }
 
 /**
- * L形横截面参数接口
- */
-export interface LShapeOptions {
-  width: number; // 总宽度（X轴方向，单位：米）
-  height: number; // 总高度（Y轴方向，单位：米）
-  thickness: number; // 臂厚（单位：米）
-}
-
-/**
  * 创建 L 形横截面
  * @param width - 总宽度（X轴方向，单位：米）
  * @param height - 总高度（Y轴方向，单位：米）
@@ -388,15 +376,6 @@ export function createLShape(
     new Cesium.Cartesian2(-w, h),
     new Cesium.Cartesian2(-w, -h),
   ];
-}
-
-/**
- * 圆环形横截面参数接口
- */
-export interface RingShapeOptions {
-  outerRadius: number; // 外圆半径（单位：米）
-  innerRadius: number; // 内圆半径（单位：米，必须小于 outerRadius）
-  segments?: number; // 分段数，默认 32
 }
 
 /**
@@ -434,13 +413,6 @@ export function createRingShape(
 
   vertices.push(vertices[0]);
   return vertices;
-}
-
-/**
- * 多边形横截面参数接口
- */
-export interface PolygonShapeOptions {
-  points: Array<{ x: number; y: number }>; // 多边形顶点坐标数组
 }
 
 /**

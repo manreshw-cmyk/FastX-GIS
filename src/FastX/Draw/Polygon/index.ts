@@ -2,86 +2,14 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
 
+import type { AddPolygonOptions, PolygonSnapshot, PolygonStyleOptions, UpdatePolygonProperties } from '../../Types'
+export type { AddPolygonOptions, PolygonSnapshot, PolygonStyleOptions, UpdatePolygonProperties }
+
 /** 多边形顶点：[经度, 纬度, 高度?]（度 / 米） */
 export type PolygonLngLatTuple = readonly [lng: number, lat: number, height?: number]
 
 /** 顶点：笛卡尔、经纬高对象或三元组 */
 export type PolygonVertexInput = Cesium.Cartesian3 | LngLatHeight | PolygonLngLatTuple
-
-export interface PolygonStyleOptions {
-  /**
-   * 为 `true`（默认）时，各顶点使用自身高度（`positions` 中的高程）构成顶面；
-   * 为 `false` 时走贴顶面逻辑，顶点高度由 `PolygonGraphics.height` 等统一控制。
-   */
-  perPositionHeight?: boolean
-  arcType?: Cesium.ArcType
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  classificationType?: Cesium.ClassificationType
-  zIndex?: number
-}
-
-/**
- * 添加多边形（`Entity` + `PolygonGraphics`）。
- * - `positions`：外环顶点，至少 3 个。
- *
- * **顶点高度**：每个顶点可带独立高程（度分经纬 + 米）。值为 **WGS84 椭球面以上的米**（与 `Cartesian3.fromDegrees` 一致），
- * 并非 Cesium 自动计算的「相对地形离地高度」；若需要贴地或离地（AGL），请在外部用 `sampleTerrainMostDetailed` 等算好后写入各点。
- *
- * **拉伸**：`extrudedHeight` 对应整块多边形的 `PolygonGraphics.extrudedHeight`（整面统一挤出），**不是**每个顶点各自一条拉伸值。
- */
-export interface AddPolygonOptions {
-  id?: string
-  positions: PolygonVertexInput[]
-  style?: PolygonStyleOptions
-  /**
-   * 整块多边形沿法线/挤出方向的拉伸高度（米），映射 `PolygonGraphics.extrudedHeight`；全环共用一个数值。
-   */
-  extrudedHeight?: number
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdatePolygonProperties {
-  positions?: PolygonVertexInput[]
-  extrudedHeight?: number
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: PolygonStyleOptions
-}
-
-export interface PolygonSnapshot {
-  id: string
-  /** 外环顶点 [lng, lat, h][] */
-  positions: number[][]
-  vertexCount: number
-  extrudedHeight: number
-  colorCss?: string
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
 
 interface PolygonRecord {
   viewer: Viewer

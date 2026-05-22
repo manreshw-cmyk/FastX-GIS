@@ -2,59 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface CircleCollectionAddItem {
-  id?: string
-  show?: boolean
-  /** 圆心 [lng, lat, height?]（度 / 米） */
-  positions: number[]
-  /**
-   * 半径（千米），与旧版 `CircleCollecation.js` 一致，内部 `* 1000` 转为米传入 `CircleGeometry`。
-   */
-  radius?: number
-  extrudedHeight?: number
-  color?: string
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  stRotation?: number
-  numberOfVerticalLines?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface CircleCollectionUpdateOptions {
-  show?: boolean
-  positions?: number[]
-  radius?: number
-  extrudedHeight?: number
-  color?: string
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface CircleCollectionUpdateEntry {
-  id: string
-  options?: CircleCollectionUpdateOptions
-}
-
-export interface CircleCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  /** 半径（千米），与入参一致 */
-  radiusKm: number
-  extrudedHeight: number
-  show: boolean
-  alpha: number
-  outline: boolean
-  targetData: Record<string, unknown>
-}
+import type { CircleCollectionAddItem, CircleCollectionSnapshot, CircleCollectionUpdateEntry, CircleCollectionUpdateOptions } from '../../Types'
+export type { CircleCollectionAddItem, CircleCollectionSnapshot, CircleCollectionUpdateEntry, CircleCollectionUpdateOptions }
 
 type PrimitiveExt = Primitive & {
   _id?: string

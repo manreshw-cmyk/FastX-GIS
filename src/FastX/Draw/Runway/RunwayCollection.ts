@@ -2,69 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-/** 批量跑道：与廊道批量相同，仅允许 **2** 个顶点（起点、终点）；无流动材质，仅实体几何 + 实例色。 */
-export interface RunwayCollectionAddItem {
-  id?: string
-  /** `[[lng,lat,h?],[lng,lat,h?]]` 恰好 2 点 */
-  positions: number[][]
-  width: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string
-  opacity?: number
-  show?: boolean
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface RunwayCollectionStoredData {
-  id: string
-  positions: number[][]
-  width: number
-  height: number
-  extrudedHeight: number
-  cornerType: Cesium.CornerType
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface RunwayCollectionEntry {
-  data: RunwayCollectionStoredData
-  primitive: Primitive
-}
-
-export interface RunwayCollectionSnapshot {
-  id: string
-  positions: number[][]
-  width: number
-  height: number
-  extrudedHeight: number
-  cornerType: string
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-  vertexCount: number
-}
-
-export interface RunwayCollectionUpdateProps {
-  positions?: number[][]
-  width?: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string
-  opacity?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface RunwayCollectionUpdateEntry extends RunwayCollectionUpdateProps {
-  id: string
-}
+import type { RunwayCollectionAddItem, RunwayCollectionEntry, RunwayCollectionSnapshot, RunwayCollectionStoredData, RunwayCollectionUpdateEntry, RunwayCollectionUpdateProps } from '../../Types'
+export type { RunwayCollectionAddItem, RunwayCollectionEntry, RunwayCollectionSnapshot, RunwayCollectionStoredData, RunwayCollectionUpdateEntry, RunwayCollectionUpdateProps }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

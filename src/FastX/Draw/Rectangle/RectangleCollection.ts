@@ -2,50 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface RectangleCollectionAddItem {
-  id?: string
-  west: number
-  south: number
-  east: number
-  north: number
-  topHeight?: number
-  color?: string
-  opacity?: number
-  show?: boolean
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface RectangleCollectionStoredData {
-  id: string
-  west: number
-  south: number
-  east: number
-  north: number
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface RectangleCollectionEntry {
-  data: RectangleCollectionStoredData
-  primitive: Primitive
-}
-
-export interface RectangleCollectionSnapshot {
-  id: string
-  west: number
-  south: number
-  east: number
-  north: number
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { RectangleCollectionAddItem, RectangleCollectionEntry, RectangleCollectionSnapshot, RectangleCollectionStoredData } from '../../Types'
+export type { RectangleCollectionAddItem, RectangleCollectionEntry, RectangleCollectionSnapshot, RectangleCollectionStoredData }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

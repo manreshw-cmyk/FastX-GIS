@@ -16,66 +16,8 @@ import {
   type VideoEndedListener,
 } from './planeShared'
 
-export interface PlaneCollectionAddItem {
-  id?: string
-  positions: number[]
-  dimensions?: [number, number]
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  materialType?: PlaneMaterialTypeValue
-  color?: string
-  alpha?: number
-  imageUrl?: string
-  videoUrl?: string
-  video?: PlaneVideoOptions
-  imageRepeat?: { x: number; y: number }
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PlaneCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  dimensions?: [number, number]
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  materialType?: PlaneMaterialTypeValue
-  color?: string
-  alpha?: number
-  imageUrl?: string
-  videoUrl?: string
-  video?: PlaneVideoOptions
-  imageRepeat?: { x: number; y: number }
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PlaneCollectionUpdateEntry extends PlaneCollectionUpdateProps {
-  id: string
-}
-
-export interface PlaneCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  width: number
-  planeHeight: number
-  headingDegrees: number
-  pitchDegrees: number
-  rollDegrees: number
-  materialType: PlaneMaterialTypeValue
-  colorCss: string
-  imageUrl?: string
-  videoUrl?: string
-  video?: PlaneVideoOptions
-  imageRepeat?: { x: number; y: number }
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { PlaneCollectionAddItem, PlaneCollectionSnapshot, PlaneCollectionUpdateEntry, PlaneCollectionUpdateProps } from '../../Types'
+export type { PlaneCollectionAddItem, PlaneCollectionSnapshot, PlaneCollectionUpdateEntry, PlaneCollectionUpdateProps }
 
 interface PlanePrimitiveMeta {
   id: string

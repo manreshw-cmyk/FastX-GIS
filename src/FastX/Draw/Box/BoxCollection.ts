@@ -2,53 +2,8 @@ import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface BoxCollectionAddItem {
-  id?: string
-  positions: number[]
-  /** 长宽高（米） */
-  dimensions?: [number, number, number]
-  show?: boolean
-  color?: string
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface BoxCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  dimensions?: [number, number, number]
-  color?: string
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface BoxCollectionUpdateEntry extends BoxCollectionUpdateProps {
-  id: string
-}
-
-export interface BoxCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  dimensions: Cesium.Cartesian3
-  color: Cesium.Color
-  outline: boolean
-  outlineColor: Cesium.Color
-  outlineWidth: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { BoxCollectionAddItem, BoxCollectionSnapshot, BoxCollectionUpdateEntry, BoxCollectionUpdateProps } from '../../Types'
+export type { BoxCollectionAddItem, BoxCollectionSnapshot, BoxCollectionUpdateEntry, BoxCollectionUpdateProps }
 
 interface BoxPrimitiveMeta {
   id: string

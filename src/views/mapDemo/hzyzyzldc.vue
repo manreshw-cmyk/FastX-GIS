@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -6,7 +6,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type { CylinderSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（Cylinder）圆锥/圆柱类（底层entity渲染）'
 const DEFAULT_FILL_COLOR = '#1890ff'

@@ -2,79 +2,8 @@ import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface LabelCollectionAddItem {
-  id?: string
-  show?: boolean
-  positions: number[]
-  /** 显示文本（与旧版 `label` 字段一致） */
-  label?: string
-  font?: string
-  alpha?: number
-  fontColor?: string
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  fontScale?: number
-  /** `FILL` | `OUTLINE` | `FILL_AND_OUTLINE` */
-  fontStyle?: keyof typeof Cesium.LabelStyle
-  showBackground?: boolean
-  backgroundColor?: string
-  backgroundPaddingX?: number
-  backgroundPaddingY?: number
-  pixelOffsetX?: number
-  pixelOffsetY?: number
-  eyeOffset?: Cesium.Cartesian3
-  horizontalOrigin?: keyof typeof Cesium.HorizontalOrigin
-  verticalOrigin?: keyof typeof Cesium.VerticalOrigin
-  translucencyByDistance?: Cesium.NearFarScalar
-  pixelOffsetScaleByDistance?: Cesium.NearFarScalar
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  scaleByDistance?: Cesium.NearFarScalar
-  heightReference?: keyof typeof Cesium.HeightReference
-  disableDepthTestDistance?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface LabelCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  label?: string
-  font?: string
-  fontColor?: string
-  alpha?: number
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  fontScale?: number
-  backgroundColor?: string
-  pixelOffsetX?: number
-  pixelOffsetY?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface LabelCollectionUpdateEntry extends LabelCollectionUpdateProps {
-  id: string
-}
-
-export interface LabelCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  text: string
-  font: string
-  fillColor: Cesium.Color
-  outlineColor: Cesium.Color
-  outlineWidth: number
-  scale: number
-  style: Cesium.LabelStyle
-  showBackground: boolean
-  backgroundColor: Cesium.Color
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { LabelCollectionAddItem, LabelCollectionSnapshot, LabelCollectionUpdateEntry, LabelCollectionUpdateProps } from '../../Types'
+export type { LabelCollectionAddItem, LabelCollectionSnapshot, LabelCollectionUpdateEntry, LabelCollectionUpdateProps }
 
 type LabelPrimitiveMeta = Cesium.Label & {
   _targetData?: Record<string, unknown>

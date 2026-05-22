@@ -5,28 +5,8 @@
 
 import * as Cesium from 'cesium'
 
-export interface TrajectoryKeyframe {
-  position: Cesium.Cartesian3
-  /** 相对 `startTime` 的秒数 */
-  timeSeconds: number
-}
-
-export interface TrajectoryLngLatKeyframe {
-  longitude: number
-  latitude: number
-  height?: number
-  timeSeconds?: number
-}
-
-export interface TrajectoryOptions {
-  startTime?: Cesium.JulianDate
-  /** 时钟终点；与 `durationSeconds` 二选一，优先用二者中较大的区间 */
-  endTime?: Cesium.JulianDate
-  /** 时钟活动区间（秒）；不小于最后一帧 `timeSeconds` */
-  durationSeconds?: number
-  /** 插值阶数：1 线性，≥2 埃尔米特 */
-  interpolationDegree?: number
-}
+import type { TrajectoryKeyframe, TrajectoryLngLatKeyframe, TrajectoryOptions } from '../Types'
+export type { TrajectoryKeyframe, TrajectoryLngLatKeyframe, TrajectoryOptions }
 
 function assignUniformTimes(count: number, durationSeconds: number): number[] {
   if (count <= 1) return [0]

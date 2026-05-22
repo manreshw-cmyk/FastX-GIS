@@ -3,62 +3,8 @@ import type { Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 import { svgMarkupToDataUri } from './svgDataUri'
 
-export interface BillboardCollectionAddItem {
-  id?: string
-  positions: number[]
-  /** 图片 URL 或 data URI */
-  image?: string
-  /** 原始 SVG XML */
-  svg?: string
-  show?: boolean
-  scale?: number
-  color?: string
-  alpha?: number
-  width?: number
-  height?: number
-  pixelOffsetX?: number
-  pixelOffsetY?: number
-  horizontalOrigin?: keyof typeof Cesium.HorizontalOrigin
-  verticalOrigin?: keyof typeof Cesium.VerticalOrigin
-  heightReference?: keyof typeof Cesium.HeightReference
-  disableDepthTestDistance?: number
-  targetData?: Record<string, unknown>
-}
-
-export interface BillboardCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  image?: string
-  svg?: string
-  scale?: number
-  color?: string
-  alpha?: number
-  width?: number
-  heightPx?: number
-  pixelOffsetX?: number
-  pixelOffsetY?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface BillboardCollectionUpdateEntry extends BillboardCollectionUpdateProps {
-  id: string
-}
-
-export interface BillboardCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  image: string
-  scale: number
-  color: Cesium.Color
-  width?: number
-  heightPx?: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { BillboardCollectionAddItem, BillboardCollectionSnapshot, BillboardCollectionUpdateEntry, BillboardCollectionUpdateProps } from '../../Types'
+export type { BillboardCollectionAddItem, BillboardCollectionSnapshot, BillboardCollectionUpdateEntry, BillboardCollectionUpdateProps }
 
 type BillboardPrimMeta = Cesium.Billboard & {
   _targetData?: Record<string, unknown>

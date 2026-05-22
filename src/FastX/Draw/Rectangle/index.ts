@@ -2,73 +2,8 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface RectangleStyleOptions {
-  height?: number
-  rotation?: number
-  stRotation?: number
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  classificationType?: Cesium.ClassificationType
-  zIndex?: number
-}
-
-export interface AddRectangleOptions {
-  id?: string
-  /** 西、南、东、北边界（度） */
-  west: number
-  south: number
-  east: number
-  north: number
-  style?: RectangleStyleOptions
-  extrudedHeight?: number
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateRectangleProperties {
-  west?: number
-  south?: number
-  east?: number
-  north?: number
-  extrudedHeight?: number
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: RectangleStyleOptions
-}
-
-export interface RectangleSnapshot {
-  id: string
-  west: number
-  south: number
-  east: number
-  north: number
-  extrudedHeight: number
-  colorCss?: string
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
+import type { AddRectangleOptions, RectangleSnapshot, RectangleStyleOptions, UpdateRectangleProperties } from '../../Types'
+export type { AddRectangleOptions, RectangleSnapshot, RectangleStyleOptions, UpdateRectangleProperties }
 
 interface RectangleRecord {
   viewer: Viewer

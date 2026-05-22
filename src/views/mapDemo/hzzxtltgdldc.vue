@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ClearOutlined, DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -10,7 +10,7 @@ import { defaultShapeParamsForType, parseShapeTypeKey, resolveShapeParamsFromTar
 import type { ShapeParams } from '../../FastX/Draw/PolylineVolume/shape'
 import { ShapeType } from '../../FastX/Draw/PolylineVolume/shape'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（PolylineVolume）折线体（立体管道）类（底层 entity）'
 

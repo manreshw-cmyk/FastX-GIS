@@ -1,97 +1,10 @@
 import * as Cesium from "cesium";
-import type { Color, Entity, Property, Viewer } from "cesium";
+import type { Entity, Property, Viewer } from "cesium";
 import { createRandomXgxId } from "../../Coordinates";
-import type { PointPositionInput, PointPositionsTuple } from "../Point";
+import type { PointPositionInput } from "../Point";
 
-export type ModelPositionsTuple = PointPositionsTuple;
-
-export interface ModelStyleOptions {
-  scale?: number;
-  minimumPixelSize?: number;
-  maximumScale?: number;
-  runAnimations?: boolean;
-  heightReference?: Cesium.HeightReference;
-  silhouetteColor?: Color;
-  silhouetteSize?: number;
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition;
-  shadows?: Cesium.ShadowMode;
-}
-
-/**
- * 添加 glTF 模型（`Entity` + `ModelGraphics`）。
- * - 位置：`position` 或 `positions` 二选一。
- * - `uri`：`.glb` / `.gltf` 或 blob / data URL。
- */
-export interface AddModelOptions {
-  id?: string;
-  position?: PointPositionInput;
-  positions?: ModelPositionsTuple;
-  uri: string;
-  style?: ModelStyleOptions;
-  scale?: number;
-  minimumPixelSize?: number;
-  maximumScale?: number;
-  runAnimations?: boolean;
-  heightReference?: keyof typeof Cesium.HeightReference;
-  /**
-   * 航向角（度），与 Cesium `HeadingPitchRoll` / `Transforms.headingPitchRollQuaternion` 一致：
-   * 0° 朝北，**顺时针**增大（俯视地图）；例如 **+90° 朝东**。
-   */
-  headingDegrees?: number;
-  /**
-   * 俯仰角（度）：**正为抬头**（机头向上），**负为俯冲**（机头向下）。
-   */
-  pitchDegrees?: number;
-  /**
-   * 横滚角（度）：**正为右倾**（右翼向下），**负为左倾**（左翼向下）。
-   */
-  rollDegrees?: number;
-  show?: boolean;
-  description?: string;
-  targetData?: Record<string, unknown>;
-}
-
-export interface UpdateModelProperties {
-  longitude?: number;
-  latitude?: number;
-  height?: number;
-  position?: PointPositionInput;
-  positions?: ModelPositionsTuple;
-  uri?: string;
-  scale?: number;
-  minimumPixelSize?: number;
-  maximumScale?: number;
-  runAnimations?: boolean;
-  heightReference?: keyof typeof Cesium.HeightReference;
-  headingDegrees?: number;
-  pitchDegrees?: number;
-  rollDegrees?: number;
-  show?: boolean;
-  description?: string;
-  targetData?: Record<string, unknown>;
-  style?: ModelStyleOptions;
-}
-
-export interface ModelSnapshot {
-  id: string;
-  longitude: number;
-  latitude: number;
-  height: number;
-  uri?: string;
-  scale?: number;
-  minimumPixelSize?: number;
-  maximumScale?: number;
-  runAnimations?: boolean;
-  /** 航向角（度），见 `AddModelOptions.headingDegrees` */
-  headingDegrees?: number;
-  /** 俯仰角（度），正抬头、负俯冲，见 `AddModelOptions.pitchDegrees` */
-  pitchDegrees?: number;
-  /** 横滚角（度），正右倾、负左倾，见 `AddModelOptions.rollDegrees` */
-  rollDegrees?: number;
-  show: boolean;
-  targetData: Record<string, unknown>;
-  description?: string;
-}
+import type { AddModelOptions, ModelPositionsTuple, ModelSnapshot, ModelStyleOptions, UpdateModelProperties } from '../../Types'
+export type { AddModelOptions, ModelPositionsTuple, ModelSnapshot, ModelStyleOptions, UpdateModelProperties }
 
 interface ModelOrientationDeg {
   heading: number;

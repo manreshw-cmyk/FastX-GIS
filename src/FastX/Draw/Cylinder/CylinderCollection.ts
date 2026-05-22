@@ -2,62 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface CylinderCollectionAddItem {
-  id?: string
-  longitude: number
-  latitude: number
-  height?: number
-  length: number
-  topRadius: number
-  bottomRadius: number
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  color?: string
-  opacity?: number
-  show?: boolean
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface CylinderCollectionStoredData {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  length: number
-  topRadius: number
-  bottomRadius: number
-  headingDegrees: number
-  pitchDegrees: number
-  rollDegrees: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface CylinderCollectionEntry {
-  data: CylinderCollectionStoredData
-  primitive: Primitive
-}
-
-export interface CylinderCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  length: number
-  topRadius: number
-  bottomRadius: number
-  headingDegrees: number
-  pitchDegrees: number
-  rollDegrees: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { CylinderCollectionAddItem, CylinderCollectionEntry, CylinderCollectionSnapshot, CylinderCollectionStoredData } from '../../Types'
+export type { CylinderCollectionAddItem, CylinderCollectionEntry, CylinderCollectionSnapshot, CylinderCollectionStoredData }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

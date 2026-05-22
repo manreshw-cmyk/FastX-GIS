@@ -1,5 +1,24 @@
 import * as Cesium from "cesium";
 
+import type {
+  LegacyPlaneVideoOptions,
+  PlaneMaterialBuildInput,
+  PlaneMaterialBuildResult,
+  PlaneMaterialSource,
+  PlaneStyleLike,
+  PlaneVideoOptions,
+} from "../../Types";
+export type {
+  LegacyPlaneVideoOptions,
+  PlaneMaterialBuildInput,
+  PlaneMaterialBuildResult,
+  PlaneMaterialSource,
+  PlaneStyleLike,
+  PlaneVideoOptions,
+};
+
+export type VideoEndedListener = () => void;
+
 export const PlaneMaterialType = {
   COLOR: "color",
   IMAGE: "image",
@@ -8,33 +27,6 @@ export const PlaneMaterialType = {
 
 export type PlaneMaterialTypeValue =
   (typeof PlaneMaterialType)[keyof typeof PlaneMaterialType];
-
-/** 视频材质播放参数（作用于 HTMLVideoElement） */
-export interface PlaneVideoOptions {
-  /** 是否播放（创建/更新后生效；默认 true） */
-  playing?: boolean;
-  /** 循环播放 */
-  loop?: boolean;
-  /** 静音（播放时建议 true，便于通过浏览器自动播放策略） */
-  muted?: boolean;
-  /** 播放倍速，默认 1 */
-  playbackRate?: number;
-  /**
-   * 播放次数：0 表示不限制（由 loop 决定是否循环）；
-   * >0 时每次自然结束计 1 次，达到后暂停
-   */
-  playCount?: number;
-  /** 浏览器原生视频控件 */
-  showControls?: boolean;
-  /** 预加载 */
-  preload?: "auto" | "metadata" | "none";
-}
-
-/** @deprecated 仅用于读取旧数据；请使用 `playing` */
-export type LegacyPlaneVideoOptions = PlaneVideoOptions & {
-  autoplay?: boolean;
-  startPaused?: boolean;
-};
 
 export const DEFAULT_PLANE_VIDEO: Readonly<Required<PlaneVideoOptions>> = {
   playing: true,
@@ -166,8 +158,6 @@ export function planeUserDegreesFromOrientationHpr(
   };
 }
 
-export type VideoEndedListener = () => void;
-
 export function detachVideoEndedListener(
   el: HTMLVideoElement,
   listener?: VideoEndedListener,
@@ -247,23 +237,6 @@ export function disposePlaneVideoElement(
   } catch {
     /* ignore */
   }
-}
-
-export interface PlaneMaterialBuildInput {
-  materialType: PlaneMaterialTypeValue;
-  color?: string;
-  alpha?: number;
-  imageUrl?: string;
-  videoUrl?: string;
-  video?: PlaneVideoOptions | LegacyPlaneVideoOptions;
-  imageRepeat?: { x: number; y: number };
-}
-
-export interface PlaneMaterialBuildResult {
-  material: Cesium.Material;
-  translucent: boolean;
-  videoElement?: HTMLVideoElement;
-  videoEndedListener?: VideoEndedListener;
 }
 
 export function buildPlaneModelMatrix(
@@ -362,23 +335,6 @@ export function buildPlaneMaterialForPrimitive(
       };
     }
   }
-}
-
-/** 从 add/update/style/targetData 解析材质相关字段（Entity / Collection 共用） */
-export interface PlaneStyleLike {
-  materialType?: PlaneMaterialTypeValue;
-  color?: string | Cesium.Color;
-  alpha?: number;
-  imageUrl?: string;
-  videoUrl?: string;
-  video?: PlaneVideoOptions | LegacyPlaneVideoOptions;
-  imageRepeat?: { x: number; y: number };
-}
-
-export interface PlaneMaterialSource extends PlaneStyleLike {
-  materialType?: PlaneMaterialTypeValue;
-  targetData?: Record<string, unknown>;
-  style?: PlaneStyleLike;
 }
 
 export function resolvePlaneMaterialTypeFromSource(

@@ -2,45 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface PolygonCollectionAddItem {
-  id?: string
-  /** 多边形顶点 [[lng, lat, h?], ...]，至少 3 个点 */
-  positions: number[][]
-  /** 拉伸高度（米），与旧版 `topHeight` 一致 */
-  topHeight?: number
-  color?: string
-  opacity?: number
-  show?: boolean
-  /** 与旧版 `entityData` 一致，存入 `targetData` */
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface PolygonCollectionStoredData {
-  id: string
-  positions: number[][]
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface PolygonCollectionEntry {
-  data: PolygonCollectionStoredData
-  primitive: Primitive
-}
-
-export interface PolygonCollectionSnapshot {
-  id: string
-  positions: number[][]
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-  vertexCount: number
-}
+import type { PolygonCollectionAddItem, PolygonCollectionEntry, PolygonCollectionSnapshot, PolygonCollectionStoredData } from '../../Types'
+export type { PolygonCollectionAddItem, PolygonCollectionEntry, PolygonCollectionSnapshot, PolygonCollectionStoredData }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

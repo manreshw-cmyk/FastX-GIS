@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from 'vue'
-import { useMapMouseEventPage } from './useMapMouseEventPage'
+import { useMapMouseEventPage } from './components/common/useMapMouseEventPage'
 
 const title = '鼠标中键按下（MiddleEventDown）事件'
 const clickCount = ref(0)

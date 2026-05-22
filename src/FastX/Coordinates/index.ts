@@ -1,41 +1,12 @@
 import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 
+import type { DmsAxis, DrawingBufferPoint, LngLatDms, LngLatHeight, ScreenPoint } from '../Types'
+export type { DmsAxis, DrawingBufferPoint, LngLatDms, LngLatHeight, ScreenPoint }
+
 const scratchCartesian = new Cesium.Cartesian3()
 const scratchCartographic = new Cesium.Cartographic()
 const scratchCartesian2 = new Cesium.Cartesian2()
-
-/** 椭球面大地高（米）下的经纬度（度）与高度 */
-export interface LngLatHeight {
-  longitude: number
-  latitude: number
-  height: number
-}
-
-/** 与 Cesium 拾取一致的绘图缓冲像素坐标（相对 canvas 左上角） */
-export interface DrawingBufferPoint {
-  x: number
-  y: number
-}
-
-/** 屏幕像素坐标（与 `DrawingBufferPoint` 在多数设备上一致；高 DPI 下请用 `clientXYToDrawingBuffer`） */
-export interface ScreenPoint {
-  x: number
-  y: number
-}
-
-export interface DmsAxis {
-  degrees: number
-  minutes: number
-  seconds: number
-  /** 经度：E/W；纬度：N/S */
-  hemisphere: 'E' | 'W' | 'N' | 'S'
-}
-
-export interface LngLatDms {
-  longitude: DmsAxis
-  latitude: DmsAxis
-}
 
 /**
  * 为 Entity / Primitive 等业务生成尽量唯一的 id（优先 `crypto.randomUUID()`）。
@@ -354,3 +325,4 @@ export const Coordinates = {
 }
 
 export type CoordinatesApi = typeof Coordinates
+

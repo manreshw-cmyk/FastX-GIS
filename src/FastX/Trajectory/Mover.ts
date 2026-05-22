@@ -6,23 +6,8 @@
 import * as Cesium from 'cesium'
 import type Trajectory from './Trajectory'
 
-export interface MoverCallbacks {
-  onStart?: () => void
-  onStop?: () => void
-  onPause?: () => void
-  onResume?: () => void
-  onComplete?: () => void
-  onLoop?: () => void
-  onTimeUpdate?: (time: Cesium.JulianDate, progress: number) => void
-}
-
-export interface MoverOptions {
-  speedMultiplier?: number
-  loop?: boolean
-  /** 非循环时的播放次数，默认 1；`loop` 为 true 时忽略 */
-  playCount?: number
-  autoStart?: boolean
-}
+import type { MoverCallbacks, MoverOptions } from '../Types'
+export type { MoverCallbacks, MoverOptions }
 
 export default class Mover {
   /** 同一 `Clock` 仅保留一个活动 Mover，避免多条轨迹重复挂 `onTick` 导致卡顿 */

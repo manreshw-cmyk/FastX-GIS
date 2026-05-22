@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { useHzxldcxrPolylineDemo } from './useHzxldcxrPolylineDemo'
+﻿<script setup lang="ts">
+import { useHzxldcxrPolylineDemo } from './components/common/useHzxldcxrPolylineDemo'
 
 const {
   title,

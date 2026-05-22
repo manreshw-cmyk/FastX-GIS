@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /** 组件已在 main.ts 中 `app.use(Antd)` 全局注册；`message` 为命令式 API 需单独引入；`TableColumnType` 为纯类型，构建后不会打入包体 */
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -6,8 +6,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type { MouseEventListenOptions, MouseEventPickPayload, LabelSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './drawFormColor'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制(Label)文字类（底层entity渲染）'
 

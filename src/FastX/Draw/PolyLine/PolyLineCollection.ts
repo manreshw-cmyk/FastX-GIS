@@ -2,6 +2,9 @@ import * as Cesium from 'cesium'
 import type { Polyline, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
+import type { PolyLineCollectionAddItem, PolyLineCollectionSnapshot, PolyLineCollectionUpdateEntry, PolyLineCollectionUpdateMaterialProps, PolyLineCollectionUpdateProps } from '../../Types'
+export type { PolyLineCollectionAddItem, PolyLineCollectionSnapshot, PolyLineCollectionUpdateEntry, PolyLineCollectionUpdateMaterialProps, PolyLineCollectionUpdateProps }
+
 /** 线材质类型（与旧版 `PolyLineCollection.js` 一致） */
 export const PolylineMaterialType = {
   COLOR: 'Color',
@@ -10,56 +13,6 @@ export const PolylineMaterialType = {
 } as const
 
 export type PolylineMaterialTypeValue = (typeof PolylineMaterialType)[keyof typeof PolylineMaterialType]
-
-export interface PolyLineCollectionAddItem {
-  id?: string
-  positions: number[][]
-  show?: boolean
-  width?: number
-  color?: string
-  alpha?: number
-  materialType?: PolylineMaterialTypeValue
-  materialOptions?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-  clampToGround?: boolean
-  arcType?: Cesium.ArcType
-}
-
-export interface PolyLineCollectionUpdateMaterialProps {
-  materialType?: PolylineMaterialTypeValue
-  color?: string
-  alpha?: number
-  [key: string]: unknown
-}
-
-export interface PolyLineCollectionUpdateProps {
-  positions?: number[][]
-  width?: number
-  color?: string
-  alpha?: number
-  show?: boolean
-  arcType?: Cesium.ArcType
-  clampToGround?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PolyLineCollectionUpdateEntry extends PolyLineCollectionUpdateProps {
-  id: string
-}
-
-export interface PolyLineCollectionSnapshot {
-  id: string
-  positions: number[][]
-  width: number
-  color: string
-  alpha: number
-  show: boolean
-  arcType: Cesium.ArcType
-  clampToGround: boolean
-  targetData: Record<string, unknown>
-  positionsCount: number
-  length: number
-}
 
 /** Cesium 运行时有 `arcType` / `clampToGround`，部分版本 `.d.ts` 未声明，此处与实现对齐 */
 type TrackedPolyline = Polyline & {

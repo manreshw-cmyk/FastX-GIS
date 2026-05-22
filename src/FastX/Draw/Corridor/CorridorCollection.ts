@@ -2,68 +2,8 @@ import * as Cesium from 'cesium'
 import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface CorridorCollectionAddItem {
-  id?: string
-  /** 中心线 [[lng, lat, h?], ...]，至少 2 点；`CorridorGeometry` 会将中心线投影到椭球面再应用 `height` / `extrudedHeight`。 */
-  positions: number[][]
-  width: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string
-  opacity?: number
-  show?: boolean
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface CorridorCollectionStoredData {
-  id: string
-  positions: number[][]
-  width: number
-  height: number
-  extrudedHeight: number
-  cornerType: Cesium.CornerType
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface CorridorCollectionEntry {
-  data: CorridorCollectionStoredData
-  primitive: Primitive
-}
-
-export interface CorridorCollectionSnapshot {
-  id: string
-  positions: number[][]
-  width: number
-  height: number
-  extrudedHeight: number
-  cornerType: string
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-  vertexCount: number
-}
-
-export interface CorridorCollectionUpdateProps {
-  positions?: number[][]
-  width?: number
-  height?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string
-  opacity?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface CorridorCollectionUpdateEntry extends CorridorCollectionUpdateProps {
-  id: string
-}
+import type { CorridorCollectionAddItem, CorridorCollectionEntry, CorridorCollectionSnapshot, CorridorCollectionStoredData, CorridorCollectionUpdateEntry, CorridorCollectionUpdateProps } from '../../Types'
+export type { CorridorCollectionAddItem, CorridorCollectionEntry, CorridorCollectionSnapshot, CorridorCollectionStoredData, CorridorCollectionUpdateEntry, CorridorCollectionUpdateProps }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

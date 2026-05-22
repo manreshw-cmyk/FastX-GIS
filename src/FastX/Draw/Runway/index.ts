@@ -2,6 +2,29 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Material, MaterialProperty, Property, Viewer } from 'cesium'
 import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
 
+import type {
+  AddRunwayOptions,
+  RunwayFlowBandStyle,
+  RunwayFlowStAxis,
+  RunwayLngLatTuple,
+  RunwayMaterialMode,
+  RunwaySnapshot,
+  RunwayStyleOptions,
+  RunwayVertexInput,
+  UpdateRunwayProperties,
+} from '../../Types'
+export type {
+  AddRunwayOptions,
+  RunwayFlowBandStyle,
+  RunwayFlowStAxis,
+  RunwayLngLatTuple,
+  RunwayMaterialMode,
+  RunwaySnapshot,
+  RunwayStyleOptions,
+  RunwayVertexInput,
+  UpdateRunwayProperties,
+}
+
 const scratchMid = new Cesium.Cartesian3()
 const scratchCarto = new Cesium.Cartographic()
 const scratchGeoA = new Cesium.Cartographic()
@@ -161,130 +184,6 @@ class RunwayFlowMaterialProperty implements MaterialProperty {
   equals(other?: Property): boolean {
     return other instanceof RunwayFlowMaterialProperty && other.fabricType === this.fabricType
   }
-}
-
-export type RunwayMaterialMode = 'flowColor' | 'flowImage'
-
-/** `single`：沿跑道一条亮带推进；`multi`：多条条纹 */
-export type RunwayFlowBandStyle = 'single' | 'multi'
-
-/** 将 `st` 的哪一维当作沿中心线方向（另一维为横向） */
-export type RunwayFlowStAxis = 'x' | 'y'
-
-export type RunwayLngLatTuple = readonly [lng: number, lat: number, height?: number]
-
-export type RunwayVertexInput = Cesium.Cartesian3 | LngLatHeight | RunwayLngLatTuple
-
-export interface RunwayStyleOptions {
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  classificationType?: Cesium.ClassificationType
-  zIndex?: number
-}
-
-/**
- * 添加跑道（`Entity` + `CorridorGraphics`），与廊道相同：**恰好 2 个顶点**（起点、终点）+ `width`（总宽，米）。
- * 在廊道几何之上可叠加流动色 / 流动贴图材质。
- */
-export interface AddRunwayOptions {
-  id?: string
-  /** 起点、终点，长度须为 2（与廊道 `positions` 一致） */
-  positions?: RunwayVertexInput[]
-  /** 兼容：与 `latitude`/`height` 组成起点，`end*` 组成终点 */
-  longitude?: number
-  latitude?: number
-  height?: number
-  endLongitude?: number
-  endLatitude?: number
-  endHeight?: number
-  width: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  style?: RunwayStyleOptions
-  materialMode?: RunwayMaterialMode
-  flowSpeed?: number
-  /** 流动条纹：`single` 一条带沿长度走；`multi` 多条（见 `flowBandCount`） */
-  flowBandStyle?: RunwayFlowBandStyle
-  /** `multi` 时沿长度方向的条纹数量，约 1～64，默认 8 */
-  flowBandCount?: number
-  /** 沿中心线采样用 `st.x` 还是 `st.y` */
-  flowStAxis?: RunwayFlowStAxis
-  /**
-   * 为 true 时对长度 UV 做 `1.0 - coord`（与几何默认方向相反时再开）。
-   * 默认 false：亮带随时间沿廊道**第一个顶点 → 第二个顶点**方向推进。
-   */
-  flowLengthFlip?: boolean
-  flowImageUrl?: string
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateRunwayProperties {
-  positions?: RunwayVertexInput[]
-  longitude?: number
-  latitude?: number
-  height?: number
-  endLongitude?: number
-  endLatitude?: number
-  endHeight?: number
-  width?: number
-  extrudedHeight?: number
-  cornerType?: keyof typeof Cesium.CornerType | Cesium.CornerType
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: RunwayStyleOptions
-  materialMode?: RunwayMaterialMode
-  flowSpeed?: number
-  flowBandStyle?: RunwayFlowBandStyle
-  flowBandCount?: number
-  flowStAxis?: RunwayFlowStAxis
-  flowLengthFlip?: boolean
-  flowImageUrl?: string
-}
-
-export interface RunwaySnapshot {
-  id: string
-  positions: number[][]
-  vertexCount: number
-  /** 中点（展示用） */
-  longitude: number
-  latitude: number
-  height: number
-  width: number
-  extrudedHeight: number
-  cornerType?: string
-  materialMode: RunwayMaterialMode
-  flowSpeed: number
-  flowBandStyle: RunwayFlowBandStyle
-  flowBandCount: number
-  flowStAxis: RunwayFlowStAxis
-  flowLengthFlip: boolean
-  flowImageUrl?: string
-  colorCss?: string
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
 }
 
 interface RunwayRecord {

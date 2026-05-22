@@ -2,53 +2,8 @@ import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-/** 单条批量点入参（与旧版 `PointCollection#addPoints` 项结构一致） */
-export interface PointCollectionAddItem {
-  id?: string
-  positions: number[]
-  show?: boolean
-  color?: string
-  alpha?: number
-  targetData?: Record<string, unknown>
-  pixelSize?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-}
-
-export interface PointCollectionUpdateProps {
-  longitude?: number
-  latitude?: number
-  height?: number
-  color?: string
-  alpha?: number
-  pixelSize?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PointCollectionUpdateEntry extends PointCollectionUpdateProps {
-  id: string
-}
-
-export interface PointCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  color: Cesium.Color
-  pixelSize: number
-  outline: boolean
-  outlineColor: Cesium.Color
-  outlineWidth: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { PointCollectionAddItem, PointCollectionSnapshot, PointCollectionUpdateEntry, PointCollectionUpdateProps } from '../../Types'
+export type { PointCollectionAddItem, PointCollectionSnapshot, PointCollectionUpdateEntry, PointCollectionUpdateProps }
 
 type PointPrimitiveMeta = Cesium.PointPrimitive & {
   outline: boolean

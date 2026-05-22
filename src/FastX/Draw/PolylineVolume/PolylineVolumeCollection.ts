@@ -10,43 +10,8 @@ import {
   resolveShapeParamsFromTargetData,
 } from './index'
 
-export interface PolylineVolumeCollectionAddItem {
-  id?: string
-  positions: number[][]
-  shapeType?: ShapeType | string
-  shapeParams?: ShapeParams
-  cornerType?: keyof typeof Cesium.CornerType
-  granularity?: number
-  color?: string
-  alpha?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PolylineVolumeCollectionUpdateProps {
-  positions?: number[][]
-  shapeType?: ShapeType | string
-  shapeParams?: ShapeParams
-  cornerType?: keyof typeof Cesium.CornerType
-  granularity?: number
-  color?: string
-  alpha?: number
-  show?: boolean
-  targetData?: Record<string, unknown>
-}
-
-export interface PolylineVolumeCollectionUpdateEntry extends PolylineVolumeCollectionUpdateProps {
-  id: string
-}
-
-export interface PolylineVolumeCollectionSnapshot {
-  id: string
-  positions: number[][]
-  positionsCount: number
-  shapeType: string
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { PolylineVolumeCollectionAddItem, PolylineVolumeCollectionSnapshot, PolylineVolumeCollectionUpdateEntry, PolylineVolumeCollectionUpdateProps } from '../../Types'
+export type { PolylineVolumeCollectionAddItem, PolylineVolumeCollectionSnapshot, PolylineVolumeCollectionUpdateEntry, PolylineVolumeCollectionUpdateProps }
 
 type PVMeta = {
   id: string

@@ -2,64 +2,8 @@ import * as Cesium from "cesium";
 import type { Viewer } from "cesium";
 import { createRandomXgxId } from "../../Coordinates";
 
-/** 批量椭球体添加入参 */
-export interface EllipsoidCollectionAddItem {
-  id?: string;
-  /** 中心点位置 [经度, 纬度, 高度] */
-  positions: number[];
-  /** 半径 [x, y, z] 米，默认 [10000, 10000, 10000] */
-  radii?: [number, number, number];
-  show?: boolean;
-  /** 填充颜色 CSS 字符串 */
-  color?: string;
-  /** 填充透明度 0-1 */
-  alpha?: number;
-  /** 轮廓开关 */
-  outline?: boolean;
-  /** 轮廓颜色 CSS 字符串 */
-  outlineColor?: string;
-  /** 轮廓透明度 0-1 */
-  outlineAlpha?: number;
-  /** 轮廓宽度 */
-  outlineWidth?: number;
-  /** 业务数据 */
-  targetData?: Record<string, unknown>;
-}
-
-/** 更新椭球体属性 */
-export interface EllipsoidCollectionUpdateProps {
-  longitude?: number;
-  latitude?: number;
-  height?: number;
-  radii?: [number, number, number];
-  color?: string;
-  alpha?: number;
-  outline?: boolean;
-  outlineColor?: string;
-  outlineAlpha?: number;
-  outlineWidth?: number;
-  show?: boolean;
-  targetData?: Record<string, unknown>;
-}
-
-export interface EllipsoidCollectionUpdateEntry extends EllipsoidCollectionUpdateProps {
-  id: string;
-}
-
-/** 椭球体快照 */
-export interface EllipsoidCollectionSnapshot {
-  id: string;
-  longitude: number;
-  latitude: number;
-  height: number;
-  radii: Cesium.Cartesian3;
-  color: Cesium.Color;
-  outline: boolean;
-  outlineColor: Cesium.Color;
-  outlineWidth: number;
-  show: boolean;
-  targetData: Record<string, unknown>;
-}
+import type { EllipsoidCollectionAddItem, EllipsoidCollectionSnapshot, EllipsoidCollectionUpdateEntry, EllipsoidCollectionUpdateProps } from '../../Types'
+export type { EllipsoidCollectionAddItem, EllipsoidCollectionSnapshot, EllipsoidCollectionUpdateEntry, EllipsoidCollectionUpdateProps }
 
 /** 扩展的椭球体 Primitive（自定义） */
 interface EllipsoidPrimitiveMeta {

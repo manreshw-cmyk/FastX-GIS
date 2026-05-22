@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions } from '../../FastX/MouseEvent'
+import type { MouseEventListenOptions } from '../../../../FastX/MouseEvent'
 import { waitForMapViewer } from './useCoordinateDemo'
 
 type MouseBinder = {

@@ -3,76 +3,12 @@ import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 import type { PointPositionInput, PointPositionsTuple } from '../Point'
 
+import type { AddBoxOptions, BoxSnapshot, BoxStyleOptions, UpdateBoxProperties } from '../../Types'
+export type { AddBoxOptions, BoxSnapshot, BoxStyleOptions, UpdateBoxProperties }
+
 export type BoxPositionsTuple = PointPositionsTuple
 
 export type BoxDimensionsInput = Cesium.Cartesian3 | readonly [number, number, number]
-
-export interface BoxStyleOptions {
-  dimensions?: Cesium.Cartesian3
-  heightReference?: Cesium.HeightReference
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  shadows?: Cesium.ShadowMode
-}
-
-/**
- * 添加轴对齐盒子（`Entity` + `BoxGraphics`），中心在 `position` / `positions`，轴向与 ENU 对齐。
- */
-export interface AddBoxOptions {
-  id?: string
-  position?: PointPositionInput
-  positions?: BoxPositionsTuple
-  /** 长宽高（米），默认 [200, 200, 200] */
-  dimensions?: BoxDimensionsInput
-  style?: BoxStyleOptions
-  color?: string
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  fill?: boolean
-  show?: boolean
-  description?: string
-  heightReference?: keyof typeof Cesium.HeightReference
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateBoxProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  position?: PointPositionInput
-  positions?: BoxPositionsTuple
-  dimensions?: BoxDimensionsInput
-  color?: string | Color
-  alpha?: number
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  fill?: boolean
-  show?: boolean
-  description?: string
-  heightReference?: keyof typeof Cesium.HeightReference
-  targetData?: Record<string, unknown>
-  style?: BoxStyleOptions
-}
-
-export interface BoxSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  dimensions: { x: number; y: number; z: number }
-  fillColorCss?: string
-  outlineColorCss?: string
-  outlineWidth?: number
-  outline?: boolean
-  fill?: boolean
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
 
 interface BoxRecord {
   viewer: Viewer

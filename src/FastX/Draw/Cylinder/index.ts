@@ -1,103 +1,22 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
-import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
+import { createRandomXgxId } from '../../Coordinates'
 
-/** 与 Point / Circle 一致：[经度, 纬度, 高度?]（度 / 米） */
-export type CylinderCenterTuple = readonly [lng: number, lat: number, height?: number]
-
-/** 轴心：笛卡尔或经纬高 */
-export type CylinderCenterInput = Cesium.Cartesian3 | LngLatHeight
-
-export interface CylinderStyleOptions {
-  slices?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-}
-
-/**
- * 添加圆柱 / 圆锥（`Entity` + `CylinderGraphics`）。
- * - 轴心：`position` / `center` / `positions` 三选一，**或** 同时给出 `longitude` + `latitude`（可选 `height`）。
- * - `length`：轴向高度（米），&gt; 0。
- * - `topRadius` / `bottomRadius`：顶、底半径（米），≥ 0；至少一侧 &gt; 0。
- * - `headingDegrees` / `pitchDegrees` / `rollDegrees`：相对当地 ENU 的姿态（度），默认 0。
- */
-export interface AddCylinderOptions {
-  id?: string
-  position?: CylinderCenterInput
-  center?: CylinderCenterInput
-  positions?: CylinderCenterTuple
-  /** 与 `center: { longitude, latitude, height }` 等价；勿与 `position` / `center` / `positions` 混用（若后者有值则优先用后者） */
-  longitude?: number
-  latitude?: number
-  height?: number
-  length: number
-  topRadius: number
-  bottomRadius: number
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  style?: CylinderStyleOptions
-  color?: string
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateCylinderProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  position?: CylinderCenterInput
-  center?: CylinderCenterInput
-  positions?: CylinderCenterTuple
-  length?: number
-  topRadius?: number
-  bottomRadius?: number
-  headingDegrees?: number
-  pitchDegrees?: number
-  rollDegrees?: number
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: CylinderStyleOptions
-}
-
-export interface CylinderSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  length: number
-  topRadius: number
-  bottomRadius: number
-  headingDegrees: number
-  pitchDegrees: number
-  rollDegrees: number
-  colorCss?: string
-  /** 填充透明度（来自材质 alpha，便于表单回显） */
-  fillAlpha?: number
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  /** 轮廓色透明度 */
-  outlineAlpha?: number
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
+import type {
+  AddCylinderOptions,
+  CylinderCenterInput,
+  CylinderCenterTuple,
+  CylinderSnapshot,
+  CylinderStyleOptions,
+  UpdateCylinderProperties,
+} from '../../Types'
+export type {
+  AddCylinderOptions,
+  CylinderCenterInput,
+  CylinderCenterTuple,
+  CylinderSnapshot,
+  CylinderStyleOptions,
+  UpdateCylinderProperties,
 }
 
 interface CylinderRecord {

@@ -3,58 +3,8 @@ import type { Primitive, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 import { computeSectorCartesianRing } from './sectorWedge'
 
-export interface SectorCollectionAddItem {
-  id?: string
-  /** 圆心 [lng, lat, height?]（度 / 米） */
-  center: number[]
-  /** 半径（米） */
-  radius: number
-  startAzimuthDegrees: number
-  endAzimuthDegrees: number
-  /** 圆弧分段，默认 32 */
-  segments?: number
-  topHeight?: number
-  color?: string
-  opacity?: number
-  show?: boolean
-  entityData?: Record<string, unknown>
-  targetData?: Record<string, unknown>
-}
-
-export interface SectorCollectionStoredData {
-  id: string
-  center: [number, number, number]
-  radius: number
-  startAzimuthDegrees: number
-  endAzimuthDegrees: number
-  segments: number
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
-
-export interface SectorCollectionEntry {
-  data: SectorCollectionStoredData
-  primitive: Primitive
-}
-
-export interface SectorCollectionSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  radius: number
-  startAzimuthDegrees: number
-  endAzimuthDegrees: number
-  segments: number
-  topHeight: number
-  color: string
-  opacity: number
-  show: boolean
-  targetData: Record<string, unknown>
-}
+import type { SectorCollectionAddItem, SectorCollectionEntry, SectorCollectionSnapshot, SectorCollectionStoredData } from '../../Types'
+export type { SectorCollectionAddItem, SectorCollectionEntry, SectorCollectionSnapshot, SectorCollectionStoredData }
 
 type Bucket = {
   collection: Cesium.PrimitiveCollection

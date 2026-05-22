@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -16,8 +16,8 @@ import {
   type UpdatePlaneProperties,
 } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './drawFormColor'
-import { waitForMapViewer } from './useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
+import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（Plane）平面类（底层 entity）'
 

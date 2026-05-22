@@ -2,41 +2,13 @@ import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import { clientXYToDrawingBuffer, screenDrawingBufferToLngLatHeight } from '../Coordinates'
 
-export type PositionedEvent = Cesium.ScreenSpaceEventHandler.PositionedEvent
+import type { MouseEventListenOptions, MouseEventPickPayload } from '../Types'
+export type { MouseEventListenOptions, MouseEventPickPayload }
 
-/**
- * 文档约定：第一个参数 — 当前点的经纬高（度 / 米）与绘图缓冲屏幕坐标。
- * 滚轮事件时附带 `wheelDelta`（Cesium 归一化增量）；经纬高在无法拾取时为 `NaN`。
- */
-export interface MouseEventPickPayload {
-  longitude: number
-  latitude: number
-  height: number
-  /** 绘图缓冲像素坐标（与 Coordinates 拾取一致） */
-  x: number
-  y: number
-  /** 仅滚轮回调中赋值 */
-  wheelDelta?: number
-}
+export type PositionedEvent = Cesium.ScreenSpaceEventHandler.PositionedEvent
 
 /** `scene.pick` 最上层对象的 `id`（常为 Entity）；无拾取则为 `undefined` */
 export type MouseEventPickedEntity = unknown
-
-export interface MouseEventListenOptions {
-  onLeftClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onLeftDoubleClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onLeftDown?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onLeftUp?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onRightClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onRightDoubleClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onRightDown?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onRightUp?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onMiddleClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onMiddleDown?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  onMiddleUp?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
-  /** 第二参数恒为 `undefined`；滚轮增量在 `pick.wheelDelta` */
-  onWheel?: (pick: MouseEventPickPayload, entity: undefined) => void
-}
 
 const DEFAULT_RIGHT_DOUBLE_MS = 350
 

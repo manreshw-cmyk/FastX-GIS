@@ -7,58 +7,8 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-export interface PathStyleOptions {
-  width?: number
-  leadTime?: number
-  trailTime?: number
-  resolution?: number
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-}
-
-export interface AddPathOptions {
-  id?: string
-  /** 时间采样位置（通常来自 `Trajectory#getPositionProperty()`） */
-  position: Cesium.PositionProperty
-  /** 可见时间窗；不传则始终可见 */
-  availability?: Cesium.TimeIntervalCollection
-  style?: PathStyleOptions
-  width?: number
-  color?: string
-  alpha?: number
-  leadTime?: number
-  trailTime?: number
-  resolution?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdatePathProperties {
-  position?: Cesium.PositionProperty
-  availability?: Cesium.TimeIntervalCollection
-  style?: PathStyleOptions
-  width?: number
-  color?: string | Color
-  alpha?: number
-  leadTime?: number
-  trailTime?: number
-  resolution?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface PathSnapshot {
-  id: string
-  width: number
-  leadTime: number
-  trailTime: number
-  resolution: number
-  colorCss?: string
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
+import type { AddPathOptions, PathSnapshot, PathStyleOptions, UpdatePathProperties } from '../../Types'
+export type { AddPathOptions, PathSnapshot, PathStyleOptions, UpdatePathProperties }
 
 interface PathRecord {
   viewer: Viewer

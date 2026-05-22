@@ -1,111 +1,11 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
-import type { PointPositionInput, PointPositionsTuple } from '../Point'
+import type { PointPositionInput } from '../Point'
 import { svgMarkupToDataUri } from './svgDataUri'
 
-export type BillboardPositionsTuple = PointPositionsTuple
-
-export { svgMarkupToDataUri } from './svgDataUri'
-
-export interface BillboardStyleOptions {
-  scale?: number
-  pixelOffset?: Cesium.Cartesian2
-  eyeOffset?: Cesium.Cartesian3
-  horizontalOrigin?: Cesium.HorizontalOrigin
-  verticalOrigin?: Cesium.VerticalOrigin
-  heightReference?: Cesium.HeightReference
-  color?: Color
-  rotation?: number
-  alignedAxis?: Cesium.Cartesian3
-  width?: number
-  height?: number
-  sizeInMeters?: boolean
-  scaleByDistance?: Cesium.NearFarScalar
-  translucencyByDistance?: Cesium.NearFarScalar
-  pixelOffsetScaleByDistance?: Cesium.NearFarScalar
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  disableDepthTestDistance?: number
-}
-
-/**
- * 添加广告牌（`Entity` + `BillboardGraphics`）。
- * - 位置：`position` 或 `positions` 二选一。
- * - 贴图：`image`（URL / data URI）与 `svg`（原始 SVG 标记）二选一；若同时提供则优先 `image`。
- */
-export interface AddBillboardOptions {
-  id?: string
-  position?: PointPositionInput
-  positions?: BillboardPositionsTuple
-  /** 图片 URL 或 data URI（含 SVG data URI） */
-  image?: string
-  /** 原始 SVG XML，内部转为 data URI */
-  svg?: string
-  style?: BillboardStyleOptions
-  /** CSS 颜色，乘到贴图上 */
-  color?: string
-  alpha?: number
-  scale?: number
-  pixelOffset?: readonly [number, number]
-  horizontalOrigin?: keyof typeof Cesium.HorizontalOrigin
-  verticalOrigin?: keyof typeof Cesium.VerticalOrigin
-  heightReference?: keyof typeof Cesium.HeightReference
-  width?: number
-  /** 贴图像素高度（与位置高度区分） */
-  imageHeight?: number
-  /**
-   * 绕贴图平面法向的旋转角（度），传入 Cesium 时转为弧度（与 `Billboard#rotation` 一致，正值为逆时针）。
-   * 示例页 UI 约定：可按地图理解「0° 为正北向、逆时针增大」；与指北针一致的几何效果需结合相机与 `alignedAxis` 等，本封装未改 Cesium 默认旋转语义。
-   */
-  rotationDegrees?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateBillboardProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  position?: PointPositionInput
-  positions?: BillboardPositionsTuple
-  image?: string
-  svg?: string
-  color?: string | Color
-  alpha?: number
-  scale?: number
-  pixelOffset?: readonly [number, number]
-  horizontalOrigin?: keyof typeof Cesium.HorizontalOrigin
-  verticalOrigin?: keyof typeof Cesium.VerticalOrigin
-  heightReference?: keyof typeof Cesium.HeightReference
-  width?: number
-  imageHeight?: number
-  rotationDegrees?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: BillboardStyleOptions
-}
-
-export interface BillboardSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  /** 当前贴图源摘要（过长 data URI 会截断，完整值见 `targetData.imageUri`） */
-  imageSummary?: string
-  scale?: number
-  colorCss?: string
-  width?: number
-  heightPx?: number
-  pixelOffsetX?: number
-  pixelOffsetY?: number
-  /** 旋转角（度）；示例页约定 0° 正北、逆时针，底层见 `AddBillboardOptions.rotationDegrees` */
-  rotationDegrees?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
-}
+import type { AddBillboardOptions, BillboardPositionsTuple, BillboardSnapshot, BillboardStyleOptions, UpdateBillboardProperties } from '../../Types'
+export type { AddBillboardOptions, BillboardPositionsTuple, BillboardSnapshot, BillboardStyleOptions, UpdateBillboardProperties }
 
 interface BillboardRecord {
   viewer: Viewer

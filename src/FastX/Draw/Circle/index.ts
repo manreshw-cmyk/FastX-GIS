@@ -1,93 +1,22 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
-import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
+import { createRandomXgxId } from '../../Coordinates'
 
-/** 圆心：[经度, 纬度, 高度?]（度 / 米） */
-export type CircleCenterTuple = readonly [lng: number, lat: number, height?: number]
-
-/** 圆心：笛卡尔坐标或经纬高 */
-export type CircleCenterInput = Cesium.Cartesian3 | LngLatHeight
-
-/** 与 `EllipseGraphics` 常用扩展字段对齐 */
-export interface CircleStyleOptions {
-  heightReference?: Cesium.HeightReference
-  /**
-   * 对应 `EllipseGraphics.height`（米，相对圆心位置的高度偏移）。
-   * 若完全不设置 `ellipse.height` 且开启填充，Cesium 会把椭圆走「贴地几何」分支并 **强制关闭 outline**（引擎 `GeometryUpdater` 行为）。
-   * 内部默认 `0`，一般无需传。
-   */
-  ellipseHeight?: number
-  rotation?: number
-  granularity?: number
-  shadows?: Cesium.ShadowMode
-  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
-  classificationType?: Cesium.ClassificationType
-  zIndex?: number
-}
-
-/**
- * 添加圆参数（`Entity` + `EllipseGraphics`，长短轴相等即为圆）。
- * - 圆心：`position` 或 `center` 或 `positions` 三选一（`positions` 与 Point 的 tuple 形态一致）。
- * - `radius`：半径（米），必填且 &gt; 0。
- * - `color` / `alpha`：填充；`outline*`：轮廓。
- */
-export interface AddCircleOptions {
-  id?: string
-  position?: CircleCenterInput
-  center?: CircleCenterInput
-  positions?: CircleCenterTuple
-  /** 半径（米） */
-  radius: number
-  style?: CircleStyleOptions
-  color?: string
-  alpha?: number
-  /** 是否填充（false 时等效透明填充，仍可显示轮廓） */
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-}
-
-export interface UpdateCircleProperties {
-  longitude?: number
-  latitude?: number
-  height?: number
-  position?: CircleCenterInput
-  positions?: CircleCenterTuple
-  radius?: number
-  color?: string | Color
-  alpha?: number
-  showFill?: boolean
-  outline?: boolean
-  outlineColor?: string | Color
-  outlineAlpha?: number
-  outlineWidth?: number
-  show?: boolean
-  description?: string
-  targetData?: Record<string, unknown>
-  style?: CircleStyleOptions
-}
-
-export interface CircleSnapshot {
-  id: string
-  longitude: number
-  latitude: number
-  height: number
-  /** 半径（米） */
-  radius: number
-  colorCss?: string
-  /** 是否显示填充（来自 targetData） */
-  showFill: boolean
-  outline?: boolean
-  outlineColorCss?: string
-  outlineWidth?: number
-  show: boolean
-  targetData: Record<string, unknown>
-  description?: string
+import type {
+  AddCircleOptions,
+  CircleCenterInput,
+  CircleCenterTuple,
+  CircleSnapshot,
+  CircleStyleOptions,
+  UpdateCircleProperties,
+} from '../../Types'
+export type {
+  AddCircleOptions,
+  CircleCenterInput,
+  CircleCenterTuple,
+  CircleSnapshot,
+  CircleStyleOptions,
+  UpdateCircleProperties,
 }
 
 interface CircleRecord {

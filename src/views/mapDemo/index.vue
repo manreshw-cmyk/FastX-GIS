@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, defineAsyncComponent, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { Component } from 'vue'
 import { useRouter } from 'vue-router'
@@ -7,7 +7,7 @@ import type { MenuProps } from 'ant-design-vue'
 import { AppstoreOutlined } from '@ant-design/icons-vue'
 import HomeSidebar from '../../components/HomeSidebar/index.vue'
 import { homeMenuTree } from '../../common/home-content'
-import { mapDemoComponentMetaMap } from './component-map'
+import { mapDemoComponentMetaMap } from './components/common/component-map'
 import { resolveMapBaseUrls } from '../../config/map-runtime'
 import type { XMapConfig } from '../../FastX/components/x-map.types'
 
