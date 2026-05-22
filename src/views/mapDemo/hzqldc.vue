@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
-  CheckOutlined,
   ClearOutlined,
-  CloseOutlined,
   DeleteOutlined,
   DownOutlined,
   EnvironmentOutlined,
@@ -439,9 +437,7 @@ function onDeleteWallRow(id: string, e: Event): void {
   message.success('已删除')
 }
 
-const primaryActionTooltip = computed(() =>
-  selectedId.value ? '保存对当前墙体的修改' : '标绘墙体（需至少 2 个顶点）',
-)
+const primaryWallText = computed(() => (selectedId.value ? '确定' : '标绘'))
 
 function onAddVertexRow(): void {
   draftVertices.value.push({
@@ -461,14 +457,14 @@ function onClearVertices(): void {
   draftVertices.value = []
 }
 
-function onToggleVertexPick(): void {
+function toggleVertexPick(): void {
   if (vertexPickArmed.value) {
     vertexPickArmed.value = false
-    message.info('已取消拾取顶点')
+    message.info('已取消地图添加顶点')
     return
   }
   vertexPickArmed.value = true
-  message.info('请在地图上左键点击，向墙轮廓追加一个顶点（经度、纬度）')
+  message.info('请在地图上左键点击，依次追加轮廓顶点')
 }
 
 function isValidPickLonLat(pick: MouseEventPickPayload): boolean {
@@ -487,8 +483,7 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
     latitude: pick.latitude,
     height: Number.isFinite(pick.height) ? pick.height : 0,
   })
-  vertexPickArmed.value = false
-  message.success('已追加顶点')
+  message.success(`已添加顶点（共 ${draftVertices.value.length} 个）`)
   void nextTick(() => updateVertexTableScrollY())
 }
 
@@ -515,8 +510,13 @@ function onImageFile(ev: Event): void {
   }
   const reader = new FileReader()
   reader.onload = () => {
-    form.imageUrl = typeof reader.result === 'string' ? reader.result : ''
-    message.success('已读取图片，可标绘或保存')
+    const dataUrl = typeof reader.result === 'string' ? reader.result : ''
+    if (!dataUrl) {
+      message.error('读取图片失败')
+      return
+    }
+    form.imageUrl = dataUrl
+    message.success('已载入本地图片')
   }
   reader.readAsDataURL(file)
   inp.value = ''
@@ -860,7 +860,10 @@ onBeforeUnmount(() => {
                   <div class="hzd-field-row">
                     <span class="hzd-field-label">上传图片</span>
                     <div class="hzd-field-control hzd-field-control--file">
-                      <input type="file" accept="image/*" class="hzd-file-input" @change="onImageFile" />
+                      <label class="hzd-file-btn">
+                        <span>选择图片</span>
+                        <input type="file" class="hzd-file-hit" accept="image/*" @change="onImageFile" />
+                      </label>
                     </div>
                   </div>
                   <div class="hzd-field-row">
@@ -881,7 +884,7 @@ onBeforeUnmount(() => {
                       <a-input-number v-model:value="form.repeatY" class="hzd-control-fill" size="small" :min="0.01" :step="0.5" />
                     </div>
                   </div>
-                  <p class="hzd-muted hzd-field-footnote">图片使用浏览器本地 Data URL 传入 Cesium，无需服务器；大文件可能较慢。</p>
+                  <p class="hzd-muted hzd-field-footnote">请先选择本地图片再标绘；使用 Data URL 传入，无需网络地址。</p>
                 </template>
 
                 <div class="hzd-field-row">
@@ -951,35 +954,27 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
-                      <a-tooltip title="地图追加顶点（经度、纬度）">
+                      <a-tooltip title="地图追加顶点">
                         <a-button
                           :type="vertexPickArmed ? 'primary' : 'default'"
                           class="hzd-pick-coord-btn hzd-primary-tall"
                           aria-label="拾取顶点"
-                          @click="onToggleVertexPick"
+                          @click="toggleVertexPick"
                         >
                           <template #icon><EnvironmentOutlined /></template>
                         </a-button>
                       </a-tooltip>
-                      <a-tooltip :title="primaryActionTooltip">
-                        <a-button
-                          type="primary"
-                          class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex"
-                          aria-label="标绘或保存"
-                          @click="onPrimaryClick"
-                        >
-                          <template #icon>
-                            <CheckOutlined v-if="selectedId" />
-                            <PlusOutlined v-else />
-                          </template>
-                        </a-button>
-                      </a-tooltip>
-                    </div>
-                    <a-tooltip v-if="selectedId" title="取消选中并重置表单">
-                      <a-button type="text" size="small" class="hzd-cancel-icon-btn" aria-label="取消选中" @click="onCancelSelect">
-                        <template #icon><CloseOutlined /></template>
+                      <a-button
+                        type="primary"
+                        class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex"
+                        @click="onPrimaryClick"
+                      >
+                        {{ primaryWallText }}
                       </a-button>
-                    </a-tooltip>
+                    </div>
+                    <a-button v-if="selectedId" type="link" size="small" class="hzd-cancel-select" @click="onCancelSelect">
+                      取消选中
+                    </a-button>
                   </div>
                 </div>
               </div>
@@ -1297,10 +1292,38 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
 }
 
-.hzd-file-input {
+.hzd-file-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(120, 180, 255, 0.45);
+  background: rgba(30, 60, 95, 0.55);
+  color: rgba(230, 242, 255, 0.92);
+  cursor: pointer;
+  width: 80%;
   max-width: 100%;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.hzd-file-btn:hover {
+  border-color: rgba(160, 210, 255, 0.75);
+  background: rgba(45, 85, 130, 0.65);
+}
+
+.hzd-file-hit {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
 }
 
 .hzd-color-native {

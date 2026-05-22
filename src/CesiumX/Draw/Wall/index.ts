@@ -182,55 +182,138 @@ interface WallRecord {
   gradientEndColor?: string | Cesium.Color;
   gradientDirection?: "vertical" | "horizontal";
   colorStops?: ColorStop[];
+  fabricMatProp?: WallFabricMaterialProperty;
 }
 
 /**
  * Entity `WallGraphics.material` 必须使用 `MaterialProperty`（含 `getType`），
  * 不能用 `ConstantProperty` 直接包 `Material` / `Color`。
  */
-class ConstantWallMaterialProperty implements Cesium.MaterialProperty {
-  readonly isConstant = true;
+function copyWallUniformsInto(
+  src: Cesium.Material | null,
+  result: Record<string, unknown>,
+): Record<string, unknown> {
+  const u = src?.uniforms as Record<string, unknown> | undefined;
+  if (!u) return result;
+  for (const key of Object.keys(u)) {
+    const v = u[key];
+    if (v === undefined) continue;
+    if (v instanceof Cesium.Color) {
+      result[key] = Cesium.Color.clone(v, result[key] as Cesium.Color | undefined);
+    } else {
+      result[key] = v;
+    }
+  }
+  return result;
+}
+
+function destroyCesiumMaterial(m: Cesium.Material | null | undefined): void {
+  if (!m) return;
+  const d = (m as Cesium.Material & { destroy?: () => void }).destroy;
+  if (typeof d === "function") d.call(m);
+}
+
+class WallFabricMaterialProperty implements Cesium.MaterialProperty {
+  readonly isConstant = false;
   readonly definitionChanged = new Cesium.Event();
 
-  constructor(private readonly _material: Cesium.Material) {}
+  constructor(
+    private backing: Cesium.Material,
+    private readonly fallbackType: string,
+  ) {}
 
   getType(_time?: Cesium.JulianDate): string {
-    return this._material.type;
+    return this.backing.type ?? this.fallbackType;
   }
 
-  getValue(
-    _time?: Cesium.JulianDate,
-    _result?: Cesium.Material,
-  ): Cesium.Material {
-    return this._material;
+  getValue(_time?: Cesium.JulianDate, result?: Record<string, unknown>): Record<string, unknown> {
+    return copyWallUniformsInto(this.backing, result ?? {});
+  }
+
+  setBacking(next: Cesium.Material): void {
+    if (this.backing !== next) {
+      destroyCesiumMaterial(this.backing);
+    }
+    this.backing = next;
+    this.definitionChanged.raiseEvent();
+  }
+
+  dispose(): void {
+    destroyCesiumMaterial(this.backing);
   }
 
   equals(other?: Cesium.Property): boolean {
-    if (this === other) return true;
-    if (!Cesium.defined(other)) return false;
-    const prop = other as Cesium.MaterialProperty;
-    if (
-      prop.isConstant !== true ||
-      typeof prop.getType !== "function" ||
-      typeof prop.getValue !== "function"
-    ) {
-      return false;
-    }
-    const now = Cesium.JulianDate.now();
-    if (prop.getType(now) !== this.getType(now)) return false;
-    return prop.getValue(now) === this._material;
+    return other === this;
   }
 }
 
-function wallMaterialResultToProperty(
-  value: Cesium.Material | Cesium.Color,
-): Cesium.MaterialProperty {
-  if (value instanceof Cesium.Color) {
-    return new Cesium.ColorMaterialProperty(value);
+function applyWallImageMaterialProperty(
+  graphics: Cesium.WallGraphics,
+  imageUrl: string,
+  repeat: { x: number; y: number } | undefined,
+  alpha?: number,
+  imageColor?: Cesium.Color,
+): void {
+  const rep = repeat ?? { x: 1, y: 1 };
+  const a = alpha ?? 1;
+  const tint = (imageColor ?? Cesium.Color.WHITE).withAlpha(a);
+  const existing = graphics.material;
+  if (existing instanceof Cesium.ImageMaterialProperty) {
+    existing.image = new Cesium.ConstantProperty(imageUrl);
+    existing.repeat = new Cesium.ConstantProperty(new Cesium.Cartesian2(rep.x, rep.y));
+    existing.color = new Cesium.ConstantProperty(tint);
+    existing.transparent = new Cesium.ConstantProperty(a < 0.999);
+    return;
   }
-  // 使用 Fabric Material + MaterialProperty 包装；勿转为 ImageMaterialProperty，
-  // 否则在 Wall 上与内置 Image 的 repeat / 采样行为可能不一致（平铺与拉伸看起来相同）。
-  return new ConstantWallMaterialProperty(value);
+  graphics.material = new Cesium.ImageMaterialProperty({
+    image: imageUrl,
+    repeat: new Cesium.ConstantProperty(new Cesium.Cartesian2(rep.x, rep.y)),
+    color: new Cesium.ConstantProperty(tint),
+    transparent: a < 0.999,
+  });
+}
+
+function applyWallMaterialToGraphics(
+  graphics: Cesium.WallGraphics,
+  rec: WallRecord | undefined,
+  value: Cesium.Material | Cesium.Color,
+  imageMeta?: { url: string; repeat?: { x: number; y: number }; alpha?: number; color?: Cesium.Color },
+): void {
+  if (value instanceof Cesium.Color) {
+    if (rec) rec.fabricMatProp = undefined;
+    graphics.material = new Cesium.ColorMaterialProperty(value);
+    return;
+  }
+
+  const matType = value.type ?? "Color";
+  if (matType === "Image" && imageMeta?.url) {
+    if (rec) rec.fabricMatProp = undefined;
+    applyWallImageMaterialProperty(
+      graphics,
+      imageMeta.url,
+      imageMeta.repeat,
+      imageMeta.alpha,
+      imageMeta.color,
+    );
+    return;
+  }
+
+  if (rec?.fabricMatProp) {
+    const prevType = rec.fabricMatProp.getType();
+    const nextType = value.type ?? matType;
+    if (prevType !== nextType) {
+      rec.fabricMatProp.dispose();
+      rec.fabricMatProp = undefined;
+    } else {
+      rec.fabricMatProp.setBacking(value);
+      graphics.material = rec.fabricMatProp as unknown as Cesium.MaterialProperty;
+      return;
+    }
+  }
+
+  const prop = new WallFabricMaterialProperty(value, matType);
+  if (rec) rec.fabricMatProp = prop;
+  graphics.material = prop as unknown as Cesium.MaterialProperty;
 }
 
 /**
@@ -375,29 +458,50 @@ export default class Wall {
     return color;
   }
 
-  /** 创建垂直渐变材质（从上到下） */
+  /** 创建垂直渐变材质（从上到下；`st.t` 沿墙高，顶为起始色） */
   private createVerticalGradientMaterial(
     startColor: Cesium.Color,
     endColor: Cesium.Color,
   ): Cesium.Material {
-    const startR = startColor.red;
-    const startG = startColor.green;
-    const startB = startColor.blue;
-    const startA = startColor.alpha;
-    const endR = endColor.red;
-    const endG = endColor.green;
-    const endB = endColor.blue;
-    const endA = endColor.alpha;
-
     return new Cesium.Material({
       fabric: {
-        // 唯一 type，且不在 source 中重复声明 uniforms（Fabric 会根据 uniforms 自动生成）
         type: "XgxWallVerticalGradient",
         uniforms: {
-          wallGradColorA: [startR, startG, startB, startA],
-          wallGradColorB: [endR, endG, endB, endA],
+          wallGradColorA: startColor,
+          wallGradColorB: endColor,
         },
         source: `
+          uniform vec4 wallGradColorA;
+          uniform vec4 wallGradColorB;
+          czm_material czm_getMaterial(czm_materialInput materialInput) {
+            czm_material material = czm_getDefaultMaterial(materialInput);
+            float t = clamp(materialInput.st.t, 0.0, 1.0);
+            vec4 g = mix(wallGradColorB, wallGradColorA, t);
+            material.diffuse = g.rgb;
+            material.alpha = g.a;
+            return material;
+          }
+        `,
+      },
+      translucent: startColor.alpha < 1 || endColor.alpha < 1,
+    });
+  }
+
+  /** 创建水平渐变材质（从左到右；`st.s` 沿墙宽，左为起始色） */
+  private createHorizontalGradientMaterial(
+    startColor: Cesium.Color,
+    endColor: Cesium.Color,
+  ): Cesium.Material {
+    return new Cesium.Material({
+      fabric: {
+        type: "XgxWallHorizontalGradient",
+        uniforms: {
+          wallGradColorA: startColor,
+          wallGradColorB: endColor,
+        },
+        source: `
+          uniform vec4 wallGradColorA;
+          uniform vec4 wallGradColorB;
           czm_material czm_getMaterial(czm_materialInput materialInput) {
             czm_material material = czm_getDefaultMaterial(materialInput);
             float t = clamp(materialInput.st.s, 0.0, 1.0);
@@ -408,43 +512,7 @@ export default class Wall {
           }
         `,
       },
-      translucent: startA < 1 || endA < 1,
-    });
-  }
-
-  /** 创建水平渐变材质（从左到右） */
-  private createHorizontalGradientMaterial(
-    startColor: Cesium.Color,
-    endColor: Cesium.Color,
-  ): Cesium.Material {
-    const startR = startColor.red;
-    const startG = startColor.green;
-    const startB = startColor.blue;
-    const startA = startColor.alpha;
-    const endR = endColor.red;
-    const endG = endColor.green;
-    const endB = endColor.blue;
-    const endA = endColor.alpha;
-
-    return new Cesium.Material({
-      fabric: {
-        type: "XgxWallHorizontalGradient",
-        uniforms: {
-          wallGradColorA: [startR, startG, startB, startA],
-          wallGradColorB: [endR, endG, endB, endA],
-        },
-        source: `
-          czm_material czm_getMaterial(czm_materialInput materialInput) {
-            czm_material material = czm_getDefaultMaterial(materialInput);
-            float t = clamp(materialInput.st.t, 0.0, 1.0);
-            vec4 g = mix(wallGradColorA, wallGradColorB, t);
-            material.diffuse = g.rgb;
-            material.alpha = g.a;
-            return material;
-          }
-        `,
-      },
-      translucent: startA < 1 || endA < 1,
+      translucent: startColor.alpha < 1 || endColor.alpha < 1,
     });
   }
 
@@ -470,19 +538,16 @@ export default class Wall {
     // Fabric 会为 uniforms 自动生成声明；不要用 GLSL 数组 + u_colors[i] 与之一并存（易重定义或链接失败）。
     // 改为每个节点独立 uniform（xgx_mc_c0… / xgx_mc_p0…）并展开 if 链。
     const coordVar =
-      direction === "vertical" ? "materialInput.st.s" : "materialInput.st.t";
+      direction === "vertical" ? "materialInput.st.t" : "materialInput.st.s";
 
     const n = stops.length;
-    const uniforms: Record<string, number | number[]> = {};
+    const uniforms: Record<string, Cesium.Color | number> = {};
+    const uniformDecls: string[] = [];
     for (let i = 0; i < n; i++) {
       const s = stops[i]!;
-      uniforms[`xgx_mc_c${i}`] = [
-        s.color.red,
-        s.color.green,
-        s.color.blue,
-        s.alpha,
-      ];
+      uniforms[`xgx_mc_c${i}`] = s.color.withAlpha(s.alpha);
       uniforms[`xgx_mc_p${i}`] = s.position;
+      uniformDecls.push(`uniform vec4 xgx_mc_c${i};`, `uniform float xgx_mc_p${i};`);
     }
 
     const parts: string[] = [];
@@ -496,6 +561,7 @@ export default class Wall {
     }
 
     const glsl = `
+      ${uniformDecls.join("\n      ")}
       czm_material czm_getMaterial(czm_materialInput materialInput) {
         czm_material material = czm_getDefaultMaterial(materialInput);
         float t = clamp(${coordVar}, 0.0, 1.0);
@@ -715,29 +781,6 @@ export default class Wall {
     // 设置轮廓点
     graphics.positions = new Cesium.ConstantProperty(cartesianPositions);
 
-    // 解析材质类型并创建材质
-    const materialConfig = this.resolveMaterialType(options);
-    const material = this.createWallMaterial(
-      materialConfig.type,
-      materialConfig.color,
-      materialConfig.imageUrl,
-      materialConfig.repeat,
-      materialConfig.imageAlpha,
-      materialConfig.imageColor,
-      materialConfig.gradientStartColor,
-      materialConfig.gradientEndColor,
-      materialConfig.gradientDirection,
-      materialConfig.colorStops,
-    );
-
-    if (material) {
-      graphics.material = wallMaterialResultToProperty(material);
-    } else {
-      graphics.material = new Cesium.ColorMaterialProperty(
-        Cesium.Color.BLUE.withAlpha(0.6),
-      );
-    }
-
     // 墙体高度（当使用二维点时生效）
     if (options.height !== undefined) {
       graphics.maximumHeights = new Cesium.ConstantProperty(
@@ -801,9 +844,52 @@ export default class Wall {
     return graphics;
   }
 
+  /** 按添加/更新参数绑定墙材质（须在 WallRecord 已登记后调用） */
+  private bindWallMaterialFromOptions(
+    rec: WallRecord,
+    options: AddWallOptions | UpdateWallProperties,
+  ): void {
+    const graphics = rec.entity.wall;
+    if (!graphics) return;
+
+    const materialConfig = this.resolveMaterialType(options as AddWallOptions);
+    const material = this.createWallMaterial(
+      materialConfig.type,
+      materialConfig.color,
+      materialConfig.imageUrl,
+      materialConfig.repeat,
+      materialConfig.imageAlpha,
+      materialConfig.imageColor,
+      materialConfig.gradientStartColor,
+      materialConfig.gradientEndColor,
+      materialConfig.gradientDirection,
+      materialConfig.colorStops,
+    );
+
+    if (material) {
+      const imageMeta = materialConfig.imageUrl
+        ? {
+            url: materialConfig.imageUrl,
+            repeat: materialConfig.repeat,
+            alpha: materialConfig.imageAlpha,
+            color: materialConfig.imageColor,
+          }
+        : undefined;
+      applyWallMaterialToGraphics(graphics, rec, material, imageMeta);
+    } else {
+      graphics.material = new Cesium.ColorMaterialProperty(
+        Cesium.Color.BLUE.withAlpha(0.6),
+      );
+    }
+    if (!rec.viewer.isDestroyed()) {
+      rec.viewer.scene.requestRender();
+    }
+  }
+
   /** 更新墙体材质 */
   private updateWallMaterial(
     graphics: Cesium.WallGraphics,
+    rec: WallRecord,
     materialType: MaterialType,
     color?: string | Cesium.Color,
     imageUrl?: string,
@@ -828,7 +914,13 @@ export default class Wall {
       colorStops,
     );
     if (material) {
-      graphics.material = wallMaterialResultToProperty(material);
+      const imageMeta = imageUrl
+        ? { url: imageUrl, repeat, alpha: imageAlpha, color: imageColor }
+        : undefined;
+      applyWallMaterialToGraphics(graphics, rec, material, imageMeta);
+      if (!rec.viewer.isDestroyed()) {
+        rec.viewer.scene.requestRender();
+      }
     }
   }
 
@@ -846,11 +938,12 @@ export default class Wall {
     }
 
     // 仅当 style 显式带 type 时才用 style 驱动材质；否则走下方快捷字段（避免仅含 fill/outline 的 style 把渐变/图片参数更新成 undefined）
-    if (properties.style?.type !== undefined) {
+    if (currentRecord && properties.style?.type !== undefined) {
       const style = properties.style;
       const type = style.type as MaterialType;
       this.updateWallMaterial(
         graphics,
+        currentRecord,
         type,
         style.color,
         style.image?.url,
@@ -866,15 +959,14 @@ export default class Wall {
             : undefined,
         style.gradient?.colorStops,
       );
-    }
-    // 使用快捷方式更新材质
-    else if (
-      properties.materialType !== undefined ||
-      properties.color !== undefined ||
-      properties.imageUrl !== undefined ||
-      properties.gradientStartColor !== undefined ||
-      properties.gradientEndColor !== undefined ||
-      properties.colorStops !== undefined
+    } else if (
+      currentRecord &&
+      (properties.materialType !== undefined ||
+        properties.color !== undefined ||
+        properties.imageUrl !== undefined ||
+        properties.gradientStartColor !== undefined ||
+        properties.gradientEndColor !== undefined ||
+        properties.colorStops !== undefined)
     ) {
       let type =
         properties.materialType ?? currentRecord?.materialType ?? "color";
@@ -896,6 +988,7 @@ export default class Wall {
 
       this.updateWallMaterial(
         graphics,
+        currentRecord,
         type,
         properties.color,
         properties.imageUrl,
@@ -1039,7 +1132,10 @@ export default class Wall {
       });
 
       const stored = this.data.get(id);
-      if (stored) this.mergeEchoIntoRecTargetData(stored);
+      if (stored) {
+        this.mergeEchoIntoRecTargetData(stored);
+        this.bindWallMaterialFromOptions(stored, options);
+      }
 
       return entity;
     } catch (error) {
@@ -1519,9 +1615,13 @@ export default class Wall {
         ? this.createImageStretchMaterial(imageUrl)
         : this.createImageRepeatMaterial(imageUrl, finalRepeat);
 
-    wall.material = wallMaterialResultToProperty(material);
+    applyWallMaterialToGraphics(wall, rec, material, {
+      url: imageUrl,
+      repeat: finalRepeat,
+    });
     rec.imageUrl = imageUrl;
     if (repeat) rec.repeat = repeat;
+    if (!rec.viewer.isDestroyed()) rec.viewer.scene.requestRender();
 
     return true;
   }
@@ -1553,12 +1653,13 @@ export default class Wall {
             this.resolveColor(endColor)!,
           );
 
-    wall.material = wallMaterialResultToProperty(material);
+    applyWallMaterialToGraphics(wall, rec, material);
     rec.materialType =
       dir === "vertical" ? "gradientVertical" : "gradientHorizontal";
     rec.gradientStartColor = startColor;
     rec.gradientEndColor = endColor;
     rec.gradientDirection = dir;
+    if (!rec.viewer.isDestroyed()) rec.viewer.scene.requestRender();
 
     return true;
   }
@@ -1580,10 +1681,11 @@ export default class Wall {
     const dir = direction ?? rec.gradientDirection ?? "vertical";
     const material = this.createMultiColorGradientMaterial(colorStops, dir);
 
-    wall.material = wallMaterialResultToProperty(material);
+    applyWallMaterialToGraphics(wall, rec, material);
     rec.materialType = "gradientMultiColor";
     rec.colorStops = colorStops;
     rec.gradientDirection = dir;
+    if (!rec.viewer.isDestroyed()) rec.viewer.scene.requestRender();
 
     return true;
   }
@@ -1615,6 +1717,7 @@ export default class Wall {
     const rec = this.data.get(id);
     if (!rec) return false;
 
+    rec.fabricMatProp?.dispose();
     this.data.delete(id);
 
     if (!rec.viewer.isDestroyed() && rec.viewer.entities.contains(rec.entity)) {

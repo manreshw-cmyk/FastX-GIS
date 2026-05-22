@@ -7,40 +7,159 @@ const scratchCarto = new Cesium.Cartographic()
 const scratchGeoA = new Cesium.Cartographic()
 const scratchGeoB = new Cesium.Cartographic()
 
+/** 与 fabric.type 一致；Entity 通过 {@link MaterialProperty.getValue} 写入 uniforms */
+const RUNWAY_FLOW_COLOR_TYPE = 'XgxRunwayFlowColor'
+const RUNWAY_FLOW_IMAGE_TYPE = 'XgxRunwayFlowImage'
+const RUNWAY_FLOW_IMAGE_PLACEHOLDER =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAD0lEQVQ42mP8z5BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+
+let runwayFlowFabricsReady = false
+
+const RUNWAY_FLOW_COLOR_SHADER = `
+  uniform vec4 u_color;
+  uniform float u_speed;
+  uniform float u_time;
+  uniform float u_alpha;
+  uniform float u_multiBands;
+  uniform float u_bandCount;
+  uniform float u_axisY;
+  uniform float u_flipLen;
+  czm_material czm_getMaterial(czm_materialInput materialInput)
+  {
+    czm_material material = czm_getDefaultMaterial(materialInput);
+    vec2 st = materialInput.st;
+    float rawLen = mix(st.x, st.y, u_axisY);
+    float lenCoord = mix(rawLen, 1.0 - rawLen, u_flipLen);
+    float bandRepeat = mix(1.0, max(u_bandCount, 1.0), u_multiBands);
+    float offset = u_time * u_speed;
+    float phase = fract(lenCoord * bandRepeat - offset);
+    float singleVis = smoothstep(0.0, 0.14, phase) * (1.0 - smoothstep(0.86, 1.0, phase));
+    float multiVis = smoothstep(0.2, 0.8, phase) * 0.75 + 0.25;
+    float vis = mix(singleVis, multiVis, u_multiBands);
+    float shimmer = 0.78 + 0.22 * sin(6.28318530718 * (lenCoord * bandRepeat - offset));
+    material.diffuse = u_color.rgb * shimmer * (0.62 + 0.38 * vis);
+    material.alpha = max(0.12, vis) * u_alpha;
+    return material;
+  }
+`
+
+const RUNWAY_FLOW_IMAGE_SHADER = `
+  uniform sampler2D image;
+  uniform float u_speed;
+  uniform float u_time;
+  uniform float u_alpha;
+  uniform float u_multiBands;
+  uniform float u_bandCount;
+  uniform float u_axisY;
+  uniform float u_flipLen;
+  czm_material czm_getMaterial(czm_materialInput materialInput)
+  {
+    czm_material material = czm_getDefaultMaterial(materialInput);
+    vec2 st = materialInput.st;
+    float rawLen = mix(st.x, st.y, u_axisY);
+    float lenCoord = mix(rawLen, 1.0 - rawLen, u_flipLen);
+    float bandRepeat = mix(1.0, max(u_bandCount, 1.0), u_multiBands);
+    float offset = u_time * u_speed;
+    vec2 uv = vec2(
+      fract(lenCoord * bandRepeat - offset),
+      fract(mix(st.y, st.x, u_axisY))
+    );
+    vec4 tex = texture(image, uv);
+    material.diffuse = tex.rgb;
+    material.alpha = tex.a * u_alpha;
+    return material;
+  }
+`
+
+function flowFabricRegistered(type: string): boolean {
+  const cache = (Cesium.Material as unknown as { _materialCache?: { getMaterial: (t: string) => unknown } })
+    ._materialCache
+  return Boolean(cache?.getMaterial(type))
+}
+
+function ensureRunwayFlowFabricsRegistered(): void {
+  if (runwayFlowFabricsReady) return
+  if (!flowFabricRegistered(RUNWAY_FLOW_COLOR_TYPE)) {
+    new Cesium.Material({
+      fabric: {
+        type: RUNWAY_FLOW_COLOR_TYPE,
+        uniforms: {
+          u_color: Cesium.Color.CYAN,
+          u_speed: 0.8,
+          u_time: 0.0,
+          u_alpha: 1.0,
+          u_multiBands: 1.0,
+          u_bandCount: 8.0,
+          u_axisY: 0.0,
+          u_flipLen: 0.0,
+        },
+        source: RUNWAY_FLOW_COLOR_SHADER,
+      },
+      translucent: true,
+    })
+  }
+  if (!flowFabricRegistered(RUNWAY_FLOW_IMAGE_TYPE)) {
+    new Cesium.Material({
+      fabric: {
+        type: RUNWAY_FLOW_IMAGE_TYPE,
+        uniforms: {
+          image: RUNWAY_FLOW_IMAGE_PLACEHOLDER,
+          u_speed: 0.8,
+          u_time: 0.0,
+          u_alpha: 1.0,
+          u_multiBands: 1.0,
+          u_bandCount: 8.0,
+          u_axisY: 0.0,
+          u_flipLen: 0.0,
+        },
+        source: RUNWAY_FLOW_IMAGE_SHADER,
+      },
+      translucent: true,
+    })
+  }
+  runwayFlowFabricsReady = true
+}
+
+function copyFlowUniformsInto(
+  src: Material | null,
+  result: Record<string, unknown>,
+): Record<string, unknown> {
+  const u = src?.uniforms as Record<string, unknown> | undefined
+  if (!u) return result
+  for (const key of Object.keys(u)) {
+    const v = u[key]
+    if (v === undefined) continue
+    if (v instanceof Cesium.Color) {
+      result[key] = Cesium.Color.clone(v, result[key] as Cesium.Color | undefined)
+    } else {
+      result[key] = v
+    }
+  }
+  return result
+}
+
 /**
- * Entity 廊道填充需 {@link MaterialProperty}（含 `getType` / `getValue`）。
- * 用于将 Fabric `Material` 的 uniforms 同步到 Cesium 渲染管线。
+ * Entity 廊道：`getType` 返回 fabric 名；`getValue(time, uniforms)` 必须把 uniform 写入第二参数。
  */
-class RunwayFlowMaterialProperty {
+class RunwayFlowMaterialProperty implements MaterialProperty {
   readonly isConstant = false
   readonly definitionChanged = new Cesium.Event()
 
-  constructor(private readonly getMaterial: () => Material | null) {}
+  constructor(
+    private readonly getMaterial: () => Material | null,
+    private readonly fabricType: string,
+  ) {}
 
   getType(_time?: Cesium.JulianDate): string {
-    const m = this.getMaterial()
-    if (m != null && typeof m.type === 'string' && m.type.length > 0) {
-      return m.type
-    }
-    return Cesium.Material.ColorType
+    return this.fabricType
   }
 
   getValue(_time?: Cesium.JulianDate, result?: Record<string, unknown>): Record<string, unknown> {
-    const m = this.getMaterial()
-    const out = result ?? {}
-    if (m?.uniforms == null) {
-      ;(out as { color?: Color }).color = Cesium.Color.WHITE
-      return out
-    }
-    const u = m.uniforms as Record<string, unknown>
-    for (const key of Object.keys(u)) {
-      out[key] = u[key]
-    }
-    return out
+    return copyFlowUniformsInto(this.getMaterial(), result ?? {})
   }
 
-  equals(_other: unknown): boolean {
-    return false
+  equals(other?: Property): boolean {
+    return other instanceof RunwayFlowMaterialProperty && other.fabricType === this.fabricType
   }
 }
 
@@ -172,7 +291,8 @@ interface RunwayRecord {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
-  tickListener: ((clock: Cesium.Clock) => void) | null
+  tickListener: (() => void) | null
+  flowMatProp?: RunwayFlowMaterialProperty
   flowMaterial: Material | null
 }
 
@@ -201,10 +321,6 @@ function wrapPlainMutableRecord(src?: Record<string, unknown>): Record<string, u
   } catch {
     return { ...out }
   }
-}
-
-function genFabricSuffix(): string {
-  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -452,74 +568,31 @@ function syncFlowLayoutUniforms(m: Material, td: Record<string, unknown>): void 
 }
 
 function createFlowColorMaterial(baseCss: string, speed: number, alpha: number, td: Record<string, unknown>): Material {
+  ensureRunwayFlowFabricsRegistered()
   const color = Cesium.Color.fromCssColorString(baseCss)
-  return new Cesium.Material({
-    fabric: {
-      type: `XgxRunwayFlowColor_${genFabricSuffix()}`,
-      uniforms: {
-        u_color: color,
-        u_speed: speed,
-        u_time: 0.0,
-        u_alpha: alpha,
-        u_multiBands: readMultiBandsFloat(td),
-        u_bandCount: readFlowBandCount(td),
-        u_axisY: readFlowStAxisY(td),
-        u_flipLen: readFlowLengthFlip(td),
-      },
-      source: `
-        uniform vec4 u_color;
-        uniform float u_speed;
-        uniform float u_time;
-        uniform float u_alpha;
-        uniform float u_multiBands;
-        uniform float u_bandCount;
-        uniform float u_axisY;
-        uniform float u_flipLen;
-        czm_material czm_getMaterial(czm_materialInput materialInput)
-        {
-          czm_material material = czm_getDefaultMaterial(materialInput);
-          vec2 st = materialInput.st;
-          float rawLen = mix(st.x, st.y, u_axisY);
-          float lenCoord = mix(rawLen, 1.0 - rawLen, u_flipLen);
-          float bandRepeat = mix(1.0, max(u_bandCount, 1.0), u_multiBands);
-          float offset = u_time * u_speed;
-          float phase = fract(lenCoord * bandRepeat - offset);
-          float singleVis = smoothstep(0.0, 0.14, phase) * (1.0 - smoothstep(0.86, 1.0, phase));
-          float multiVis = smoothstep(0.2, 0.8, phase) * 0.75 + 0.25;
-          float vis = mix(singleVis, multiVis, u_multiBands);
-          float shimmer = 0.78 + 0.22 * sin(6.28318530718 * (lenCoord * bandRepeat - offset));
-          material.diffuse = u_color.rgb * shimmer * (0.62 + 0.38 * vis);
-          material.alpha = max(0.12, vis) * u_alpha;
-          return material;
-        }
-      `,
-    },
-    translucent: true,
+  return Cesium.Material.fromType(RUNWAY_FLOW_COLOR_TYPE, {
+    u_color: color,
+    u_speed: speed,
+    u_time: 0.0,
+    u_alpha: alpha,
+    u_multiBands: readMultiBandsFloat(td),
+    u_bandCount: readFlowBandCount(td),
+    u_axisY: readFlowStAxisY(td),
+    u_flipLen: readFlowLengthFlip(td),
   })
 }
 
 function createFlowImageMaterial(imageUrl: string, speed: number, alpha: number, td: Record<string, unknown>): Material {
-  return new Cesium.Material({
-    fabric: {
-      type: `XgxRunwayFlowImage_${genFabricSuffix()}`,
-      uniforms: {
-        image: imageUrl,
-        u_speed: speed,
-        u_time: 0.0,
-        u_alpha: alpha,
-        u_multiBands: readMultiBandsFloat(td),
-        u_bandCount: readFlowBandCount(td),
-        u_axisY: readFlowStAxisY(td),
-        u_flipLen: readFlowLengthFlip(td),
-      },
-      components: {
-        diffuse:
-          'texture2D(image, vec2(fract((mix(mix(materialInput.st.x,materialInput.st.y,u_axisY),1.0-mix(materialInput.st.x,materialInput.st.y,u_axisY),u_flipLen))*mix(1.0,max(u_bandCount,1.0),u_multiBands)-u_time*u_speed), fract(mix(materialInput.st.y,materialInput.st.x,u_axisY)))).rgb',
-        alpha:
-          'texture2D(image, vec2(fract((mix(mix(materialInput.st.x,materialInput.st.y,u_axisY),1.0-mix(materialInput.st.x,materialInput.st.y,u_axisY),u_flipLen))*mix(1.0,max(u_bandCount,1.0),u_multiBands)-u_time*u_speed), fract(mix(materialInput.st.y,materialInput.st.x,u_axisY)))).a * u_alpha',
-      },
-    },
-    translucent: true,
+  ensureRunwayFlowFabricsRegistered()
+  return Cesium.Material.fromType(RUNWAY_FLOW_IMAGE_TYPE, {
+    image: imageUrl,
+    u_speed: speed,
+    u_time: 0.0,
+    u_alpha: alpha,
+    u_multiBands: readMultiBandsFloat(td),
+    u_bandCount: readFlowBandCount(td),
+    u_axisY: readFlowStAxisY(td),
+    u_flipLen: readFlowLengthFlip(td),
   })
 }
 
@@ -539,27 +612,24 @@ function buildFlowMaterial(
   return createFlowColorMaterial(colorCss, speed, alpha, td)
 }
 
-function detachFlow(rec: RunwayRecord): void {
+function detachFlowListener(rec: RunwayRecord): void {
   if (rec.tickListener && rec.viewer && !rec.viewer.isDestroyed()) {
-    rec.viewer.clock.onTick.removeEventListener(rec.tickListener)
+    rec.viewer.scene.preRender.removeEventListener(rec.tickListener)
   }
   rec.tickListener = null
-  const cg = rec.entity.corridor
-  if (cg) {
-    const td = rec.targetData
-    const alpha = typeof td.alpha === 'number' ? td.alpha : 1
-    const showFill = td.showFill !== false
-    const col =
-      toColor(String(td.color ?? '#00aaff'), showFill ? alpha : 0) ??
-      Cesium.Color.CYAN.withAlpha(showFill ? alpha : 0)
-    cg.material = new Cesium.ColorMaterialProperty(col)
-  }
+  rec.flowMatProp = undefined
+}
+
+function detachFlow(rec: RunwayRecord): void {
+  detachFlowListener(rec)
   destroyFlowMaterial(rec.flowMaterial)
   rec.flowMaterial = null
 }
 
 function attachFlowTick(rec: RunwayRecord): void {
-  detachFlow(rec)
+  detachFlowListener(rec)
+  destroyFlowMaterial(rec.flowMaterial)
+  rec.flowMaterial = null
   const mat = buildFlowMaterial(
     (rec.targetData.materialMode as RunwayMaterialMode) ?? 'flowColor',
     String(rec.targetData.color ?? '#00aaff'),
@@ -579,11 +649,17 @@ function attachFlowTick(rec: RunwayRecord): void {
     rec.flowMaterial = null
     return
   }
-  cg.material = new RunwayFlowMaterialProperty(() => rec.flowMaterial) as unknown as MaterialProperty
+  const fabricType =
+    (rec.targetData.materialMode as RunwayMaterialMode) === 'flowImage'
+      ? RUNWAY_FLOW_IMAGE_TYPE
+      : RUNWAY_FLOW_COLOR_TYPE
+  const flowMatProp = new RunwayFlowMaterialProperty(() => rec.flowMaterial, fabricType)
+  rec.flowMatProp = flowMatProp
+  cg.material = flowMatProp as unknown as MaterialProperty
 
   const listener = () => {
     const m = rec.flowMaterial
-    if (!m || !m.uniforms) return
+    if (!m?.uniforms || rec.viewer.isDestroyed()) return
     const wallSec =
       (typeof performance !== 'undefined' ? performance.now() : Date.now()) * 0.001
     m.uniforms.u_time = wallSec
@@ -597,10 +673,17 @@ function attachFlowTick(rec: RunwayRecord): void {
     if (rec.targetData.materialMode === 'flowColor' && m.uniforms.u_color !== undefined) {
       m.uniforms.u_color = Cesium.Color.fromCssColorString(String(rec.targetData.color ?? '#00aaff'))
     }
+    if (rec.targetData.materialMode === 'flowImage' && m.uniforms.image !== undefined) {
+      const url = typeof rec.targetData.flowImageUrl === 'string' ? rec.targetData.flowImageUrl : ''
+      if (url) m.uniforms.image = url
+    }
     syncFlowLayoutUniforms(m, rec.targetData)
+    rec.viewer.scene.requestRender()
   }
-  rec.viewer.clock.onTick.addEventListener(listener)
+  rec.viewer.scene.preRender.addEventListener(listener)
   rec.tickListener = listener
+  listener()
+  flowMatProp.definitionChanged.raiseEvent()
 }
 
 function rebuildRunwayFill(rec: RunwayRecord): void {

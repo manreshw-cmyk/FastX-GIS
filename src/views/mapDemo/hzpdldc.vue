@@ -29,9 +29,6 @@ const runwayPickArmed = ref(false)
 /** 0 待拾取起点，1 已拾取起点待拾取终点 */
 const runwayPickPhase = ref(0)
 
-/** 本页为上传贴图创建的 blob: URL，需在替换/卸载时 revoke */
-let uploadedFlowImageBlobUrl: string | null = null
-
 interface RunwayPointRow {
   key: string
   label: string
@@ -63,9 +60,7 @@ const form = reactive({
   flowBandStyle: 'multi' as RunwayFlowBandStyle,
   /** multi 时沿长度重复条数，1～64 */
   flowBandCount: 8,
-  /** 贴图模式：网络地址或本地上传生成的 blob URL */
   flowImageUrl: '',
-  imageRemoteUrl: '',
   showFill: true,
   color: DEFAULT_FILL_COLOR,
   alpha: 0.85,
@@ -246,7 +241,6 @@ function fillFormFromSnapshot(s: RunwaySnapshot): void {
   }
   const img = s.flowImageUrl ?? (typeof s.targetData?.flowImageUrl === 'string' ? s.targetData.flowImageUrl : '')
   form.flowImageUrl = img
-  form.imageRemoteUrl = img && !img.startsWith('blob:') ? img : ''
   const td = s.targetData
   const rawShowFill = td?.showFill
   form.showFill = typeof rawShowFill === 'boolean' ? rawShowFill : s.showFill !== false
@@ -276,19 +270,7 @@ function fillAlphaForApi(): number {
   return form.showFill ? form.alpha : 0
 }
 
-function revokeUploadedFlowImageIfAny(): void {
-  if (uploadedFlowImageBlobUrl) {
-    try {
-      URL.revokeObjectURL(uploadedFlowImageBlobUrl)
-    } catch {
-      /* ignore */
-    }
-    uploadedFlowImageBlobUrl = null
-  }
-}
-
 function resetFormToInitial(): void {
-  revokeUploadedFlowImageIfAny()
   disarmRunwayPick()
   form.id = ''
   runwayPoints.value = createEmptyRunwayPoints()
@@ -298,7 +280,6 @@ function resetFormToInitial(): void {
   form.flowBandStyle = 'multi'
   form.flowBandCount = 8
   form.flowImageUrl = ''
-  form.imageRemoteUrl = ''
   form.showFill = true
   form.color = DEFAULT_FILL_COLOR
   form.alpha = 0.85
@@ -348,6 +329,7 @@ const primaryRunwayText = computed(() => (selectedId.value ? '确定' : '标绘'
 function runwayStylePayload() {
   return {
     width: form.width,
+    showFill: form.showFill,
     materialMode: form.materialMode,
     flowSpeed: form.flowSpeed,
     flowBandStyle: form.flowBandStyle,
@@ -360,7 +342,16 @@ function runwayStylePayload() {
     outlineAlpha: form.outlineAlpha,
     outlineWidth: form.outlineWidth,
     show: form.show,
-    targetData: { showFill: form.showFill },
+    targetData: {
+      showFill: form.showFill,
+      materialMode: form.materialMode,
+      flowSpeed: form.flowSpeed,
+      flowBandStyle: form.flowBandStyle,
+      flowBandCount: form.flowBandCount,
+      flowImageUrl: form.materialMode === 'flowImage' ? form.flowImageUrl.trim() || undefined : undefined,
+      color: form.color,
+      alpha: form.alpha,
+    },
   }
 }
 
@@ -420,7 +411,7 @@ function addRunwayFromForm(): void {
     return
   }
   if (form.materialMode === 'flowImage' && !form.flowImageUrl.trim()) {
-    message.warning('流动贴图模式下请先上传图片或填写网络图片地址')
+    message.warning('流动贴图模式下请先上传本地图片')
     return
   }
   const R = window.XGX?.Runway
@@ -483,22 +474,19 @@ function onFlowImageFile(ev: Event): void {
     message.warning('请选择图片文件')
     return
   }
-  revokeUploadedFlowImageIfAny()
-  uploadedFlowImageBlobUrl = URL.createObjectURL(file)
-  form.flowImageUrl = uploadedFlowImageBlobUrl
-  message.success('已载入本地贴图')
-  input.value = ''
-}
-
-function applyRemoteFlowImageUrl(): void {
-  const t = form.imageRemoteUrl.trim()
-  if (!t) {
-    message.warning('请先填写 http(s) 图片地址')
-    return
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = typeof reader.result === 'string' ? reader.result : ''
+    if (!dataUrl) {
+      message.error('读取图片失败')
+      return
+    }
+    form.flowImageUrl = dataUrl
+    message.success('已载入本地贴图')
   }
-  revokeUploadedFlowImageIfAny()
-  form.flowImageUrl = t
-  message.success('已使用网络图片地址')
+  reader.onerror = () => message.error('读取图片失败')
+  reader.readAsDataURL(file)
+  input.value = ''
 }
 
 function bindMouse(v: Viewer): void {
@@ -608,7 +596,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  revokeUploadedFlowImageIfAny()
   runwayPointResizeObserver?.disconnect()
   runwayPointResizeObserver = null
   tableResizeObserver?.disconnect()
@@ -765,19 +752,6 @@ onBeforeUnmount(() => {
                         <span>选择图片</span>
                         <input type="file" class="hzd-file-hit" accept="image/*" @change="onFlowImageFile" />
                       </label>
-                    </div>
-                  </div>
-                  <div class="hzd-field-row">
-                    <span class="hzd-field-label">网络地址</span>
-                    <div class="hzd-field-control hzd-field-control--stack">
-                      <a-input
-                        v-model:value="form.imageRemoteUrl"
-                        class="hzd-control-fill"
-                        size="small"
-                        allow-clear
-                        placeholder="https://... 图片直链"
-                      />
-                      <a-button size="small" type="default" @click="applyRemoteFlowImageUrl">应用</a-button>
                     </div>
                   </div>
                 </template>
