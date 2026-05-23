@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+FastX GIS
 *.local
 
 # Editor directories and files

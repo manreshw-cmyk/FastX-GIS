@@ -21,7 +21,7 @@ import type {
   WallSnapshot,
 } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normaFastX, parseCssColorForForm } from './components/common/drawFormColor'
+import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（Wall）墙类（底层entity）'
