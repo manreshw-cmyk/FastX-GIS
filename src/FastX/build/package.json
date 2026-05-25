@@ -1,0 +1,50 @@
+{
+  "name": "fastx-sdk",
+  "version": "1.0.0",
+  "description": "基于 Cesium 二次封装的三维 GIS SDK：Layer / Draw / Coordinates / Trajectory 等能力；内置完整 Cesium 运行时（lib/Cesium JS + Workers/Assets/Widgets），内网/离线解压即用，无需单独安装 cesium，installFastXToWindow 自动配置 CESIUM_BASE_URL，框架无关，TypeScript 类型完整。",
+  "type": "module",
+  "license": "MIT",
+  "author": "manreshw-cmyk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manreshw-cmyk/FastX-GIS.git",
+    "directory": "src/FastX/build"
+  },
+  "keywords": ["cesium", "gis", "fastx", "3d", "map", "layer", "draw", "trajectory"],
+  "main": "./dist/fastx.cjs.cjs",
+  "module": "./dist/fastx.esm.js",
+  "types": "./dist/entry.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/entry.d.ts",
+      "import": "./dist/fastx.esm.js",
+      "require": "./dist/fastx.cjs.cjs"
+    },
+    "./default/index.css": "./default/index.css",
+    "./lib/Cesium/*": "./lib/Cesium/*",
+    "./cesium": {
+      "types": "./lib/Cesium.d.ts",
+      "import": "./lib/Cesium/index.js",
+      "require": "./lib/Cesium/index.cjs"
+    },
+    "./vite-plugin": "./vite-plugin.mjs",
+    "./Data/*": "./Data/*"
+  },
+  "files": [
+    "dist",
+    "lib",
+    "default",
+    "Data",
+    "README.md",
+    "vite-plugin.mjs"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "pack": "npm run build",
+    "prepublishOnly": "node scripts/build.mjs"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  }
+}

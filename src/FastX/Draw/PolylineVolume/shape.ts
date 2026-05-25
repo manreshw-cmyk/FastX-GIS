@@ -1,14 +1,5 @@
 /**
  * 折线体横截面形状工具库 (TypeScript)
- *
- * 所有方法返回 Cartesian2 数组，用于 Cesium 的 PolylineVolumeGraphics.shape 属性
- * 返回值格式：Cartesian2[]，数组最后一个元素通常是第一个点的副本，确保形状闭合
- *
- * 使用示例：
- * import { createCircleShape, createHexagonShape, createStarShape } from './polylineVolumeShapes'
- * const circleShape = createCircleShape(3.0)
- * const hexagonShape = createHexagonShape(2.5)
- * const starShape = createStarShape(3.0, 1.5)
  */
 
 import * as Cesium from "cesium";

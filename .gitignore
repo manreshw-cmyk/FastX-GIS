@@ -13,6 +13,13 @@ dist-ssr
 FastX GIS
 *.local
 
+# fastx-sdk 构建产物（源码在 src/FastX/build，dist/lib 由 npm run build:sdk 生成）
+src/FastX/build/dist/
+src/FastX/build/lib/Cesium/
+src/FastX/build/lib/Cesium.d.ts
+src/FastX/build/default/
+src/FastX/build/*.tgz
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

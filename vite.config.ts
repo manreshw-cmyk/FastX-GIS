@@ -28,7 +28,7 @@ function fastxBuildSuccessBanner(): Plugin {
 
       console.log(
         colors.green(logo) +
-          `\n${colors.green("✓")} ${colors.bold("FastX GIS SDK 构建完成")}\n` +
+          `\n${colors.green("✓")} ${colors.bold("FastX GIS 构建完成")}\n` +
           `\n  ${colors.dim("📁 输出目录:")} ${colors.cyan(OUT_DIR)}` +
           `\n  ${colors.dim("📦 打包格式:")} ${colors.yellow("ESM + UMD + CJS")}` +
           `\n` +

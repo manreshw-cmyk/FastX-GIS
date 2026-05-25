@@ -1,0 +1,7 @@
+# fastx-sdk 构建产物（源码提交 git，dist/lib/default 由 npm run build 生成）
+
+dist/
+lib/Cesium/
+lib/Cesium.d.ts
+default/
+*.tgz

@@ -6,11 +6,11 @@ import pinia from "./stores";
 import "./assets/styles/default.scss";
 import "ant-design-vue/dist/reset.css";
 import App from "./App.vue";
-import { installXGXToWindow, FastX } from "./FastX";
+import { installFastXToWindow, FastX } from "./FastX";
 import printConsoleLogo from "./utils/consoleLogo";
 
 printConsoleLogo();
-installXGXToWindow();
+installFastXToWindow();
 const app = createApp(App);
 FastX.registerCesiumXVueComponents(app);
 

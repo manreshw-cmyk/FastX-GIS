@@ -404,7 +404,7 @@ function resolveMapLayer(mapName?: string): Layer | null {
 }
 
 /**
- * 全局统一入口：运行时在 `main.ts` 中 `installXGXToWindow()` 后可通过 `window.FastX` 访问。
+ * 全局统一入口：运行时在 `main.ts` 中 `installFastXToWindow()` 后可通过 `window.FastX` 访问。
  * 各 `Draw/*` 为单例实例，复用内部 Map 与 Entity 引用。
  */
 export const FastX = {
@@ -465,9 +465,9 @@ export const FastX = {
   },
 } as const;
 
-export type XGXGlobal = typeof FastX;
+export type FastXGlobal = typeof FastX;
 
-export function installXGXToWindow(): void {
+export function installFastXToWindow(): void {
   if (typeof window === "undefined") return;
-  (window as Window & { FastX: XGXGlobal }).FastX = FastX;
+  (window as Window & { FastX: FastXGlobal }).FastX = FastX;
 }
