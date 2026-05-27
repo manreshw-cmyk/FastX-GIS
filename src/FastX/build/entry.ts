@@ -51,6 +51,7 @@ export {
   Plane,
   PlaneCollection,
   Path,
+  AreaManager,
   PlaneMaterialType,
   DEFAULT_PLANE_VIDEO,
   normalizePlaneVideoOptions,

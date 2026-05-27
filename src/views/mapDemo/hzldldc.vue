@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { CorridorSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, CorridorSnapshot, LngLatHeight } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
@@ -20,7 +20,8 @@ const cornerTypeOptions = [
 ] as const
 
 const mapStore = useMapLayerStore()
-const vertexPickArmed = ref(false)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedEntityId = ref<string | null>(null)
 
 interface DraftVertex {
@@ -63,9 +64,56 @@ const vertexTableScrollY = ref(96)
 let tableResizeObserver: ResizeObserver | null = null
 let vertexResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = { listen: (options: MouseEventListenOptions) => void; destroy: () => void }
 let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+
+function syncDraftVerticesFromPick(points: LngLatHeight[]): void {
+  draftVertices.value = points.map((p) => ({
+    key: newVertexKey(),
+    longitude: p.longitude,
+    latitude: p.latitude,
+    height: p.height ?? 0,
+  }))
+}
+
+function buildCorridorStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'corridor',
+    id: formEntity.id.trim() || undefined,
+    width: formEntity.width,
+    height: formEntity.height,
+    extrudedHeight: formEntity.extrudedHeight,
+    cornerType: formEntity.cornerType,
+    color: formEntity.color,
+    alpha: fillAlphaForEntity(),
+    outline: formEntity.outline,
+    outlineColor: formEntity.outlineColor,
+    outlineAlpha: formEntity.outlineAlpha,
+    outlineWidth: formEntity.outlineWidth,
+    show: formEntity.show,
+    targetData: { showFill: formEntity.showFill },
+    preview: { lineColor: formEntity.color, anchorPointColor: '#13c2c2', cursorPointColor: '#13c2c2' },
+    onAnchorChange: (points) => {
+      syncDraftVerticesFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'corridor') return
+    stopAreaDraw()
+    message.success('已添加廊道 Entity')
+    refreshTable()
+    resetFormEntity()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -227,7 +275,7 @@ function resetFormEntity(): void {
 }
 
 function disarmPick(): void {
-  vertexPickArmed.value = false
+  stopAreaDraw()
 }
 
 function onEntityRowClick(record: CorridorSnapshot): void {
@@ -259,7 +307,7 @@ function onClearDraftVertices(): void {
   message.info('已清空中心线顶点')
 }
 
-const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '标绘'))
+const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制'))
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
@@ -327,51 +375,46 @@ function addEntityFromForm(): void {
 }
 
 function onEntityPrimary(): void {
-  if (selectedEntityId.value) applyEntityUpdate()
-  else addEntityFromForm()
+  if (selectedEntityId.value) {
+    applyEntityUpdate()
+    return
+  }
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('中心线至少需要 2 个顶点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  draftVertices.value = []
+  const ok = am.start(v, buildCorridorStartParams())
+  if (!ok) {
+    message.error('无法开始廊道绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+  // --- Corridor 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addEntityFromForm()
 }
 
 function onCancelEntitySelect(): void {
   selectedEntityId.value = null
-  disarmPick()
+  stopAreaDraw()
   resetFormEntity()
-}
-
-function toggleVertexPick(): void {
-  if (vertexPickArmed.value) {
-    vertexPickArmed.value = false
-    message.info('已取消地图添加顶点')
-    return
-  }
-  vertexPickArmed.value = true
-  message.info('请在地图上左键点击，依次追加中心线顶点')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!vertexPickArmed.value) return
-  if (!Number.isFinite(pick.longitude) || !Number.isFinite(pick.latitude)) {
-    message.warning('未能拾取到有效坐标')
-    return
-  }
-  draftVertices.value.push({
-    key: newVertexKey(),
-    longitude: pick.longitude,
-    latitude: pick.latitude,
-    height: Number.isFinite(pick.height) ? pick.height : 0,
-  })
-  message.success(`已添加顶点（共 ${draftVertices.value.length} 个）`)
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({ onLeftClick: onMapLeftClick })
-  mouseBinder = binder
 }
 
 const vertexColumns: TableColumnType<DraftVertex>[] = [
@@ -433,8 +476,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   updateVertexTableScrollY()
@@ -449,8 +493,9 @@ onBeforeUnmount(() => {
   vertexResizeObserver?.disconnect()
   tableResizeObserver = null
   vertexResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -619,6 +664,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
+                      <!-- 原「地图追加顶点」按钮：已由「绘制」直接 am.start
                       <a-tooltip title="地图追加顶点">
                         <a-button
                           :type="vertexPickArmed ? 'primary' : 'default'"
@@ -629,6 +675,7 @@ onBeforeUnmount(() => {
                           <template #icon><EnvironmentOutlined /></template>
                         </a-button>
                       </a-tooltip>
+                      -->
                       <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onEntityPrimary">
                         {{ primaryEntityText }}
                       </a-button>

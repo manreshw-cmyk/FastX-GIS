@@ -1,6 +1,17 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
+import {
+  clearAreaDraftTargetData,
+  createDraftPolylinePositionsProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+  type DraftCartesiansOption,
+  cloneDraftPoints,
+} from '../../Utils/areaDraft'
 import { createShape, ShapeType, type ShapeParams, type ShapeVertices } from './shape'
 
 import type { AddPolylineVolumeOptions, PolylineVolumeSnapshot, PolylineVolumeStyleOptions, UpdatePolylineVolumeProperties } from '../../Types'
@@ -9,7 +20,7 @@ export type { AddPolylineVolumeOptions, PolylineVolumeSnapshot, PolylineVolumeSt
 /** 折线路径顶点：[经度, 纬度, 高度(米)?]，至少 2 点 */
 export type PolylineVolumeLngLatTuple = readonly [lng: number, lat: number, height?: number]
 
-interface PolylineVolumeRecord {
+interface PolylineVolumeRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
@@ -74,14 +85,24 @@ export function buildShapeVerticesFromTargetData(td: Record<string, unknown>): S
   return createShape(params)
 }
 
-function normalizePositionsInput(raw: PolylineVolumeLngLatTuple[] | number[][]): number[][] {
+function normalizePositionsInput(
+  raw: PolylineVolumeLngLatTuple[] | number[][] | { longitude: number; latitude: number; height?: number }[],
+  minRows = 2,
+): number[][] {
   const out: number[][] = []
   for (const row of raw) {
+    if (row && typeof row === 'object' && !Array.isArray(row) && 'longitude' in row) {
+      const p = row as { longitude: number; latitude: number; height?: number }
+      if (!Number.isFinite(Number(p.longitude)) || !Number.isFinite(Number(p.latitude))) continue
+      out.push([Number(p.longitude), Number(p.latitude), Number(p.height ?? 0)])
+      continue
+    }
     const a = row as readonly number[]
     if (a.length < 2 || !Number.isFinite(Number(a[0])) || !Number.isFinite(Number(a[1]))) continue
     const h = a.length >= 3 && Number.isFinite(Number(a[2])) ? Number(a[2]) : 0
     out.push([Number(a[0]), Number(a[1]), h])
   }
+  if (out.length < minRows) return []
   return out
 }
 
@@ -135,6 +156,22 @@ function syncPolylineVolumeTargetShape(
     shapeParams,
     polylinePositions,
   }
+}
+
+function applyVisualPropsToTargetData(
+  td: Record<string, unknown>,
+  options: AddPolylineVolumeOptions | UpdatePolylineVolumeProperties,
+): void {
+  if (options.color !== undefined) td.color = options.color
+  if (options.alpha !== undefined) td.alpha = options.alpha
+  if (options.fill !== undefined) td.fill = options.fill
+  if (options.outline !== undefined) td.outline = options.outline
+  if (options.outlineColor !== undefined) td.outlineColor = options.outlineColor
+  if (options.outlineAlpha !== undefined) td.outlineAlpha = options.outlineAlpha
+  if (options.outlineWidth !== undefined) td.outlineWidth = options.outlineWidth
+  if (options.cornerType !== undefined) td.cornerType = options.cornerType
+  if (options.granularity !== undefined) td.granularity = options.granularity
+  if (options.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...options.style }
 }
 
 function mergePolylineVolumeGraphics(
@@ -208,6 +245,100 @@ function mergePolylineVolumeGraphics(
   }
 }
 
+function applyAreaDraftPolylineVolumeGraphics(
+  rec: PolylineVolumeRecord,
+  shape: ShapeVertices,
+  options: AddPolylineVolumeOptions | UpdatePolylineVolumeProperties,
+): void {
+  const getPoints = (): Cesium.Cartesian3[] => getDraftPoints(rec)
+  const pvg = rec.entity.polylineVolume ?? new Cesium.PolylineVolumeGraphics()
+  pvg.positions = createDraftPolylinePositionsProperty(getPoints)
+  pvg.shape = new Cesium.ConstantProperty(shape)
+
+  const corner =
+    (options as AddPolylineVolumeOptions).cornerType !== undefined
+      ? parseCornerType((options as AddPolylineVolumeOptions).cornerType)
+      : (options as UpdatePolylineVolumeProperties).cornerType !== undefined
+        ? parseCornerType((options as UpdatePolylineVolumeProperties).cornerType)
+        : parseCornerType(rec.targetData.cornerType as keyof typeof Cesium.CornerType | undefined)
+  pvg.cornerType = new Cesium.ConstantProperty(corner)
+
+  const gran =
+    (options as AddPolylineVolumeOptions).granularity ??
+    (options as UpdatePolylineVolumeProperties).granularity ??
+    options.style?.granularity
+  if (gran !== undefined) pvg.granularity = new Cesium.ConstantProperty(gran)
+
+  const fill = (options as AddPolylineVolumeOptions).fill ?? (options as UpdatePolylineVolumeProperties).fill ?? true
+  pvg.fill = new Cesium.ConstantProperty(fill)
+
+  const col =
+    toColor((options as AddPolylineVolumeOptions).color, (options as AddPolylineVolumeOptions).alpha) ??
+    toColor((options as UpdatePolylineVolumeProperties).color as string | undefined, (options as UpdatePolylineVolumeProperties).alpha) ??
+    toColor(String(rec.targetData.color ?? DEFAULT_COLOR), typeof rec.targetData.alpha === 'number' ? rec.targetData.alpha : 0.75)
+  if (col !== undefined) pvg.material = new Cesium.ColorMaterialProperty(col)
+
+  const outline =
+    (options as AddPolylineVolumeOptions).outline ?? (options as UpdatePolylineVolumeProperties).outline ?? false
+  pvg.outline = new Cesium.ConstantProperty(outline)
+
+  const oc =
+    toColor((options as AddPolylineVolumeOptions).outlineColor, (options as AddPolylineVolumeOptions).outlineAlpha) ??
+    toColor((options as UpdatePolylineVolumeProperties).outlineColor as string | undefined, (options as UpdatePolylineVolumeProperties).outlineAlpha) ??
+    toColor(DEFAULT_OUTLINE, 0.9)
+  if (oc !== undefined) pvg.outlineColor = new Cesium.ConstantProperty(oc)
+
+  const ow =
+    (options as AddPolylineVolumeOptions).outlineWidth ??
+    (options as UpdatePolylineVolumeProperties).outlineWidth ??
+    1
+  pvg.outlineWidth = new Cesium.ConstantProperty(ow)
+
+  if (options.style?.shadows !== undefined) {
+    pvg.shadows = new Cesium.ConstantProperty(options.style.shadows)
+  }
+  if (options.style?.distanceDisplayCondition !== undefined) {
+    pvg.distanceDisplayCondition = new Cesium.ConstantProperty(options.style.distanceDisplayCondition)
+  }
+
+  rec.entity.polylineVolume = pvg
+}
+
+function commitAreaDraftPolylineVolumeRecord(rec: PolylineVolumeRecord): boolean {
+  const rows = normalizePositionsInput((rec.targetData.polylinePositions as number[][]) ?? [])
+  if (rows.length < 2) return false
+
+  const shapeType = parseShapeTypeKey(rec.targetData.shapeType)
+  const shapeParams = resolveShapeParamsFromTargetData(rec.targetData, shapeType)
+  let shape: ShapeVertices
+  try {
+    shape = createShape(shapeParams)
+  } catch {
+    shape = createShape(defaultShapeParamsForType(ShapeType.CIRCLE))
+  }
+
+  const pvg = rec.entity.polylineVolume ?? (rec.entity.polylineVolume = new Cesium.PolylineVolumeGraphics())
+  const commitOpts: AddPolylineVolumeOptions = {
+    positions: rows,
+    shapeType: String(rec.targetData.shapeType ?? ShapeType.CIRCLE),
+    shapeParams,
+    cornerType: rec.targetData.cornerType as AddPolylineVolumeOptions['cornerType'],
+    granularity: rec.targetData.granularity as number | undefined,
+    color: typeof rec.targetData.color === 'string' ? rec.targetData.color : DEFAULT_COLOR,
+    alpha: typeof rec.targetData.alpha === 'number' ? rec.targetData.alpha : 0.75,
+    fill: rec.targetData.fill as boolean | undefined,
+    outline: rec.targetData.outline as boolean | undefined,
+    outlineColor: typeof rec.targetData.outlineColor === 'string' ? rec.targetData.outlineColor : DEFAULT_OUTLINE,
+    outlineAlpha: typeof rec.targetData.outlineAlpha === 'number' ? rec.targetData.outlineAlpha : 0.9,
+    outlineWidth: typeof rec.targetData.outlineWidth === 'number' ? rec.targetData.outlineWidth : 1,
+    style: rec.targetData.styleSnapshot as PolylineVolumeStyleOptions | undefined,
+  }
+  mergePolylineVolumeGraphics(pvg, positionsToCartesian3Array(rows), shape, commitOpts, false)
+  clearAreaDraftTargetData(rec.targetData)
+  rec.draftPoints = undefined
+  return true
+}
+
 /**
  * 基础绘制 — 折线体（`Entity` + `PolylineVolumeGraphics`）。
  */
@@ -233,6 +364,10 @@ export default class PolylineVolume {
     if (!viewer || viewer.isDestroyed()) return undefined
     const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('pvl')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
+
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
 
     const rows = normalizePositionsInput(options.positions as number[][])
     if (rows.length < 2) return undefined
@@ -268,9 +403,99 @@ export default class PolylineVolume {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddPolylineVolumeOptions): Entity | undefined {
+    const draftCarts = (options as AddPolylineVolumeOptions & DraftCartesiansOption).draftCartesians
+    const rows = draftCarts?.length
+      ? draftCarts.map((c) => {
+          const carto = Cesium.Cartographic.fromCartesian(c)
+          return [
+            Cesium.Math.toDegrees(carto.longitude),
+            Cesium.Math.toDegrees(carto.latitude),
+            carto.height,
+          ] as number[]
+        })
+      : normalizePositionsInput(options.positions as number[][], 1)
+    if (rows.length < 1) return undefined
+
+    const shapeType = parseShapeTypeKey(options.shapeType ?? options.targetData?.shapeType)
+    const shapeParams =
+      options.shapeParams ?? resolveShapeParamsFromTargetData(mergeTargetData(options.targetData), shapeType)
+    let shape: ShapeVertices
+    try {
+      shape = createShape(shapeParams)
+    } catch {
+      shape = createShape(defaultShapeParamsForType(ShapeType.CIRCLE))
+    }
+
+    const td = mergeTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    const mergedTd = syncPolylineVolumeTargetShape(td, shapeType, shapeParams, rows)
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: PolylineVolumeRecord = { viewer, entity, targetData: mergedTd }
+    setDraftPoints(rec, positionsToCartesian3Array(rows))
+    applyAreaDraftPolylineVolumeGraphics(rec, shape, options)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   updatePolylineVolume(id: string, properties: UpdatePolylineVolumeProperties): boolean {
     const rec = this.takeIfAlive(id)
     if (!rec) return false
+    const td = rec.targetData
+    const p = properties
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyDraftPatchToTargetData(rec, p)
+      applyVisualPropsToTargetData(td, p)
+      const shapeType = parseShapeTypeKey(rec.targetData.shapeType)
+      const shapeParams = resolveShapeParamsFromTargetData(rec.targetData, shapeType)
+      const draftCarts = (p as UpdatePolylineVolumeProperties & DraftCartesiansOption).draftCartesians
+      if (draftCarts?.length) {
+        setDraftPoints(rec, cloneDraftPoints(draftCarts))
+        const rows = draftCarts.map((c) => {
+          const carto = Cesium.Cartographic.fromCartesian(c)
+          return [
+            Cesium.Math.toDegrees(carto.longitude),
+            Cesium.Math.toDegrees(carto.latitude),
+            carto.height,
+          ] as number[]
+        })
+        rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+      } else if (p.positions !== undefined) {
+        const rows = normalizePositionsInput(p.positions as number[][], 1)
+        if (rows.length < 1) return false
+        setDraftPoints(rec, positionsToCartesian3Array(rows))
+        rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+      } else {
+        const pts = getDraftPoints(rec)
+        if (pts.length >= 2) {
+          const rows = pts.map((c) => {
+            const carto = Cesium.Cartographic.fromCartesian(c)
+            return [
+              Cesium.Math.toDegrees(carto.longitude),
+              Cesium.Math.toDegrees(carto.latitude),
+              carto.height,
+            ] as number[]
+          })
+          rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+        }
+      }
+      return commitAreaDraftPolylineVolumeRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
+
     const pvg = rec.entity.polylineVolume ?? (rec.entity.polylineVolume = new Cesium.PolylineVolumeGraphics())
 
     let rows = normalizePositionsInput(
@@ -297,6 +522,7 @@ export default class PolylineVolume {
     }
 
     mergePolylineVolumeGraphics(pvg, positionsToCartesian3Array(rows), shape, properties, false)
+    applyVisualPropsToTargetData(rec.targetData, properties)
 
     if (properties.show !== undefined) rec.entity.show = properties.show
     if (properties.description !== undefined) {
@@ -306,6 +532,71 @@ export default class PolylineVolume {
       rec.targetData = { ...rec.targetData, ...properties.targetData }
     }
     rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+    if (rec.viewer.scene.requestRenderMode) rec.viewer.scene.requestRender()
+    return true
+  }
+
+  private applyDraftPatchToTargetData(
+    rec: PolylineVolumeRecord,
+    p: UpdatePolylineVolumeProperties,
+  ): void {
+    applyVisualPropsToTargetData(rec.targetData, p)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    const shapeType =
+      p.shapeType !== undefined ? parseShapeTypeKey(p.shapeType) : parseShapeTypeKey(rec.targetData.shapeType)
+    const shapeParams =
+      p.shapeParams !== undefined
+        ? p.shapeParams
+        : resolveShapeParamsFromTargetData({ ...rec.targetData, shapeType }, shapeType)
+    const rows = p.positions !== undefined
+      ? normalizePositionsInput(p.positions as number[][], 1)
+      : ((rec.targetData.polylinePositions as number[][]) ?? [])
+    rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+  }
+
+  private updateAreaDraft(rec: PolylineVolumeRecord, p: UpdatePolylineVolumeProperties): boolean {
+    markAreaDraftTargetData(rec.targetData)
+    this.applyDraftPatchToTargetData(rec, p)
+
+    const shapeType = parseShapeTypeKey(rec.targetData.shapeType)
+    let shapeParams = resolveShapeParamsFromTargetData(rec.targetData, shapeType)
+
+    const draftCarts = (p as UpdatePolylineVolumeProperties & DraftCartesiansOption).draftCartesians
+    if (draftCarts?.length) {
+      setDraftPoints(rec, cloneDraftPoints(draftCarts))
+      const rows = draftCarts.map((c) => {
+        const carto = Cesium.Cartographic.fromCartesian(c)
+        return [
+          Cesium.Math.toDegrees(carto.longitude),
+          Cesium.Math.toDegrees(carto.latitude),
+          carto.height,
+        ] as number[]
+      })
+      if (p.shapeParams !== undefined) shapeParams = p.shapeParams
+      rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+    } else if (p.positions !== undefined) {
+      const rows = normalizePositionsInput(p.positions as number[][], 1)
+      if (rows.length < 1) return false
+      setDraftPoints(rec, positionsToCartesian3Array(rows))
+      if (p.shapeParams !== undefined) shapeParams = p.shapeParams
+      rec.targetData = syncPolylineVolumeTargetShape(rec.targetData, shapeType, shapeParams, rows)
+    }
+
+    let shape: ShapeVertices
+    try {
+      shape = createShape(shapeParams)
+    } catch {
+      shape = createShape(defaultShapeParamsForType(ShapeType.CIRCLE))
+    }
+
+    applyAreaDraftPolylineVolumeGraphics(rec, shape, p)
+
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
     return true
   }
 
@@ -318,7 +609,7 @@ export default class PolylineVolume {
 
   getPolylineVolume(id: string): PolylineVolumeSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pvg = rec.entity.polylineVolume
     const posArr = (rec.targetData.polylinePositions as number[][]) ?? []
     const fill = pvg ? sampleProperty<boolean>(pvg.fill) : undefined
@@ -332,7 +623,13 @@ export default class PolylineVolume {
     if (pvg?.outlineColor) {
       outlineColorCss = colorToCss(sampleProperty<Color>(pvg.outlineColor))
     }
-    const ow = pvg ? sampleProperty<number>(pvg.outlineWidth) : undefined
+    const owTd = rec.targetData.outlineWidth
+    const ow =
+      typeof owTd === 'number' && Number.isFinite(owTd)
+        ? owTd
+        : pvg
+          ? sampleProperty<number>(pvg.outlineWidth)
+          : undefined
     const desc = sampleProperty<string>(rec.entity.description)
 
     return {
@@ -364,11 +661,12 @@ export default class PolylineVolume {
     return this.getIds(viewer).length
   }
 
-  getIds(viewer?: Viewer): string[] {
+  getIds(viewer?: Viewer, opts?: { includeDraft?: boolean }): string[] {
     const out: string[] = []
     for (const [id, rec] of this.data) {
       if (!this.isRecordAlive(rec)) continue
       if (viewer !== undefined && rec.viewer !== viewer) continue
+      if (!opts?.includeDraft && isAreaDraftTargetData(rec.targetData)) continue
       out.push(id)
     }
     return out

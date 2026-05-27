@@ -37,6 +37,7 @@ import PolylineVolumeCollection from "./Draw/PolylineVolume/PolylineVolumeCollec
 import Plane from "./Draw/Plane";
 import PlaneCollection from "./Draw/Plane/PlaneCollection";
 import Path from "./Draw/Path";
+import AreaManager from "./areaManager";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
 import Utils from "./Utils";
@@ -85,6 +86,23 @@ export {
 export { default as Plane } from "./Draw/Plane";
 export { default as PlaneCollection } from "./Draw/Plane/PlaneCollection";
 export { default as Path } from "./Draw/Path";
+export { default as AreaManager } from "./areaManager";
+export type {
+  AreaDrawShapeType,
+  AreaDrawInteractionMode,
+  AreaDrawRenderMode,
+  AreaDrawPreviewStyle,
+  AreaDrawStartParams,
+  AreaDrawDirectParams,
+  AreaDrawResult,
+  AreaDrawOutput,
+  AreaDrawPublishCallback,
+  AreaManagerDrawApis,
+  AreaManagerEntityApis,
+  AreaManagerPrimitiveApis,
+  AreaManagerOptions,
+  AreaShapeInteractionRule,
+} from "./Types";
 export {
   PlaneMaterialType,
   DEFAULT_PLANE_VIDEO,
@@ -394,6 +412,42 @@ const polylineVolumeCollectionApi = new PolylineVolumeCollection();
 const planeApi = new Plane();
 const planeCollectionApi = new PlaneCollection();
 const pathApi = new Path();
+const areaManagerApi = new AreaManager({
+  point: pointApi,
+  pointCollection: pointCollectionApi,
+  label: labelApi,
+  labelCollection: labelCollectionApi,
+  billboard: billboardApi,
+  billboardCollection: billboardCollectionApi,
+  model: modelApi,
+  modelCollection: modelCollectionApi,
+  polyLine: polyLineApi,
+  polyLineCollection: polyLineCollectionApi,
+  polygon: polygonApi,
+  polygonCollection: polygonCollectionApi,
+  circle: circleApi,
+  circleCollection: circleCollectionApi,
+  rectangle: rectangleApi,
+  rectangleCollection: rectangleCollectionApi,
+  sector: sectorApi,
+  sectorCollection: sectorCollectionApi,
+  corridor: corridorApi,
+  corridorCollection: corridorCollectionApi,
+  cylinder: cylinderApi,
+  cylinderCollection: cylinderCollectionApi,
+  ellipsoid: ellipsoidApi,
+  ellipsoidCollection: ellipsoidCollectionApi,
+  wall: wallApi,
+  runway: runwayApi,
+  runwayCollection: runwayCollectionApi,
+  box: boxApi,
+  boxCollection: boxCollectionApi,
+  polylineVolume: polylineVolumeApi,
+  polylineVolumeCollection: polylineVolumeCollectionApi,
+  plane: planeApi,
+  planeCollection: planeCollectionApi,
+  path: pathApi,
+});
 
 function resolveMapLayer(mapName?: string): Layer | null {
   const key = mapName?.trim();
@@ -449,6 +503,7 @@ export const FastX = {
   Plane: planeApi,
   PlaneCollection: planeCollectionApi,
   Path: pathApi,
+  AreaManager: areaManagerApi,
   registerCesiumXVueComponents,
   /** 获取已按 `mapName` 注册的 `Layer`；未传名且仅有一个注册实例时返回该实例 */
   getLayer(mapName?: string): Layer | null {

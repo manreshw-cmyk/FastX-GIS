@@ -1,11 +1,5 @@
 ﻿<script setup lang="ts">
-import {
-  ClearOutlined,
-  DeleteOutlined,
-  DownOutlined,
-  EnvironmentOutlined,
-  PlusOutlined,
-} from '@ant-design/icons-vue'
+import { ClearOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
@@ -13,10 +7,10 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type {
   AddWallOptions,
+  AreaDrawStartParams,
   ColorStop,
+  LngLatHeight,
   MaterialType,
-  MouseEventListenOptions,
-  MouseEventPickPayload,
   UpdateWallProperties,
   WallSnapshot,
 } from '../../FastX'
@@ -42,7 +36,8 @@ const materialTypeOptions: { value: MaterialType; label: string }[] = [
 ]
 
 const mapStore = useMapLayerStore()
-const vertexPickArmed = ref(false)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedId = ref<string | null>(null)
 
 interface DraftVertex {
@@ -92,13 +87,66 @@ const vertexTableScrollY = ref(96)
 let tableResizeObserver: ResizeObserver | null = null
 let vertexResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
+let viewerRef: Viewer | null = null
+
+function syncDraftVerticesFromPick(points: LngLatHeight[]): void {
+  draftVertices.value = points.map((p) => ({
+    key: newVertexKey(),
+    longitude: p.longitude,
+    latitude: p.latitude,
+    height: p.height ?? 0,
+  }))
 }
 
-let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+function wallStyleFieldsForDraw(): Omit<AddWallOptions, 'positions'> {
+  const saved = draftVertices.value
+  draftVertices.value = [
+    { key: '_t0', longitude: 0, latitude: 0, height: 0 },
+    { key: '_t1', longitude: 0, latitude: 0, height: 0 },
+  ]
+  try {
+    const { positions: _, ...rest } = buildAddPayload()
+    return rest
+  } finally {
+    draftVertices.value = saved
+  }
+}
+
+function buildWallStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'wall',
+    id: form.id.trim() || undefined,
+    ...(wallStyleFieldsForDraw() as Record<string, unknown>),
+    targetData: echoTargetDataForApi(),
+    preview: {
+      lineColor: form.solidColor,
+      anchorPointColor: '#2b8cbe',
+      cursorPointColor: '#2b8cbe',
+    },
+    onAnchorChange: (points) => {
+      syncDraftVerticesFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  bindAreaManagerPublish(
+    'wall',
+    () => {
+      message.success('已添加墙体')
+      selectedId.value = null
+      refreshTable()
+      resetForm()
+    },
+    stopAreaDraw,
+  )
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -414,12 +462,8 @@ function resetForm(): void {
   draftVertices.value = []
 }
 
-function disarmPick(): void {
-  vertexPickArmed.value = false
-}
-
 function onWallRowClick(record: WallSnapshot): void {
-  disarmPick()
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Wall?.getWall(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -430,14 +474,16 @@ function onDeleteWallRow(id: string, e: Event): void {
   window.FastX?.Wall?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    disarmPick()
+    stopAreaDraw()
     resetForm()
   }
   refreshTable()
   message.success('已删除')
 }
 
-const primaryWallText = computed(() => (selectedId.value ? '确定' : '标绘'))
+const primaryWallText = computed(() =>
+  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 function onAddVertexRow(): void {
   draftVertices.value.push({
@@ -455,48 +501,6 @@ function onRemoveVertexRow(key: string): void {
 
 function onClearVertices(): void {
   draftVertices.value = []
-}
-
-function toggleVertexPick(): void {
-  if (vertexPickArmed.value) {
-    vertexPickArmed.value = false
-    message.info('已取消地图添加顶点')
-    return
-  }
-  vertexPickArmed.value = true
-  message.info('请在地图上左键点击，依次追加轮廓顶点')
-}
-
-function isValidPickLonLat(pick: MouseEventPickPayload): boolean {
-  return Number.isFinite(pick.longitude) && Number.isFinite(pick.latitude)
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!vertexPickArmed.value) return
-  if (!isValidPickLonLat(pick)) {
-    message.warning('未能拾取到有效坐标')
-    return
-  }
-  draftVertices.value.push({
-    key: newVertexKey(),
-    longitude: pick.longitude,
-    latitude: pick.latitude,
-    height: Number.isFinite(pick.height) ? pick.height : 0,
-  })
-  message.success(`已添加顶点（共 ${draftVertices.value.length} 个）`)
-  void nextTick(() => updateVertexTableScrollY())
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({ onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick) })
-  mouseBinder = binder
 }
 
 function onImageFile(ev: Event): void {
@@ -570,7 +574,7 @@ function addWallFromForm(): void {
   const W = window.FastX?.Wall
   const v = mapStore.getViewer()
   if (!W || !v || v.isDestroyed()) return
-  disarmPick()
+  stopAreaDraw()
   let payload: AddWallOptions
   try {
     payload = buildAddPayload()
@@ -595,13 +599,49 @@ function addWallFromForm(): void {
 }
 
 function onPrimaryClick(): void {
-  if (selectedId.value) applyUpdateToSelected()
-  else addWallFromForm()
+  if (selectedId.value) {
+    applyUpdateToSelected()
+    return
+  }
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('墙轮廓至少需要 2 个顶点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  draftVertices.value = []
+  const ok = am.start(v, buildWallStartParams())
+  if (!ok) {
+    message.error('无法开始墙体绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Wall 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addWallFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
-  disarmPick()
+  stopAreaDraw()
   resetForm()
 }
 
@@ -656,8 +696,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   updateVertexTableScrollY()
@@ -672,8 +713,9 @@ onBeforeUnmount(() => {
   vertexResizeObserver?.disconnect()
   tableResizeObserver = null
   vertexResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -953,20 +995,10 @@ onBeforeUnmount(() => {
 
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
-                    <div class="hzd-actions-primary-row">
-                      <a-tooltip title="地图追加顶点">
-                        <a-button
-                          :type="vertexPickArmed ? 'primary' : 'default'"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="拾取顶点"
-                          @click="toggleVertexPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
+                    <div class="hzd-actions-primary-row hzd-actions-primary-row--solo">
                       <a-button
                         type="primary"
-                        class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex"
+                        class="map-tool-primary-btn hzd-primary-tall"
                         @click="onPrimaryClick"
                       >
                         {{ primaryWallText }}

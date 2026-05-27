@@ -1,8 +1,21 @@
 import * as Cesium from "cesium";
 import type { Entity, Viewer } from "cesium";
 import { createRandomXgxId, type LngLatHeight } from "../../Coordinates";
+import {
+  clearAreaDraftTargetData,
+  createDraftPolylinePositionsProperty,
+  draftLinePositions,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+  type DraftCartesiansOption,
+  cloneDraftPoints,
+} from "../../Utils/areaDraft";
 
 import type { AddWallOptions, ColorStop, GradientMaterialOptions, ImageMaterialOptions, Position3D, UpdateWallProperties, WallPosition, WallSnapshot, WallStyleOptions } from '../../Types'
+import { cartesianToLngLat } from '../../Utils/geoDraw'
 export type { AddWallOptions, ColorStop, GradientMaterialOptions, ImageMaterialOptions, Position3D, UpdateWallProperties, WallPosition, WallSnapshot, WallStyleOptions }
 
 /** 材质类型 */
@@ -15,7 +28,7 @@ export type MaterialType =
   | "imageStretch"; // 图片拉伸铺满整面墙
 
 /** 内部记录 */
-interface WallRecord {
+interface WallRecord extends AreaDraftPointsHolder {
   viewer: Viewer;
   entity: Entity;
   targetData: Record<string, unknown>;
@@ -278,9 +291,10 @@ export default class Wall {
   /** 将输入位置转换为 Cartesian3 数组 */
   private positionsToCartesianArray(
     positions: WallPosition[],
+    minVertices = 2,
   ): Cesium.Cartesian3[] {
-    if (!positions || positions.length < 2) {
-      throw new Error("[Wall] 至少需要2个点才能构建墙体");
+    if (!positions || positions.length < minVertices) {
+      throw new Error(`[Wall] 至少需要${minVertices}个点才能构建墙体`);
     }
 
     return positions.map((pos) => {
@@ -691,6 +705,203 @@ export default class Wall {
     return graphics;
   }
 
+  private buildWallGraphicsDraft(rec: WallRecord, options: AddWallOptions): Cesium.WallGraphics {
+    const graphics = new Cesium.WallGraphics();
+    graphics.positions = createDraftPolylinePositionsProperty(() => getDraftPoints(rec));
+
+    if (options.height !== undefined) {
+      const height = options.height;
+      graphics.maximumHeights = new Cesium.CallbackProperty(() => {
+        const n = draftLinePositions(getDraftPoints(rec)).length;
+        return new Array(n).fill(height);
+      }, false);
+    }
+
+    if (options.extrudedHeight !== undefined) {
+      const extrudedHeight = options.extrudedHeight;
+      graphics.minimumHeights = new Cesium.CallbackProperty(() => {
+        const n = draftLinePositions(getDraftPoints(rec)).length;
+        return new Array(n).fill(extrudedHeight);
+      }, false);
+    }
+
+    if (options.clampToGround !== undefined) {
+      const g = graphics as unknown as {
+        classificationType?: Cesium.ClassificationType | Cesium.ConstantProperty;
+      };
+      g.classificationType = new Cesium.ConstantProperty(
+        options.clampToGround
+          ? Cesium.ClassificationType.TERRAIN
+          : Cesium.ClassificationType.CESIUM_3D_TILE,
+      );
+    }
+
+    const fill = options.style?.fill ?? true;
+    graphics.fill = new Cesium.ConstantProperty(fill);
+    const outline = options.style?.outline ?? false;
+    graphics.outline = new Cesium.ConstantProperty(outline);
+
+    if (options.style?.outlineColor) {
+      const outlineColor =
+        typeof options.style.outlineColor === "string"
+          ? Cesium.Color.fromCssColorString(options.style.outlineColor)
+          : options.style.outlineColor;
+      graphics.outlineColor = new Cesium.ConstantProperty(outlineColor);
+    }
+
+    const outlineWidth = options.style?.outlineWidth ?? 1;
+    graphics.outlineWidth = new Cesium.ConstantProperty(outlineWidth);
+
+    if (options.style?.granularity !== undefined) {
+      graphics.granularity = new Cesium.ConstantProperty(options.style.granularity);
+    }
+
+    if (options.style?.distanceDisplayCondition !== undefined) {
+      graphics.distanceDisplayCondition = new Cesium.ConstantProperty(
+        options.style.distanceDisplayCondition,
+      );
+    }
+
+    return graphics;
+  }
+
+  /** 提交前同步轮廓顶点（positions 优先，否则 draftCartesians） */
+  private syncWallPositionsBeforeCommit(
+    rec: WallRecord,
+    p: UpdateWallProperties,
+  ): void {
+    const draftCarts = (p as UpdateWallProperties & DraftCartesiansOption).draftCartesians;
+    if (p.positions !== undefined && p.positions.length >= 2) {
+      rec.originalPositions = [...p.positions];
+      setDraftPoints(rec, this.positionsToCartesianArray(p.positions, 1));
+      return;
+    }
+    if (draftCarts?.length) {
+      setDraftPoints(rec, cloneDraftPoints(draftCarts));
+      if (draftCarts.length >= 2) {
+        rec.originalPositions = draftCarts.map(cartesianToLngLat);
+      }
+    }
+  }
+
+  private commitAreaDraftWallRecord(rec: WallRecord): boolean {
+    const draftPts = getDraftPoints(rec);
+    if (
+      (!rec.originalPositions || rec.originalPositions.length < 2) &&
+      draftPts.length >= 2
+    ) {
+      rec.originalPositions = draftPts.map(cartesianToLngLat);
+    }
+    if (!rec.originalPositions || rec.originalPositions.length < 2) return false;
+
+    const wallGraphics = this.buildWallGraphics({
+      positions: rec.originalPositions,
+      height: rec.targetData.height as number | undefined,
+      extrudedHeight: rec.targetData.extrudedHeight as number | undefined,
+      clampToGround: rec.targetData.clampToGround as boolean | undefined,
+      style: rec.targetData.styleSnapshot as WallStyleOptions | undefined,
+      fill: rec.targetData.fill as boolean | undefined,
+      outline: rec.targetData.outline as boolean | undefined,
+      outlineColor: rec.targetData.outlineColor as string | undefined,
+      outlineWidth: rec.targetData.outlineWidth as number | undefined,
+    } as AddWallOptions);
+
+    rec.entity.wall = wallGraphics;
+    this.syncWallRecordMaterialFromStyle(rec);
+    this.bindWallMaterialFromOptions(rec, this.wallMaterialOptionsFromRecord(rec));
+
+    clearAreaDraftTargetData(rec.targetData);
+    rec.draftPoints = undefined;
+    this.mergeEchoIntoRecTargetData(rec);
+    return true;
+  }
+
+  private applyStylePatchToTargetData(
+    rec: WallRecord,
+    p: UpdateWallProperties,
+  ): void {
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData };
+    }
+    if (p.height !== undefined) rec.targetData.height = p.height;
+    if (p.extrudedHeight !== undefined) rec.targetData.extrudedHeight = p.extrudedHeight;
+    if (p.clampToGround !== undefined) rec.targetData.clampToGround = p.clampToGround;
+    if (p.fill !== undefined) rec.targetData.fill = p.fill;
+    if (p.outline !== undefined) rec.targetData.outline = p.outline;
+    if (p.outlineColor !== undefined) {
+      rec.targetData.outlineColor =
+        p.outlineColor instanceof Cesium.Color ? this.colorOrCss(p.outlineColor) : p.outlineColor;
+    }
+    if (p.outlineWidth !== undefined) rec.targetData.outlineWidth = p.outlineWidth;
+    if (p.style !== undefined) {
+      rec.targetData.styleSnapshot = { ...(rec.targetData.styleSnapshot as object), ...p.style };
+    }
+    if (p.materialType !== undefined) rec.materialType = p.materialType;
+    if (p.imageUrl !== undefined) rec.imageUrl = p.imageUrl;
+    if (p.repeat !== undefined) rec.repeat = p.repeat;
+    if (p.gradientStartColor !== undefined) rec.gradientStartColor = p.gradientStartColor;
+    if (p.gradientEndColor !== undefined) rec.gradientEndColor = p.gradientEndColor;
+    if (p.gradientDirection !== undefined) rec.gradientDirection = p.gradientDirection;
+    if (p.colorStops !== undefined) rec.colorStops = p.colorStops;
+    if (p.color !== undefined) rec.solidColor = p.color;
+    if (p.style?.color !== undefined) rec.solidColor = p.style.color;
+    const td = rec.targetData;
+    if (p.materialType === undefined && typeof td.materialType === 'string') {
+      rec.materialType = td.materialType as MaterialType;
+    }
+    if (p.imageUrl === undefined && typeof td.imageUrl === 'string') {
+      rec.imageUrl = td.imageUrl;
+    }
+    this.syncWallRecordMaterialFromStyle(rec);
+  }
+
+  /** 将 styleSnapshot / targetData 中的材质字段同步到 WallRecord，供草稿与提交绑定材质 */
+  private syncWallRecordMaterialFromStyle(rec: WallRecord): void {
+    const cfg = this.resolveMaterialType({
+      materialType: rec.materialType,
+      color: rec.solidColor,
+      imageUrl: rec.imageUrl,
+      repeat: rec.repeat,
+      gradientStartColor: rec.gradientStartColor,
+      gradientEndColor: rec.gradientEndColor,
+      gradientDirection: rec.gradientDirection,
+      colorStops: rec.colorStops,
+      style: rec.targetData.styleSnapshot as WallStyleOptions | undefined,
+    } as AddWallOptions)
+    rec.materialType = cfg.type as MaterialType
+    if (cfg.color !== undefined) rec.solidColor = cfg.color as string
+    if (cfg.imageUrl !== undefined) rec.imageUrl = cfg.imageUrl
+    if (cfg.repeat !== undefined) rec.repeat = cfg.repeat
+    if (cfg.gradientStartColor !== undefined) rec.gradientStartColor = cfg.gradientStartColor as string
+    if (cfg.gradientEndColor !== undefined) rec.gradientEndColor = cfg.gradientEndColor as string
+    if (cfg.gradientDirection !== undefined) rec.gradientDirection = cfg.gradientDirection
+    if (cfg.colorStops !== undefined) rec.colorStops = cfg.colorStops
+  }
+
+  private wallMaterialOptionsFromRecord(rec: WallRecord): AddWallOptions {
+    return {
+      materialType: rec.materialType,
+      color: rec.solidColor,
+      imageUrl: rec.imageUrl,
+      repeat: rec.repeat,
+      gradientStartColor: rec.gradientStartColor,
+      gradientEndColor: rec.gradientEndColor,
+      gradientDirection: rec.gradientDirection,
+      colorStops: rec.colorStops,
+      style: rec.targetData.styleSnapshot as WallStyleOptions | undefined,
+      fill: rec.targetData.fill as boolean | undefined,
+      outline: rec.targetData.outline as boolean | undefined,
+      outlineColor: rec.targetData.outlineColor as string | undefined,
+      outlineWidth: rec.targetData.outlineWidth as number | undefined,
+    } as AddWallOptions
+  }
+
+  private updateAreaDraftWallGraphics(rec: WallRecord, options: AddWallOptions): void {
+    const wallGraphics = this.buildWallGraphicsDraft(rec, options);
+    rec.entity.wall = wallGraphics;
+    this.bindWallMaterialFromOptions(rec, options);
+  }
+
   /** 按添加/更新参数绑定墙材质（须在 WallRecord 已登记后调用） */
   private bindWallMaterialFromOptions(
     rec: WallRecord,
@@ -939,6 +1150,10 @@ export default class Wall {
     const id = options.id?.trim() ? options.id : createRandomXgxId("wall");
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined;
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options);
+    }
+
     if (!options.positions || options.positions.length < 2) {
       console.error("[Wall] 至少需要2个点才能构建墙体");
       return undefined;
@@ -987,6 +1202,62 @@ export default class Wall {
       return entity;
     } catch (error) {
       console.error(`[Wall] 添加墙体失败: ${id}`, error);
+      return undefined;
+    }
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddWallOptions): Entity | undefined {
+    if (!options.positions || options.positions.length < 1) {
+      console.error("[Wall] 草稿至少需要1个点");
+      return undefined;
+    }
+
+    try {
+      const draftCarts = (options as AddWallOptions & DraftCartesiansOption).draftCartesians;
+      const cartesians = draftCarts?.length
+        ? cloneDraftPoints(draftCarts)
+        : this.positionsToCartesianArray(options.positions, 1);
+      if (!cartesians?.length) return undefined;
+      const materialConfig = this.resolveMaterialType(options);
+
+      const entity = new Cesium.Entity({
+        id,
+        show: options.show !== false,
+      });
+      if (options.description !== undefined) {
+        entity.description = new Cesium.ConstantProperty(options.description);
+      }
+
+      const targetData = this.cloneTargetData(options.targetData);
+      markAreaDraftTargetData(targetData);
+      if (options.style) targetData.styleSnapshot = { ...options.style };
+      if (options.height !== undefined) targetData.height = options.height;
+      if (options.extrudedHeight !== undefined) targetData.extrudedHeight = options.extrudedHeight;
+      if (options.clampToGround !== undefined) targetData.clampToGround = options.clampToGround;
+
+      const rec: WallRecord = {
+        viewer,
+        entity,
+        targetData,
+        originalPositions: [...options.positions],
+        materialType: materialConfig.type,
+        solidColor: materialConfig.type === "color" ? materialConfig.color : undefined,
+        imageUrl: materialConfig.imageUrl,
+        repeat: materialConfig.repeat,
+        gradientStartColor: materialConfig.gradientStartColor,
+        gradientEndColor: materialConfig.gradientEndColor,
+        gradientDirection: materialConfig.gradientDirection,
+        colorStops: materialConfig.colorStops,
+      };
+
+      setDraftPoints(rec, cartesians);
+      viewer.entities.add(entity);
+      this.data.set(id, rec);
+      this.updateAreaDraftWallGraphics(rec, options);
+      this.mergeEchoIntoRecTargetData(rec);
+      return entity;
+    } catch (error) {
+      console.error(`[Wall] 添加草稿墙体失败: ${id}`, error);
       return undefined;
     }
   }
@@ -1050,6 +1321,19 @@ export default class Wall {
   updateWall(id: string, properties: UpdateWallProperties): boolean {
     const rec = this.takeIfAlive(id);
     if (!rec) return false;
+
+    const p = properties;
+    const td = rec.targetData;
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p);
+      this.syncWallPositionsBeforeCommit(rec, p);
+      return this.commitAreaDraftWallRecord(rec);
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p);
+    }
 
     const wallGraphics = rec.entity.wall;
     if (!wallGraphics) return false;
@@ -1161,6 +1445,35 @@ export default class Wall {
     return true;
   }
 
+  private updateAreaDraft(rec: WallRecord, p: UpdateWallProperties): boolean {
+    markAreaDraftTargetData(rec.targetData);
+    this.applyStylePatchToTargetData(rec, p);
+
+    const draftCarts = (p as UpdateWallProperties & DraftCartesiansOption).draftCartesians;
+    if (draftCarts?.length) {
+      setDraftPoints(rec, cloneDraftPoints(draftCarts));
+    } else if (p.positions !== undefined) {
+      if (p.positions.length < 1) return false;
+      rec.originalPositions = [...p.positions];
+      setDraftPoints(rec, this.positionsToCartesianArray(p.positions, 1));
+    }
+
+    this.updateAreaDraftWallGraphics(rec, {
+      positions: rec.originalPositions,
+      height: rec.targetData.height as number | undefined,
+      extrudedHeight: rec.targetData.extrudedHeight as number | undefined,
+      clampToGround: rec.targetData.clampToGround as boolean | undefined,
+      ...this.wallMaterialOptionsFromRecord(rec),
+    } as AddWallOptions);
+
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
+    this.mergeEchoIntoRecTargetData(rec);
+    return true;
+  }
+
   /**
    * 批量更新墙体
    */
@@ -1207,7 +1520,7 @@ export default class Wall {
    */
   getWall(id: string): WallSnapshot | null {
     const rec = this.takeIfAlive(id);
-    if (!rec) return null;
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null;
 
     const wall = rec.entity.wall;
     if (!wall) return null;
@@ -1374,11 +1687,12 @@ export default class Wall {
   /**
    * 获取所有墙体ID
    */
-  getIds(viewer?: Viewer): string[] {
+  getIds(viewer?: Viewer, opts?: { includeDraft?: boolean }): string[] {
     const out: string[] = [];
     for (const [id, rec] of this.data) {
       if (!this.isRecordAlive(rec)) continue;
       if (viewer !== undefined && rec.viewer !== viewer) continue;
+      if (!opts?.includeDraft && isAreaDraftTargetData(rec.targetData)) continue;
       out.push(id);
     }
     return out;

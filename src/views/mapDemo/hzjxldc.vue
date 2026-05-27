@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, RectangleSnapshot } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, RectangleSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -14,7 +14,8 @@ const DEFAULT_FILL_COLOR = '#13c2c2'
 const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
-const pickCorner = ref<'sw' | 'ne' | null>(null)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedId = ref<string | null>(null)
 
 const form = reactive({
@@ -39,9 +40,65 @@ const tableShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = { listen: (options: MouseEventListenOptions) => void; destroy: () => void }
 let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+
+function syncRectangleFromAnchors(points: LngLatHeight[]): void {
+  if (points.length >= 1) {
+    form.west = points[0]!.longitude
+    form.south = points[0]!.latitude
+    form.east = points[0]!.longitude
+    form.north = points[0]!.latitude
+  }
+  if (points.length >= 2) {
+    form.west = Math.min(points[0]!.longitude, points[1]!.longitude)
+    form.east = Math.max(points[0]!.longitude, points[1]!.longitude)
+    form.south = Math.min(points[0]!.latitude, points[1]!.latitude)
+    form.north = Math.max(points[0]!.latitude, points[1]!.latitude)
+  }
+}
+
+function buildRectangleStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'rectangle',
+    id: form.id.trim() || undefined,
+    extrudedHeight: form.extrudedHeight,
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#13c2c2',
+      cursorPointColor: '#13c2c2',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+    },
+    onAnchorChange: (points) => {
+      syncRectangleFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'rectangle') return
+    stopAreaDraw()
+    message.success('已添加矩形')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -127,12 +184,8 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
   else form.outlineColor = hex
 }
 
-function disarmPick(): void {
-  pickCorner.value = null
-}
-
 function onRowClick(record: RectangleSnapshot): void {
-  disarmPick()
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Rectangle?.getRectangle(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -143,16 +196,14 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Rectangle?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    disarmPick()
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
   message.success('已删除')
 }
 
-const primaryButtonText = computed(() => (selectedId.value ? '确定' : '标绘'))
-const pickSwType = computed(() => (pickCorner.value === 'sw' ? ('primary' as const) : ('default' as const)))
-const pickNeType = computed(() => (pickCorner.value === 'ne' ? ('primary' as const) : ('default' as const)))
+const primaryButtonText = computed(() => (selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制'))
 
 function boundsReady(): boolean {
   return (
@@ -208,7 +259,7 @@ function addRectangleFromForm(): void {
   const v = mapStore.getViewer()
   if (!R || !v || v.isDestroyed()) return
 
-  disarmPick()
+  stopAreaDraw()
   const idOpt = form.id.trim() || undefined
   const entity = R.add(v, {
     id: idOpt,
@@ -237,54 +288,49 @@ function addRectangleFromForm(): void {
 }
 
 function onPrimaryClick(): void {
-  if (selectedId.value) applyUpdateToSelected()
-  else addRectangleFromForm()
+  if (selectedId.value) {
+    applyUpdateToSelected()
+    return
+  }
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（对角）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  form.west = null
+  form.south = null
+  form.east = null
+  form.north = null
+  const ok = am.start(v, buildRectangleStartParams())
+  if (!ok) {
+    message.error('无法开始矩形绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+  // --- Rectangle 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addRectangleFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
-  disarmPick()
+  stopAreaDraw()
   resetFormToInitial()
-}
-
-function togglePick(which: 'sw' | 'ne'): void {
-  if (pickCorner.value === which) {
-    pickCorner.value = null
-    message.info('已取消拾取')
-    return
-  }
-  pickCorner.value = which
-  message.info(which === 'sw' ? '左键点击地图：写入西、南' : '左键点击地图：写入东、北')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  const mode = pickCorner.value
-  if (!mode) return
-  if (!Number.isFinite(pick.longitude) || !Number.isFinite(pick.latitude)) {
-    message.warning('未能拾取到有效坐标')
-    return
-  }
-  if (mode === 'sw') {
-    form.west = pick.longitude
-    form.south = pick.latitude
-  } else {
-    form.east = pick.longitude
-    form.north = pick.latitude
-  }
-  pickCorner.value = null
-  message.success('已写入边界')
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({ onLeftClick: onMapLeftClick })
-  mouseBinder = binder
 }
 
 const columns: TableColumnType<RectangleSnapshot>[] = [
@@ -346,8 +392,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -357,8 +404,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) window.FastX?.Rectangle?.clear(v)
@@ -479,6 +527,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
+                      <!-- 原角点拾取按钮：已由「绘制」直接 am.start
                       <a-tooltip title="拾取西南角（西、南）">
                         <a-button :type="pickSwType" class="hzd-pick-coord-btn hzd-primary-tall" aria-label="拾取西南" @click="togglePick('sw')">
                           <template #icon><EnvironmentOutlined /></template>
@@ -489,6 +538,7 @@ onBeforeUnmount(() => {
                           <template #icon><EnvironmentOutlined /></template>
                         </a-button>
                       </a-tooltip>
+                      -->
                       <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onPrimaryClick">
                         {{ primaryButtonText }}
                       </a-button>

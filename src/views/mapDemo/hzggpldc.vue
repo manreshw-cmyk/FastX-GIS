@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { BillboardSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, BillboardSnapshot, LngLatHeight } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -14,7 +14,9 @@ const DEFAULT_TINT = '#ffffff'
 
 const mapStore = useMapLayerStore()
 
-const plotArmed = ref(false)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
+
 const selectedId = ref<string | null>(null)
 
 const form = reactive({
@@ -40,13 +42,53 @@ const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
 let lastBlobUrl: string | null = null
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
+let viewerRef: Viewer | null = null
+
+function syncFormFromPick(points: LngLatHeight[]): void {
+  const p = points[points.length - 1]
+  if (!p) return
+  form.longitude = p.longitude
+  form.latitude = p.latitude
+  form.height = p.height ?? 0
 }
 
-let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+function buildBillboardStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'billboard',
+    id: form.id.trim() || undefined,
+    height: 0,
+    image: form.imageDataUrl.trim(),
+    scale: form.scale,
+    width: form.width,
+    imageHeight: form.heightPx,
+    rotationDegrees: form.rotationDegrees,
+    color: form.color,
+    alpha: form.alpha,
+    show: form.show,
+    targetData: { tintColor: form.color, tintAlpha: form.alpha, rotationDegrees: form.rotationDegrees },
+    preview: { anchorPointColor: '#ffffff', cursorPointColor: '#ffffff' },
+    onAnchorChange: (points) => {
+      syncFormFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'billboard') return
+    stopAreaDraw()
+    message.success('已添加广告牌')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function revokeLastBlob(): void {
   if (lastBlobUrl && lastBlobUrl.startsWith('blob:')) {
@@ -120,7 +162,7 @@ function resetFormToInitial(): void {
 
 function onCancelSelect(): void {
   selectedId.value = null
-  plotArmed.value = false
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -151,7 +193,7 @@ function onImageFile(ev: Event): void {
 }
 
 function onRowClick(record: BillboardSnapshot): void {
-  plotArmed.value = false
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Billboard?.getBillboard(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -162,7 +204,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Billboard?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    plotArmed.value = false
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
@@ -171,14 +213,80 @@ function onDeleteRow(id: string, e: Event): void {
 
 const primaryButtonText = computed(() => {
   if (selectedId.value) return '确定'
-  if (plotArmed.value) return '取消标绘'
-  return '标绘'
+  return isAreaDrawing.value ? '完成标绘' : '绘制'
 })
 
-const primaryButtonType = computed(() => {
-  if (plotArmed.value && !selectedId.value) return 'default' as const
-  return 'primary' as const
-})
+function addBillboardFromForm(): void {
+  if (!form.imageDataUrl.trim()) {
+    message.warning('请先上传一张图片后再标绘')
+    return
+  }
+  const B = window.FastX?.Billboard
+  const v = mapStore.getViewer()
+  if (!B || !v || v.isDestroyed()) return
+  stopAreaDraw()
+  const idOpt = form.id.trim() || undefined
+  const entity = B.add(v, {
+    id: idOpt,
+    position: { longitude: form.longitude, latitude: form.latitude, height: form.height },
+    image: form.imageDataUrl.trim(),
+    scale: form.scale,
+    width: form.width,
+    imageHeight: form.heightPx,
+    rotationDegrees: form.rotationDegrees,
+    color: form.color,
+    alpha: form.alpha,
+    show: form.show,
+    targetData: { tintColor: form.color, tintAlpha: form.alpha, rotationDegrees: form.rotationDegrees },
+  })
+  if (!entity) {
+    message.error('添加失败：id 可能重复，请修改 id 后重新标绘')
+    return
+  }
+  message.success('已添加广告牌')
+  refreshTable()
+  resetFormToInitial()
+}
+
+function onPrimaryClick(): void {
+  if (selectedId.value) {
+    applyUpdateToSelected()
+    return
+  }
+  if (!form.imageDataUrl.trim()) {
+    message.warning('请先上传一张图片后再开始绘制')
+    return
+  }
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 1) {
+      message.warning('至少需要 1 个点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  const ok = am.start(v, buildBillboardStartParams())
+  if (!ok) {
+    message.error('无法开始广告牌绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+  // --- Billboard 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addBillboardFromForm()
+}
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
@@ -209,78 +317,6 @@ function applyUpdateToSelected(): void {
   } else {
     message.error('保存失败，请确认该对象仍存在')
   }
-}
-
-function onPrimaryClick(): void {
-  if (selectedId.value) {
-    applyUpdateToSelected()
-    return
-  }
-  if (plotArmed.value) {
-    plotArmed.value = false
-    resetFormToInitial()
-    message.info('已取消标绘')
-    return
-  }
-  if (!form.imageDataUrl.trim()) {
-    message.warning('请先上传一张图片后再开始标绘')
-    return
-  }
-  plotArmed.value = true
-  message.info('请在地图上左键点击放置广告牌，放置成功后自动结束标绘')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!plotArmed.value || selectedId.value) return
-  if (Number.isNaN(pick.longitude) || Number.isNaN(pick.latitude)) {
-    message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
-    return
-  }
-  const B = window.FastX?.Billboard
-  const v = mapStore.getViewer()
-  if (!B || !v || v.isDestroyed()) return
-
-  const idOpt = form.id.trim() || undefined
-  const entity = B.add(v, {
-    id: idOpt,
-    position: {
-      longitude: pick.longitude,
-      latitude: pick.latitude,
-      height: Number.isNaN(pick.height) ? form.height : pick.height,
-    },
-    image: form.imageDataUrl.trim(),
-    scale: form.scale,
-    width: form.width,
-    imageHeight: form.heightPx,
-    rotationDegrees: form.rotationDegrees,
-    color: form.color,
-    alpha: form.alpha,
-    show: form.show,
-    targetData: { tintColor: form.color, tintAlpha: form.alpha, rotationDegrees: form.rotationDegrees },
-  })
-  if (!entity) {
-    message.error('添加失败：id 可能重复，请修改 id 后重新标绘')
-    plotArmed.value = false
-    return
-  }
-  plotArmed.value = false
-  message.success('已添加广告牌')
-  refreshTable()
-  resetFormToInitial()
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
-  mouseBinder = binder
 }
 
 function onColorPick(ev: Event): void {
@@ -342,8 +378,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -355,8 +392,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   revokeLastBlob()
   const v = viewerRef
   viewerRef = null
@@ -489,7 +527,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <a-button
-                      :type="primaryButtonType"
+                      type="primary"
                       block
                       class="map-tool-primary-btn hzd-primary-tall"
                       @click="onPrimaryClick"

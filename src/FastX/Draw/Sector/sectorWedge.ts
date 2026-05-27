@@ -38,3 +38,25 @@ export function computeSectorCartesianRing(
   }
   return out
 }
+
+/** 圆心 + 半径 + 方位角 → 圆弧外侧顶点（ENU 切平面） */
+export function pointOnCircleAtAzimuth(
+  center: Cesium.Cartesian3,
+  radiusMeters: number,
+  azimuthDegrees: number,
+): Cesium.Cartesian3 {
+  const carto = Cesium.Cartographic.fromCartesian(center)
+  const scratch: Cesium.Cartesian3[] = []
+  computeSectorCartesianRing(
+    Cesium.Math.toDegrees(carto.longitude),
+    Cesium.Math.toDegrees(carto.latitude),
+    carto.height,
+    radiusMeters,
+    azimuthDegrees,
+    azimuthDegrees,
+    1,
+    scratch,
+  )
+  if (scratch.length >= 2) return Cesium.Cartesian3.clone(scratch[1]!)
+  return Cesium.Cartesian3.clone(center)
+}

@@ -2,14 +2,26 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
-import type {
-  AddCircleOptions,
-  CircleCenterInput,
-  CircleCenterTuple,
-  CircleSnapshot,
-  CircleStyleOptions,
-  UpdateCircleProperties,
+import {
+  AREA_DRAFT_TARGET_KEY,
+  type AddCircleOptions,
+  type CircleCenterInput,
+  type CircleCenterTuple,
+  type CircleSnapshot,
+  type CircleStyleOptions,
+  type UpdateCircleProperties,
 } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftRadiusProperty,
+  draftRadiusFromPoints,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
 export type {
   AddCircleOptions,
   CircleCenterInput,
@@ -19,10 +31,166 @@ export type {
   UpdateCircleProperties,
 }
 
-interface CircleRecord {
+interface CircleRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function createDraftCircleCenterProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.PositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const pts = getPoints()
+    return pts.length ? Cesium.Cartesian3.clone(pts[0]!) : Cesium.Cartesian3.ZERO
+  }, false)
+}
+
+function resolveCircleDraftCenter(options: AddCircleOptions | UpdateCircleProperties): Cesium.Cartesian3 | undefined {
+  if (options.areaDraft && options.center !== undefined) {
+    return toCartesian3(options.center)
+  }
+  if (options.areaDraft && options.draftVertices !== undefined && options.draftVertices.length >= 1) {
+    return toCartesian3(options.draftVertices[0]!)
+  }
+  const n = [options.position, options.center, options.positions].filter((x) => x !== undefined).length
+  if (n > 1) return undefined
+  if (options.position !== undefined) return toCartesian3(options.position)
+  if (options.center !== undefined) return toCartesian3(options.center)
+  if (options.positions !== undefined && options.positions.length >= 1) {
+    return centerFromTuple(options.positions)
+  }
+  const p = options as UpdateCircleProperties
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0
+    return Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), Number(h))
+  }
+  return undefined
+}
+
+function syncCircleDraftPoints(rec: CircleRecord, center: Cesium.Cartesian3, rim?: Cesium.Cartesian3): void {
+  const pts: Cesium.Cartesian3[] = [Cesium.Cartesian3.clone(center)]
+  if (rim) pts.push(Cesium.Cartesian3.clone(rim))
+  setDraftPoints(rec, pts)
+}
+
+function setCircleDraftFromVertices(
+  rec: CircleRecord,
+  td: Record<string, unknown>,
+  vertices: readonly { longitude: number; latitude: number; height?: number }[],
+): void {
+  const carts = vertices.map((p) => toCartesian3(p))
+  if (!carts.length) return
+  setDraftPoints(rec, carts)
+  storeCircleCenterInTargetData(td, carts[0]!)
+  td.radius = carts.length >= 2 ? Cesium.Cartesian3.distance(carts[0]!, carts[1]!) : 0
+}
+
+function resolveCircleStyleFromTargetData(td: Record<string, unknown>): {
+  showFill: boolean
+  alpha: number
+  fillColor: Color
+  outline: boolean
+  outlineColor: Color
+  outlineWidth: number
+  style?: CircleStyleOptions
+} {
+  const showFill = td.showFill !== false
+  const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+  const fillColor =
+    toColor(String(td.color ?? '#3388ff'), showFill ? alpha : 0) ?? Cesium.Color.BLUE.withAlpha(showFill ? alpha : 0)
+  const outline = td.outline !== false
+  const outlineColor =
+    toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+    Cesium.Color.WHITE
+  const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+  return { showFill, alpha, fillColor, outline, outlineColor, outlineWidth, style: td.styleSnapshot as CircleStyleOptions | undefined }
+}
+
+function applyAreaDraftGraphics(rec: CircleRecord): void {
+  const entity = rec.entity
+  const st = resolveCircleStyleFromTargetData(rec.targetData)
+  const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec)
+
+  entity.position = createDraftCircleCenterProperty(getPts)
+
+  const ellipse = new Cesium.EllipseGraphics()
+  ellipse.semiMajorAxis = createDraftRadiusProperty(getPts)
+  ellipse.semiMinorAxis = createDraftRadiusProperty(getPts)
+  ellipse.fill = new Cesium.ConstantProperty(st.showFill)
+  ellipse.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  ellipse.outline = new Cesium.ConstantProperty(st.outline)
+  ellipse.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  ellipse.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+  ellipse.height = new Cesium.ConstantProperty(st.style?.ellipseHeight ?? 0)
+  const style = st.style
+  if (style?.heightReference !== undefined) {
+    ellipse.heightReference = new Cesium.ConstantProperty(style.heightReference)
+  }
+  if (style?.rotation !== undefined) ellipse.rotation = new Cesium.ConstantProperty(style.rotation)
+  if (style?.granularity !== undefined) {
+    ellipse.granularity = new Cesium.ConstantProperty(style.granularity)
+  } else {
+    ellipse.granularity = new Cesium.ConstantProperty(Cesium.Math.toRadians(0.35))
+  }
+  if (style?.shadows !== undefined) ellipse.shadows = new Cesium.ConstantProperty(style.shadows)
+  if (style?.distanceDisplayCondition !== undefined) {
+    ellipse.distanceDisplayCondition = new Cesium.ConstantProperty(style.distanceDisplayCondition)
+  }
+  if (style?.classificationType !== undefined) {
+    ellipse.classificationType = new Cesium.ConstantProperty(style.classificationType)
+  }
+  if (style?.zIndex !== undefined) ellipse.zIndex = new Cesium.ConstantProperty(style.zIndex)
+
+  entity.ellipse = ellipse
+}
+
+function refreshAreaDraftStyle(rec: CircleRecord): void {
+  const st = resolveCircleStyleFromTargetData(rec.targetData)
+  const eg = rec.entity.ellipse
+  if (!eg) return
+  eg.fill = new Cesium.ConstantProperty(st.showFill)
+  eg.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  eg.outline = new Cesium.ConstantProperty(st.outline)
+  eg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  eg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+}
+
+function storeCircleCenterInTargetData(td: Record<string, unknown>, center: Cesium.Cartesian3): void {
+  const carto = Cesium.Cartographic.fromCartesian(center)
+  td.longitude = Cesium.Math.toDegrees(carto.longitude)
+  td.latitude = Cesium.Math.toDegrees(carto.latitude)
+  td.height = carto.height
+}
+
+function commitAreaDraftRecord(rec: CircleRecord): boolean {
+  const pts = getDraftPoints(rec)
+  if (!pts.length) return false
+  const center = pts[0]!
+  const radius = draftRadiusFromPoints(pts)
+  if (!Number.isFinite(radius) || radius <= 0) return false
+
+  const td = rec.targetData
+  td.radius = radius
+  storeCircleCenterInTargetData(td, center)
+  clearAreaDraftTargetData(td)
+  rec.draftPoints = undefined
+
+  const st = resolveCircleStyleFromTargetData(td)
+  commitEntityPosition(rec.entity, center)
+  const eg = rec.entity.ellipse ?? (rec.entity.ellipse = new Cesium.EllipseGraphics())
+  mergeEllipseGraphics(
+    eg,
+    {
+      radius,
+      fillColor: st.fillColor,
+      showFill: st.showFill,
+      outline: st.outline,
+      outlineColor: st.outlineColor,
+      outlineWidth: st.outlineWidth,
+      style: st.style,
+    },
+    false,
+  )
+  return true
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -161,6 +329,10 @@ export default class Circle {
     const id = options.id?.trim() ? options.id : createRandomXgxId('cir')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const center = resolveCenterCartesian(options)
     if (!center) return undefined
     const radius = Number(options.radius)
@@ -216,6 +388,49 @@ export default class Circle {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddCircleOptions): Entity | undefined {
+    const center = resolveCircleDraftCenter(options)
+    if (!center) return undefined
+    const radius = Number(options.radius)
+    const radiusHint = Number.isFinite(radius) && radius >= 0 ? radius : 0
+
+    const showFill = options.showFill !== false
+    const alpha = options.alpha ?? 1
+    const outline = options.outline !== false
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    td.radius = radiusHint
+    storeCircleCenterInTargetData(td, center)
+    td.color = options.color ?? '#3388ff'
+    td.alpha = alpha
+    td.showFill = showFill
+    td.outline = outline
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = options.outlineWidth ?? 2
+    if (options.style) td.styleSnapshot = { ...options.style }
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: CircleRecord = { viewer, entity, targetData: td }
+    if (options.draftVertices !== undefined && options.draftVertices.length >= 1) {
+      setCircleDraftFromVertices(rec, td, options.draftVertices)
+    } else {
+      syncCircleDraftPoints(rec, center)
+    }
+    applyAreaDraftGraphics(rec)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   addCircles(viewer: Viewer, items: AddCircleOptions[]): string[] {
     if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
     const ids: string[] = []
@@ -237,6 +452,23 @@ export default class Circle {
     if (!rec) return false
     const p = properties
     const td = rec.targetData
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      const center = resolveCircleDraftCenter(p) ?? getDraftPoints(rec)[0]
+      if (center) storeCircleCenterInTargetData(td, center)
+      if (p.draftVertices !== undefined && p.draftVertices.length >= 1) {
+        setCircleDraftFromVertices(rec, td, p.draftVertices)
+      } else if (center) {
+        const existing = getDraftPoints(rec)
+        syncCircleDraftPoints(rec, center, existing.length >= 2 ? existing[1] : undefined)
+      }
+      return commitAreaDraftRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
 
     if (p.targetData !== undefined) Object.assign(td, p.targetData)
 
@@ -323,6 +555,50 @@ export default class Circle {
     return true
   }
 
+  private applyStylePatchToTargetData(rec: CircleRecord, p: UpdateCircleProperties): void {
+    const td = rec.targetData
+    if (p.targetData !== undefined) Object.assign(td, p.targetData)
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+  }
+
+  private updateAreaDraft(rec: CircleRecord, p: UpdateCircleProperties): boolean {
+    const td = rec.targetData
+    markAreaDraftTargetData(td)
+    this.applyStylePatchToTargetData(rec, p)
+
+    if (p.draftVertices !== undefined && p.draftVertices.length >= 1) {
+      setCircleDraftFromVertices(rec, td, p.draftVertices)
+    } else {
+      const prev = getDraftPoints(rec)[0]
+      const center = resolveCircleDraftCenter(p) ?? prev
+      if (center) {
+        storeCircleCenterInTargetData(td, center)
+        if (p.radius !== undefined && Number.isFinite(p.radius) && p.radius >= 0) {
+          td.radius = p.radius
+        }
+        const existing = getDraftPoints(rec)
+        const rim = existing.length >= 2 ? existing[1] : undefined
+        syncCircleDraftPoints(rec, center, rim)
+      }
+    }
+
+    applyAreaDraftGraphics(rec)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
   updateCircles(updates: Array<{ id: string } & UpdateCircleProperties>): Array<{ id: string; success: boolean }> {
     return updates.map(({ id, ...rest }) => ({ id, success: this.updateCircle(id, rest) }))
   }
@@ -349,7 +625,7 @@ export default class Circle {
 
   getCircle(id: string): CircleSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos)

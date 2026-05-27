@@ -5,7 +5,7 @@ import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { EllipsoidSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, EllipsoidSnapshot, LngLatHeight, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -17,6 +17,8 @@ const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
 
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const coordPickArmed = ref(false)
 const selectedId = ref<string | null>(null)
 
@@ -50,6 +52,83 @@ type MapMouseBinder = {
 
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+
+function haversineDistanceM(a: LngLatHeight, b: LngLatHeight): number {
+  const R = 6371008.8
+  const r0 = (a.latitude * Math.PI) / 180
+  const r1 = (b.latitude * Math.PI) / 180
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(r0) * Math.cos(r1) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+function syncEllipsoidFromAnchors(points: LngLatHeight[]): void {
+  if (points.length >= 1) {
+    form.longitude = points[0]!.longitude
+    form.latitude = points[0]!.latitude
+    form.height = points[0]!.height ?? 0
+  }
+  if (points.length >= 2) {
+    const r = haversineDistanceM(points[0]!, points[1]!)
+    form.radiusX = r
+    form.radiusY = r
+    form.radiusZ = r
+  }
+}
+
+function buildEllipsoidStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'ellipsoid',
+    id: form.id.trim() || undefined,
+    radii: radiiFromForm(),
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outline ? form.outlineWidth : 0,
+    show: form.show,
+    targetData: {
+      showFill: form.showFill,
+      alpha: form.alpha,
+      color: form.color,
+      outline: form.outline,
+      outlineColor: form.outlineColor,
+      outlineAlpha: form.outlineAlpha,
+      outlineWidth: form.outline ? form.outlineWidth : 0,
+    },
+    preview: {
+      anchorPointColor: '#6495ed',
+      cursorPointColor: '#6495ed',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineWidth: form.outlineWidth,
+    },
+    onAnchorChange: (points) => {
+      syncEllipsoidFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'ellipsoid') return
+    stopAreaDraw()
+    message.success('已添加椭球')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -151,6 +230,7 @@ function disarmCoordPick(): void {
 }
 
 function onRowClick(record: EllipsoidSnapshot): void {
+  stopAreaDraw()
   disarmCoordPick()
   selectedId.value = record.id
   const snap = window.FastX?.Ellipsoid?.getEllipsoid(record.id)
@@ -162,6 +242,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Ellipsoid?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
+    stopAreaDraw()
     disarmCoordPick()
     resetFormToInitial()
   }
@@ -169,7 +250,9 @@ function onDeleteRow(id: string, e: Event): void {
   message.success('已删除')
 }
 
-const primaryButtonText = computed(() => (selectedId.value ? '确定' : '标绘'))
+const primaryButtonText = computed(() =>
+  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 const pickCoordButtonType = computed(() => (coordPickArmed.value ? ('primary' as const) : ('default' as const)))
 
@@ -234,6 +317,7 @@ function addEllipsoidFromForm(): void {
   const v = mapStore.getViewer()
   if (!E || !v || v.isDestroyed()) return
 
+  stopAreaDraw()
   disarmCoordPick()
   const idOpt = form.id.trim() || undefined
   const entity = E.add(v, {
@@ -277,12 +361,47 @@ function onPrimaryClick(): void {
     applyUpdateToSelected()
     return
   }
-  addEllipsoidFromForm()
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（中心 + 边缘）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  form.longitude = null
+  form.latitude = null
+  const ok = am.start(v, buildEllipsoidStartParams())
+  if (!ok) {
+    message.error('无法开始椭球绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Ellipsoid 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addEllipsoidFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
   disarmCoordPick()
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -392,8 +511,10 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -405,6 +526,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef

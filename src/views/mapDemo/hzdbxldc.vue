@@ -1,10 +1,10 @@
 ﻿<script setup lang="ts">
-import { ClearOutlined, DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { ClearOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PolygonSnapshot } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, PolygonSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -16,8 +16,12 @@ const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
 
-/** 为 true 时下一次地图左键将顶点追加到外环列表 */
-const vertexPickArmed = ref(false)
+/** 空域管理（FastX 全局单例，示例变量统一命名为 am） */
+let am = window.FastX?.AreaManager
+
+/** 绘制中（用于按钮文案；am.active 非响应式） */
+const isAreaDrawing = ref(false)
+
 const selectedId = ref<string | null>(null)
 
 interface DraftVertex {
@@ -57,13 +61,7 @@ const vertexTableScrollY = ref(96)
 let tableResizeObserver: ResizeObserver | null = null
 let vertexTableResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
-}
-
 let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -180,12 +178,51 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
   else form.outlineColor = hex
 }
 
-function disarmVertexPick(): void {
-  vertexPickArmed.value = false
+function syncDraftVerticesFromPick(points: LngLatHeight[]): void {
+  draftVertices.value = points.map((p) => ({
+    key: newVertexKey(),
+    longitude: p.longitude,
+    latitude: p.latitude,
+    height: p.height ?? 0,
+  }))
+}
+
+function buildPolygonStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'polygon',
+    id: form.id.trim() || undefined,
+    extrudedHeight: form.extrudedHeight,
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#22cc44',
+      cursorPointColor: '#22cc44',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineWidth: form.outlineWidth,
+    },
+    onAnchorChange: (points) => {
+      syncDraftVerticesFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
 }
 
 function onRowClick(record: PolygonSnapshot): void {
-  disarmVertexPick()
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Polygon?.getPolygon(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -196,7 +233,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Polygon?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    disarmVertexPick()
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
@@ -209,13 +246,15 @@ function onDeleteDraftRow(key: string, e: Event): void {
 }
 
 function onClearDraftVertices(): void {
+  stopAreaDraw()
   draftVertices.value = []
   message.info('已清空外环顶点列表')
 }
 
-const primaryButtonText = computed(() => (selectedId.value ? '确定' : '标绘'))
-
-const pickVertexButtonType = computed(() => (vertexPickArmed.value ? ('primary' as const) : ('default' as const)))
+const primaryButtonText = computed(() => {
+  if (selectedId.value) return '确定'
+  return isAreaDrawing.value ? '完成标绘' : '绘制'
+})
 
 function draftToPositions(): [number, number, number][] {
   return draftVertices.value.map((v) => [v.longitude, v.latitude, v.height])
@@ -250,16 +289,20 @@ function applyUpdateToSelected(): void {
   }
 }
 
+/**
+ * Polygon 单类 `add` 绘制（不经过空域管理）。
+ * 表单外环顶点已齐全时可直接落图；与下方 `am.start` / `am.end` 二选一使用。
+ */
 function addPolygonFromForm(): void {
   if (draftVertices.value.length < 3) {
-    message.warning('请先在地图上添加至少 3 个外环顶点，或选中列表项进行编辑')
+    message.warning('外环至少需要 3 个顶点')
     return
   }
   const P = window.FastX?.Polygon
   const v = mapStore.getViewer()
   if (!P || !v || v.isDestroyed()) return
 
-  disarmVertexPick()
+  stopAreaDraw()
   const idOpt = form.id.trim() || undefined
   const entity = P.add(v, {
     id: idOpt,
@@ -289,56 +332,57 @@ function onPrimaryClick(): void {
     applyUpdateToSelected()
     return
   }
-  addPolygonFromForm()
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：点击「绘制」start，再次点击或右键 end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 3) {
+      message.warning('外环至少需要 3 个顶点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  draftVertices.value = []
+  const ok = am.start(v, buildPolygonStartParams())
+  if (!ok) {
+    message.error('无法开始多边形绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束绘制！')
+
+  // --- Polygon 单类 add（保留参考：不用空域管理时注释上一段，改用本行）---
+  // addPolygonFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
-  disarmVertexPick()
+  stopAreaDraw()
   resetFormToInitial()
 }
 
-function onToggleVertexPick(): void {
-  if (vertexPickArmed.value) {
-    vertexPickArmed.value = false
-    message.info('已取消地图添加顶点')
-    return
-  }
-  vertexPickArmed.value = true
-  message.info('请在地图上左键点击，依次追加外环顶点')
-}
-
-function isValidPickLonLat(pick: MouseEventPickPayload): boolean {
-  return Number.isFinite(pick.longitude) && Number.isFinite(pick.latitude)
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!vertexPickArmed.value) return
-  if (!isValidPickLonLat(pick)) {
-    message.warning('未能拾取到有效坐标，请点击地球可见区域后重试')
-    return
-  }
-  draftVertices.value.push({
-    key: newVertexKey(),
-    longitude: pick.longitude,
-    latitude: pick.latitude,
-    height: Number.isFinite(pick.height) ? pick.height : 0,
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'polygon') return
+    stopAreaDraw()
+    message.success('已添加多边形')
+    refreshTable()
+    resetFormToInitial()
   })
-  message.success(`已添加顶点（共 ${draftVertices.value.length} 个）`)
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
-  mouseBinder = binder
 }
 
 const vertexColumns: TableColumnType<DraftVertex>[] = [
@@ -408,8 +452,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   updateVertexTableScrollY()
@@ -428,8 +473,9 @@ onBeforeUnmount(() => {
   tableResizeObserver = null
   vertexTableResizeObserver?.disconnect()
   vertexTableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -493,7 +539,7 @@ onBeforeUnmount(() => {
                       </a-tooltip>
                     </div>
                     <p class="hzd-muted hzd-field-footnote">
-                      各点「高」为椭球高程（米）；相对地形高度需自行采样后写入。拉伸高度为整块多边形统一挤出。
+                      各点「高」为椭球高程（米）；相对地形高度需自行采样后写入。拉伸高度为整块多边形统一挤出，预览与成品一致。点「绘制」开始标绘：鼠标左键点击绘制，右键结束绘制。
                     </p>
                     <div ref="vertexTableShellRef" class="hzd-vertex-table-wrap hzd-scroll-skin">
                       <a-table
@@ -599,17 +645,18 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
-                      <a-tooltip :title="vertexPickArmed ? '取消添加顶点' : '地图添加顶点'">
-                        <a-button
-                          :type="pickVertexButtonType"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="地图添加顶点"
-                          @click="onToggleVertexPick"
-                        >
+                      <!-- 原「地图添加顶点」按钮：已由「绘制」直接 am.start，保留结构供对照
+                      <a-tooltip title="地图添加顶点">
+                        <a-button class="hzd-pick-coord-btn hzd-primary-tall" aria-label="地图添加顶点">
                           <template #icon><EnvironmentOutlined /></template>
                         </a-button>
                       </a-tooltip>
-                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onPrimaryClick">
+                      -->
+                      <a-button
+                        type="primary"
+                        class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex"
+                        @click="onPrimaryClick"
+                      >
                         {{ primaryButtonText }}
                       </a-button>
                     </div>

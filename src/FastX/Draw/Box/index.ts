@@ -4,16 +4,84 @@ import { createRandomXgxId } from '../../Coordinates'
 import type { PointPositionInput, PointPositionsTuple } from '../Point'
 
 import type { AddBoxOptions, BoxSnapshot, BoxStyleOptions, UpdateBoxProperties } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  draftRadiusFromPoints,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
+import { midpoint } from '../../Utils/geoDraw'
 export type { AddBoxOptions, BoxSnapshot, BoxStyleOptions, UpdateBoxProperties }
 
 export type BoxPositionsTuple = PointPositionsTuple
 
 export type BoxDimensionsInput = Cesium.Cartesian3 | readonly [number, number, number]
 
-interface BoxRecord {
+interface BoxRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function createDraftBoxPositionProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.PositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const pts = getPoints()
+    if (!pts.length) return Cesium.Cartesian3.ZERO
+    if (pts.length >= 2) return midpoint(pts[0]!, pts[1]!)
+    return Cesium.Cartesian3.clone(pts[0]!)
+  }, false)
+}
+
+function resolveBoxDimensionsFromTargetData(td: Record<string, unknown>, dist: number): Cesium.Cartesian3 {
+  const raw = td.dimensions as [number, number, number] | undefined
+  if (raw && Array.isArray(raw) && raw.length >= 3) {
+    return new Cesium.Cartesian3(Number(raw[0]) || dist, Number(raw[1]) || dist, Number(raw[2]) || dist * 0.5)
+  }
+  return new Cesium.Cartesian3(dist, dist, dist * 0.5)
+}
+
+function createDraftBoxDimensionsProperty(
+  getPoints: () => Cesium.Cartesian3[],
+  td: Record<string, unknown>,
+): Cesium.Property {
+  return new Cesium.CallbackProperty(() => {
+    const raw = td.dimensions as number[] | undefined
+    if (raw && Array.isArray(raw) && raw.length >= 3) {
+      return new Cesium.Cartesian3(Number(raw[0]) || 1, Number(raw[1]) || 1, Number(raw[2]) || 1)
+    }
+    const dist = draftRadiusFromPoints(getPoints())
+    return resolveBoxDimensionsFromTargetData(td, dist)
+  }, false)
+}
+
+function applyAreaDraftGraphics(rec: BoxRecord, options: AddBoxOptions): void {
+  const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec)
+  rec.entity.position = createDraftBoxPositionProperty(getPts)
+  const bg = new Cesium.BoxGraphics()
+  bg.dimensions = createDraftBoxDimensionsProperty(getPts, rec.targetData)
+  mergeBoxGraphics(bg, options, true)
+  rec.entity.box = bg
+}
+
+function commitAreaDraftRecord(rec: BoxRecord, options: AddBoxOptions): boolean {
+  const pts = getDraftPoints(rec)
+  if (!pts.length) return false
+  const center = pts.length >= 2 ? midpoint(pts[0]!, pts[1]!) : pts[0]!
+  const dist = draftRadiusFromPoints(pts)
+  const dim = resolveBoxDimensionsFromTargetData(rec.targetData, dist)
+
+  clearAreaDraftTargetData(rec.targetData)
+  rec.draftPoints = undefined
+
+  commitEntityPosition(rec.entity, center)
+  const bg = rec.entity.box ?? (rec.entity.box = new Cesium.BoxGraphics())
+  bg.dimensions = new Cesium.ConstantProperty(dim)
+  mergeBoxGraphics(bg, options, false)
+  return true
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -158,6 +226,10 @@ export default class Box {
     const id = options.id?.trim() ? options.id : createRandomXgxId('box')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const position = resolveAddCartesian(options)
     if (!position) return undefined
 
@@ -176,6 +248,37 @@ export default class Box {
 
     viewer.entities.add(entity)
     this.data.set(id, { viewer, entity, targetData: this.cloneTargetData(options.targetData) })
+    return entity
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddBoxOptions): Entity | undefined {
+    const position = resolveAddCartesian(options)
+    if (!position) return undefined
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    if (options.dimensions !== undefined) {
+      const d = resolveDimensions(options.dimensions)
+      td.dimensions = [d.x, d.y, d.z]
+    }
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: BoxRecord = { viewer, entity, targetData: td }
+    const pts: Cesium.Cartesian3[] = [Cesium.Cartesian3.clone(position)]
+    if (options.positions && options.positions.length >= 2) {
+      pts.push(positionFromTuple(options.positions))
+    }
+    setDraftPoints(rec, pts)
+    applyAreaDraftGraphics(rec, options)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
     return entity
   }
 
@@ -213,6 +316,21 @@ export default class Box {
     if (!rec) return false
 
     const p = properties
+    const td = rec.targetData
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      if (p.dimensions !== undefined) {
+        const d = resolveDimensions(p.dimensions)
+        td.dimensions = [d.x, d.y, d.z]
+      }
+      return commitAreaDraftRecord(rec, { ...p, position: p.position ?? { longitude: 0, latitude: 0 } } as AddBoxOptions)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
+
     if (p.position !== undefined) {
       rec.entity.position = new Cesium.ConstantPositionProperty(toCartesian3(p.position))
     } else if (p.positions !== undefined) {
@@ -233,6 +351,37 @@ export default class Box {
     if (p.targetData !== undefined) {
       rec.targetData = { ...rec.targetData, ...p.targetData }
     }
+    return true
+  }
+
+  private applyStylePatchToTargetData(rec: BoxRecord, p: UpdateBoxProperties): void {
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    if (p.dimensions !== undefined) {
+      const d = resolveDimensions(p.dimensions)
+      rec.targetData.dimensions = [d.x, d.y, d.z]
+    }
+  }
+
+  private updateAreaDraft(rec: BoxRecord, p: UpdateBoxProperties): boolean {
+    markAreaDraftTargetData(rec.targetData)
+    this.applyStylePatchToTargetData(rec, p)
+
+    if (p.position !== undefined) {
+      const c = toCartesian3(p.position)
+      setDraftPoints(rec, [Cesium.Cartesian3.clone(c)])
+    } else if (p.positions !== undefined && p.positions.length >= 2) {
+      setDraftPoints(rec, [positionFromTuple(p.positions), positionFromTuple(p.positions)])
+    }
+
+    rec.entity.position = createDraftBoxPositionProperty(() => getDraftPoints(rec))
+    const bg = rec.entity.box ?? (rec.entity.box = new Cesium.BoxGraphics())
+    bg.dimensions = createDraftBoxDimensionsProperty(() => getDraftPoints(rec), rec.targetData)
+    mergeBoxGraphics(bg, p, false)
+
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
     return true
   }
 
@@ -265,7 +414,7 @@ export default class Box {
 
   getBox(id: string): BoxSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos)

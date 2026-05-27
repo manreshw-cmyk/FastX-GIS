@@ -4,7 +4,7 @@ import { useHzxldcxrPolylineDemo } from './components/common/useHzxldcxrPolyline
 const {
   title,
   form,
-  plotArmed,
+  isAreaDrawing,
   selectedId,
   draftVertices,
   tableData,
@@ -15,7 +15,6 @@ const {
   arcTypeFormOptions,
   cornerTypeFormOptions,
   primaryButtonText,
-  primaryButtonType,
   onPrimaryClick,
   onCancelSelect,
   onColorPick,
@@ -366,7 +365,7 @@ const {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <a-button
-                      :type="primaryButtonType"
+                      type="primary"
                       block
                       class="map-tool-primary-btn hzd-primary-tall"
                       @click="onPrimaryClick"
@@ -376,8 +375,8 @@ const {
                     <a-button v-if="selectedId" type="link" size="small" class="hzd-cancel-select" @click="onCancelSelect">
                       取消选中
                     </a-button>
-                    <p v-if="plotArmed && !selectedId" class="hzd-muted">
-                      当前顶点 {{ draftVertices.length }} 个；≥2 个后可点「完成线段」。拾取点默认椭球高为 0；有量化地形、高度≈0 且路径不太长时自动贴地。仅箭头线挂载时会将 `depthTestAgainstTerrain` 置 false。
+                    <p v-if="isAreaDrawing && !selectedId" class="hzd-muted">
+                      当前顶点 {{ draftVertices.length }} 个；≥2 个后右键或点「完成标绘」结束。鼠标左键点击绘制，右键结束。
                     </p>
                   </div>
                 </div>

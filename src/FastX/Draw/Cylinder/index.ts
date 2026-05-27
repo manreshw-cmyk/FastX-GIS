@@ -10,6 +10,17 @@ import type {
   CylinderStyleOptions,
   UpdateCylinderProperties,
 } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftRadiusProperty,
+  draftRadiusFromPoints,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
 export type {
   AddCylinderOptions,
   CylinderCenterInput,
@@ -19,10 +30,164 @@ export type {
   UpdateCylinderProperties,
 }
 
-interface CylinderRecord {
+interface CylinderRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function resolveCylinderDraftCenter(options: AddCylinderOptions | UpdateCylinderProperties): Cesium.Cartesian3 | undefined {
+  const explicitCount = [options.position, options.center, options.positions].filter((x) => x !== undefined).length
+  if (explicitCount > 1) return undefined
+  if (explicitCount === 1) {
+    if (options.position !== undefined) return toCartesian3(options.position)
+    if (options.center !== undefined) return toCartesian3(options.center)
+    if (options.positions !== undefined && options.positions.length >= 1) {
+      return centerFromTuple(options.positions)
+    }
+    return undefined
+  }
+  const p = options as UpdateCylinderProperties
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0
+    return Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), Number(h))
+  }
+  return undefined
+}
+
+function createDraftCylinderCenterProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.PositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const pts = getPoints()
+    return pts.length ? Cesium.Cartesian3.clone(pts[0]!) : Cesium.Cartesian3.ZERO
+  }, false)
+}
+
+function resolveCylinderStyleFromTargetData(td: Record<string, unknown>): {
+  length: number
+  topRadius: number
+  bottomRadius: number
+  showFill: boolean
+  fillColor: Color
+  outline: boolean
+  outlineColor: Color
+  outlineWidth: number
+  style?: CylinderStyleOptions
+} {
+  const length = typeof td.length === 'number' && td.length > 0 ? td.length : 100
+  const tr = typeof td.topRadius === 'number' ? td.topRadius : 50
+  const br = typeof td.bottomRadius === 'number' ? td.bottomRadius : tr
+  const showFill = td.showFill !== false
+  const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+  const fillColor =
+    toColor(String(td.color ?? '#3388ff'), showFill ? alpha : 0) ?? Cesium.Color.BLUE.withAlpha(showFill ? alpha : 0)
+  const outline = td.outline !== false
+  const outlineColor =
+    toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+    Cesium.Color.WHITE
+  const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+  return { length, topRadius: tr, bottomRadius: br, showFill, fillColor, outline, outlineColor, outlineWidth, style: td.styleSnapshot as CylinderStyleOptions | undefined }
+}
+
+function applyAreaDraftGraphics(rec: CylinderRecord, ellipsoid: Cesium.Ellipsoid): void {
+  const st = resolveCylinderStyleFromTargetData(rec.targetData)
+  const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec)
+  const radiusProp = createDraftRadiusProperty(getPts)
+
+  rec.entity.position = createDraftCylinderCenterProperty(getPts)
+
+  const cg = new Cesium.CylinderGraphics()
+  cg.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  cg.length = new Cesium.ConstantProperty(st.length)
+  cg.topRadius = radiusProp
+  cg.bottomRadius = radiusProp
+  cg.fill = new Cesium.ConstantProperty(st.showFill)
+  cg.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  cg.outline = new Cesium.ConstantProperty(st.outline)
+  cg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  cg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+  const style = st.style
+  if (style?.slices !== undefined) cg.slices = new Cesium.ConstantProperty(style.slices)
+  else cg.slices = new Cesium.ConstantProperty(32)
+  if (style?.shadows !== undefined) cg.shadows = new Cesium.ConstantProperty(style.shadows)
+  if (style?.distanceDisplayCondition !== undefined) {
+    cg.distanceDisplayCondition = new Cesium.ConstantProperty(style.distanceDisplayCondition)
+  }
+
+  const center = getPts()[0]
+  if (center) {
+    const hd = typeof rec.targetData.headingDegrees === 'number' ? rec.targetData.headingDegrees : 0
+    const pd = typeof rec.targetData.pitchDegrees === 'number' ? rec.targetData.pitchDegrees : 0
+    const rd = typeof rec.targetData.rollDegrees === 'number' ? rec.targetData.rollDegrees : 0
+    rec.entity.orientation = new Cesium.ConstantProperty(orientationFromHprDegrees(center, hd, pd, rd, ellipsoid))
+  }
+
+  rec.entity.cylinder = cg
+}
+
+function refreshAreaDraftStyle(rec: CylinderRecord): void {
+  const st = resolveCylinderStyleFromTargetData(rec.targetData)
+  const cg = rec.entity.cylinder
+  if (!cg) return
+  cg.length = new Cesium.ConstantProperty(st.length)
+  cg.fill = new Cesium.ConstantProperty(st.showFill)
+  cg.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  cg.outline = new Cesium.ConstantProperty(st.outline)
+  cg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  cg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+}
+
+function storeCylinderCenterInTargetData(td: Record<string, unknown>, center: Cesium.Cartesian3, ellipsoid: Cesium.Ellipsoid): void {
+  const carto = Cesium.Cartographic.fromCartesian(center, ellipsoid)
+  td.longitude = Cesium.Math.toDegrees(carto.longitude)
+  td.latitude = Cesium.Math.toDegrees(carto.latitude)
+  td.height = carto.height
+}
+
+function commitAreaDraftRecord(rec: CylinderRecord): boolean {
+  const pts = getDraftPoints(rec)
+  if (!pts.length) return false
+  const center = pts[0]!
+  const groundR = draftRadiusFromPoints(pts)
+  if (!Number.isFinite(groundR) || groundR <= 0) return false
+
+  const td = rec.targetData
+  const len = typeof td.length === 'number' && td.length > 0 ? td.length : groundR
+  td.length = len
+  td.topRadius = groundR
+  td.bottomRadius = groundR
+  clearAreaDraftTargetData(td)
+  rec.draftPoints = undefined
+
+  const ellipsoid = rec.viewer.scene.globe.ellipsoid
+  storeCylinderCenterInTargetData(td, center, ellipsoid)
+  const st = resolveCylinderStyleFromTargetData(td)
+  commitEntityPosition(rec.entity, center)
+  rec.entity.orientation = new Cesium.ConstantProperty(
+    orientationFromHprDegrees(
+      center,
+      typeof td.headingDegrees === 'number' ? td.headingDegrees : 0,
+      typeof td.pitchDegrees === 'number' ? td.pitchDegrees : 0,
+      typeof td.rollDegrees === 'number' ? td.rollDegrees : 0,
+      ellipsoid,
+    ),
+  )
+  const cg = rec.entity.cylinder ?? (rec.entity.cylinder = new Cesium.CylinderGraphics())
+  mergeCylinderGraphics(
+    cg,
+    {
+      length: len,
+      topRadius: groundR,
+      bottomRadius: groundR,
+      fillColor: st.fillColor,
+      showFill: st.showFill,
+      outline: st.outline,
+      outlineColor: st.outlineColor,
+      outlineWidth: st.outlineWidth,
+      style: st.style,
+    },
+    false,
+  )
+  return true
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -186,6 +351,10 @@ export default class Cylinder {
     const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('cyl')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const center = resolveCenterCartesian(options)
     if (!center) return undefined
 
@@ -266,6 +435,64 @@ export default class Cylinder {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddCylinderOptions): Entity | undefined {
+    const center = resolveCylinderDraftCenter(options)
+    if (!center) return undefined
+
+    const length = Number(options.length)
+    const topR = Number(options.topRadius)
+    const bottomR = Number(options.bottomRadius)
+    const lenHint = Number.isFinite(length) && length > 0 ? length : 1
+    const rHint =
+      Number.isFinite(topR) && topR > 0
+        ? topR
+        : Number.isFinite(bottomR) && bottomR > 0
+          ? bottomR
+          : 1
+
+    const showFill = options.showFill !== false
+    const alpha = options.alpha ?? 1
+    const outline = options.outline !== false
+    const hd = options.headingDegrees ?? 0
+    const pd = options.pitchDegrees ?? 0
+    const rd = options.rollDegrees ?? 0
+    const ellipsoid = viewer.scene.globe.ellipsoid
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    storeCylinderCenterInTargetData(td, center, ellipsoid)
+    td.length = lenHint
+    td.topRadius = rHint
+    td.bottomRadius = rHint
+    td.headingDegrees = hd
+    td.pitchDegrees = pd
+    td.rollDegrees = rd
+    td.color = options.color ?? '#3388ff'
+    td.alpha = alpha
+    td.showFill = showFill
+    td.outline = outline
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = options.outlineWidth ?? 2
+    if (options.style) td.styleSnapshot = { ...options.style }
+    td.slices = options.style?.slices ?? 32
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: CylinderRecord = { viewer, entity, targetData: td }
+    setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+    applyAreaDraftGraphics(rec, ellipsoid)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   addCylinders(viewer: Viewer, items: AddCylinderOptions[]): string[] {
     if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
     const ids: string[] = []
@@ -288,6 +515,24 @@ export default class Cylinder {
     const p = properties
     const td = rec.targetData
     const ellipsoid = rec.viewer.scene.globe.ellipsoid
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      const center = resolveCylinderDraftCenter(p) ?? getDraftPoints(rec)[0]
+      if (center) {
+        storeCylinderCenterInTargetData(td, center, ellipsoid)
+        const pts = getDraftPoints(rec)
+        if (pts.length) pts[0] = Cesium.Cartesian3.clone(center)
+        else setDraftPoints(rec, [center])
+      }
+      if (p.topRadius !== undefined) td.topRadius = p.topRadius
+      if (p.bottomRadius !== undefined) td.bottomRadius = p.bottomRadius
+      return commitAreaDraftRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p, ellipsoid)
+    }
 
     if (p.targetData !== undefined) Object.assign(td, p.targetData)
 
@@ -368,6 +613,70 @@ export default class Cylinder {
     return true
   }
 
+  private applyStylePatchToTargetData(rec: CylinderRecord, p: UpdateCylinderProperties): void {
+    const td = rec.targetData
+    if (p.targetData !== undefined) Object.assign(td, p.targetData)
+    if (p.length !== undefined) td.length = p.length
+    if (p.headingDegrees !== undefined) td.headingDegrees = p.headingDegrees
+    if (p.pitchDegrees !== undefined) td.pitchDegrees = p.pitchDegrees
+    if (p.rollDegrees !== undefined) td.rollDegrees = p.rollDegrees
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) ?? String(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) ?? String(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.style !== undefined) {
+      td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+      if (p.style.slices !== undefined) td.slices = p.style.slices
+    }
+  }
+
+  private updateAreaDraft(rec: CylinderRecord, p: UpdateCylinderProperties, ellipsoid: Cesium.Ellipsoid): boolean {
+    const td = rec.targetData
+    markAreaDraftTargetData(td)
+    this.applyStylePatchToTargetData(rec, p)
+
+    const center = resolveCylinderDraftCenter(p) ?? getDraftPoints(rec)[0]
+    if (center) {
+      storeCylinderCenterInTargetData(td, center, ellipsoid)
+      const pts = getDraftPoints(rec)
+      const groundR =
+        p.topRadius !== undefined && p.topRadius > 0
+          ? p.topRadius
+          : p.bottomRadius !== undefined && p.bottomRadius > 0
+            ? p.bottomRadius
+            : undefined
+      if (pts.length >= 2) {
+        pts[0] = Cesium.Cartesian3.clone(center)
+        setDraftPoints(rec, pts)
+      } else if (groundR !== undefined) {
+        const carto = Cesium.Cartographic.fromCartesian(center, ellipsoid)
+        const rim = Cesium.Cartesian3.fromRadians(
+          carto.longitude + groundR / ellipsoid.maximumRadius,
+          carto.latitude,
+          carto.height,
+          ellipsoid,
+        )
+        setDraftPoints(rec, [Cesium.Cartesian3.clone(center), rim])
+        td.topRadius = groundR
+        td.bottomRadius = groundR
+      } else {
+        setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+      }
+    }
+
+    refreshAreaDraftStyle(rec)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
   updateCylinders(updates: Array<{ id: string } & UpdateCylinderProperties>): Array<{ id: string; success: boolean }> {
     return updates.map(({ id, ...rest }) => ({ id, success: this.updateCylinder(id, rest) }))
   }
@@ -394,7 +703,7 @@ export default class Cylinder {
 
   getCylinder(id: string): CylinderSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos, rec.viewer.scene.globe.ellipsoid)

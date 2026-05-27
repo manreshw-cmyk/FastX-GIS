@@ -5,7 +5,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, SectorSnapshot } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, MouseEventListenOptions, MouseEventPickPayload, SectorSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -18,6 +18,8 @@ const DEFAULT_FILL_COLOR = '#722ed1'
 const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 
 /** 为 true 时下一次地图左键将经纬度（及有效时的高度）写入表单 */
 const coordPickArmed = ref(false)
@@ -28,12 +30,12 @@ const form = reactive({
   longitude: null as number | null,
   latitude: null as number | null,
   height: 0,
-  /** 半径（米） */
-  radius: 50_000,
+  /** 半径（米）；未选中表格行时为空 */
+  radius: null as number | null,
   /** 起始角（°），自北顺时针 */
-  startAzimuthDegrees: 0,
+  startAzimuthDegrees: null as number | null,
   /** 结束角（°），自北顺时针 */
-  endAzimuthDegrees: 60,
+  endAzimuthDegrees: null as number | null,
   /** 圆弧分段（下拉） */
   arcSegments: 32,
   /** 拉伸高度（m），整块扇形统一挤出 */
@@ -68,6 +70,96 @@ type MapMouseBinder = {
 
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+
+function bearingDegFromNorth(a: LngLatHeight, b: LngLatHeight): number {
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const lat1 = (a.latitude * Math.PI) / 180
+  const lat2 = (b.latitude * Math.PI) / 180
+  const y = Math.sin(dLon) * Math.cos(lat2)
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360
+}
+
+function haversineM(a: LngLatHeight, b: LngLatHeight): number {
+  const R = 6371000
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const lat1 = (a.latitude * Math.PI) / 180
+  const lat2 = (b.latitude * Math.PI) / 180
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+function syncSectorFromAnchors(points: LngLatHeight[], anchorCount = points.length): void {
+  if (points.length >= 1 && anchorCount >= 1) {
+    form.longitude = points[0]!.longitude
+    form.latitude = points[0]!.latitude
+    form.height = points[0]!.height ?? 0
+  } else {
+    form.longitude = null
+    form.latitude = null
+  }
+  if (anchorCount >= 1 && points.length >= 2) {
+    form.radius = haversineM(points[0]!, points[1]!)
+  } else {
+    form.radius = null
+  }
+  if (anchorCount >= 2 && points.length >= 2) {
+    form.startAzimuthDegrees = bearingDegFromNorth(points[0]!, points[1]!)
+  } else {
+    form.startAzimuthDegrees = null
+  }
+  if (anchorCount >= 2 && points.length >= 3) {
+    form.endAzimuthDegrees = bearingDegFromNorth(points[0]!, points[2]!)
+  } else {
+    form.endAzimuthDegrees = null
+  }
+}
+
+function buildSectorStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'sector',
+    id: form.id.trim() || undefined,
+    arcSegments: form.arcSegments,
+    extrudedHeight: form.extrudedHeight,
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#722ed1',
+      cursorPointColor: '#722ed1',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+    },
+    onAnchorChange: (points) => {
+      syncSectorFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'sector') return
+    stopAreaDraw()
+    message.success('已添加扇形')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -132,9 +224,9 @@ function resetFormToInitial(): void {
   form.longitude = null
   form.latitude = null
   form.height = 0
-  form.radius = 50_000
-  form.startAzimuthDegrees = 0
-  form.endAzimuthDegrees = 60
+  form.radius = null
+  form.startAzimuthDegrees = null
+  form.endAzimuthDegrees = null
   form.arcSegments = 32
   form.extrudedHeight = 0
   form.showFill = true
@@ -167,6 +259,7 @@ function disarmCoordPick(): void {
 }
 
 function onRowClick(record: SectorSnapshot): void {
+  stopAreaDraw()
   disarmCoordPick()
   selectedId.value = record.id
   const snap = window.FastX?.Sector?.getSector(record.id)
@@ -273,11 +366,44 @@ function onPrimaryClick(): void {
     applyUpdateToSelected()
     return
   }
-  addSectorFromForm()
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 3) {
+      message.warning('扇形至少需要 3 个点（圆心、起始方向、结束方向）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  const ok = am.start(v, buildSectorStartParams())
+  if (!ok) {
+    message.error('无法开始扇形绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束绘制！')
+
+  // --- Sector 单类 add（不用空域管理时注释上一段，改用本行）---
+  // addSectorFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
+  stopAreaDraw()
   disarmCoordPick()
   resetFormToInitial()
 }
@@ -385,7 +511,9 @@ onMounted(async () => {
   }
   viewerRef = v
   refreshTable()
-  bindMouse(v)
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -397,6 +525,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  stopAreaDraw()
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef
@@ -439,7 +568,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="绘制后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -452,7 +582,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="绘制后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -502,6 +633,8 @@ onBeforeUnmount(() => {
                       :max="2000000"
                       :step="1000"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -515,6 +648,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="1"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -527,6 +662,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="1"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -605,16 +742,6 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
-                      <a-tooltip :title="coordPickArmed ? '取消拾取' : '地图拾取经纬度'">
-                        <a-button
-                          :type="pickCoordButtonType"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="地图拾取经纬度"
-                          @click="onToggleCoordPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
                       <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onPrimaryClick">
                         {{ primaryButtonText }}
                       </a-button>

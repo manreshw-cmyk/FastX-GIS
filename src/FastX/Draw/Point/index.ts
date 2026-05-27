@@ -10,6 +10,16 @@ import type {
   PointStyleOptions,
   UpdatePointProperties,
 } from '../../Types'
+import {
+  type AreaDraftPointsHolder,
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftPositionProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+} from '../../Utils/areaDraft'
 export type {
   AddPointOptions,
   PointPositionInput,
@@ -19,10 +29,23 @@ export type {
   UpdatePointProperties,
 }
 
-interface PointRecord {
+interface PointRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function resolveUpdateCartesian(p: UpdatePointProperties): Cesium.Cartesian3 | undefined {
+  if (p.position !== undefined) return toCartesian3(p.position)
+  if (p.positions !== undefined) {
+    if (p.positions.length < 2) return undefined
+    return positionFromTuple(p.positions)
+  }
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0
+    return Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), Number(h))
+  }
+  return undefined
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -167,6 +190,10 @@ export default class Point {
     const id = options.id?.trim() ? options.id : createRandomXgxId('pt')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const position = resolveAddCartesian(options)
     if (!position) return undefined
     const mergedStyle = buildStyleFromAddOptions(options)
@@ -186,6 +213,90 @@ export default class Point {
     viewer.entities.add(entity)
     this.data.set(id, { viewer, entity, targetData: this.cloneTargetData(options.targetData) })
     return entity
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddPointOptions): Entity | undefined {
+    const position = resolveAddCartesian(options)
+    if (!position) return undefined
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    const mergedStyle = buildStyleFromAddOptions(options)
+    const pointGraphics = new Cesium.PointGraphics()
+    mergePointGraphics(pointGraphics, mergedStyle, options, true)
+
+    const rec: PointRecord = {
+      viewer,
+      entity: new Cesium.Entity({ id, show: options.show !== false }),
+      targetData: td,
+    }
+    setDraftPoints(rec, [position])
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    rec.entity.point = pointGraphics
+    if (options.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    viewer.entities.add(rec.entity)
+    this.data.set(id, rec)
+    return rec.entity
+  }
+
+  private applyPointStylePatch(rec: PointRecord, p: UpdatePointProperties): void {
+    const pg = rec.entity.point ?? (rec.entity.point = new Cesium.PointGraphics())
+    if (
+      p.color !== undefined ||
+      p.alpha !== undefined ||
+      p.pixelSize !== undefined ||
+      p.outline !== undefined ||
+      p.outlineColor !== undefined ||
+      p.outlineAlpha !== undefined ||
+      p.outlineWidth !== undefined ||
+      p.style !== undefined
+    ) {
+      const stylePatch: PointStyleOptions = { ...(p.style ?? {}) }
+      const col = toColor(p.color as string | Color | undefined, p.alpha)
+      if (col) stylePatch.color = col
+      const oc = toColor(p.outlineColor as string | Color | undefined, p.outlineAlpha)
+      if (oc) stylePatch.outlineColor = oc
+      if (p.pixelSize !== undefined) stylePatch.pixelSize = p.pixelSize
+      if (p.outlineWidth !== undefined) stylePatch.outlineWidth = p.outlineWidth
+      mergePointGraphics(pg, stylePatch, { outline: p.outline, outlineWidth: p.outlineWidth }, false)
+    }
+  }
+
+  private commitAreaDraft(rec: PointRecord, p: UpdatePointProperties): boolean {
+    const pts = getDraftPoints(rec)
+    const pos = resolveUpdateCartesian(p) ?? (pts.length ? pts[pts.length - 1] : undefined)
+    if (!pos) return false
+    commitEntityPosition(rec.entity, pos)
+    clearAreaDraftTargetData(rec.targetData)
+    delete rec.draftPoints
+    this.applyPointStylePatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
+  }
+
+  private updateAreaDraft(rec: PointRecord, p: UpdatePointProperties): boolean {
+    markAreaDraftTargetData(rec.targetData)
+    const pos = resolveUpdateCartesian(p)
+    if (pos) setDraftPoints(rec, [pos])
+    else if (!getDraftPoints(rec).length) {
+      const cur = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
+      if (cur) setDraftPoints(rec, [cur])
+    }
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    this.applyPointStylePatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
   }
 
   /**
@@ -237,6 +348,14 @@ export default class Point {
     if (!rec) return false
 
     const p = properties
+    const td = rec.targetData
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      return this.commitAreaDraft(rec, p)
+    }
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
+
     if (p.position !== undefined) {
       rec.entity.position = new Cesium.ConstantPositionProperty(toCartesian3(p.position))
     } else if (p.positions !== undefined) {
@@ -249,26 +368,7 @@ export default class Point {
       )
     }
 
-    const pg = rec.entity.point ?? (rec.entity.point = new Cesium.PointGraphics())
-    if (
-      p.color !== undefined ||
-      p.alpha !== undefined ||
-      p.pixelSize !== undefined ||
-      p.outline !== undefined ||
-      p.outlineColor !== undefined ||
-      p.outlineAlpha !== undefined ||
-      p.outlineWidth !== undefined ||
-      p.style !== undefined
-    ) {
-      const stylePatch: PointStyleOptions = { ...(p.style ?? {}) }
-      const col = toColor(p.color as string | Color | undefined, p.alpha)
-      if (col) stylePatch.color = col
-      const oc = toColor(p.outlineColor as string | Color | undefined, p.outlineAlpha)
-      if (oc) stylePatch.outlineColor = oc
-      if (p.pixelSize !== undefined) stylePatch.pixelSize = p.pixelSize
-      if (p.outlineWidth !== undefined) stylePatch.outlineWidth = p.outlineWidth
-      mergePointGraphics(pg, stylePatch, { outline: p.outline, outlineWidth: p.outlineWidth }, false)
-    }
+    this.applyPointStylePatch(rec, p)
 
     if (p.show !== undefined) {
       rec.entity.show = p.show
@@ -318,7 +418,7 @@ export default class Point {
   /** 对应 `PointCollection#getPoint`：经纬高 + 样式快照 + `targetData` */
   getPoint(id: string): PointSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos)

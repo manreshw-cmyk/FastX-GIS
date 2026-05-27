@@ -5,7 +5,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { CircleSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, CircleSnapshot, LngLatHeight } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -19,8 +19,12 @@ const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
 
-/** 为 true 时下一次地图左键将经纬度（及有效时的高度）写入表单 */
-const coordPickArmed = ref(false)
+/** 空域管理（FastX 全局单例，示例变量统一命名为 am） */
+let am = window.FastX?.AreaManager
+
+/** 绘制中（用于按钮文案；am.active 非响应式） */
+const isAreaDrawing = ref(false)
+
 const selectedId = ref<string | null>(null)
 
 const form = reactive({
@@ -28,8 +32,8 @@ const form = reactive({
   longitude: null as number | null,
   latitude: null as number | null,
   height: 0,
-  /** 半径（米） */
-  radius: 25_000,
+  /** 半径（米）；未选中表格行时为空 */
+  radius: null as number | null,
   /** 是否绘制填充色（关则填充透明度等效为 0，轮廓仍可显示） */
   showFill: true,
   color: DEFAULT_FILL_COLOR,
@@ -46,13 +50,78 @@ const tableShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
+let viewerRef: Viewer | null = null
+
+function haversineDistanceM(a: LngLatHeight, b: LngLatHeight): number {
+  const R = 6371008.8
+  const r0 = (a.latitude * Math.PI) / 180
+  const r1 = (b.latitude * Math.PI) / 180
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(r0) * Math.cos(r1) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
-let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+function syncCircleFromAnchors(points: LngLatHeight[], anchorCount = points.length): void {
+  if (points.length >= 1 && anchorCount >= 1) {
+    form.longitude = points[0]!.longitude
+    form.latitude = points[0]!.latitude
+    form.height = points[0]!.height ?? 0
+  } else {
+    form.longitude = null
+    form.latitude = null
+  }
+  if (anchorCount >= 1 && points.length >= 2) {
+    const rim = points[points.length - 1]!
+    form.radius = haversineDistanceM(points[0]!, rim)
+  } else {
+    form.radius = null
+  }
+}
+
+function buildCircleStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'circle',
+    id: form.id.trim() || undefined,
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#faad14',
+      cursorPointColor: '#faad14',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineWidth: form.outlineWidth,
+    },
+    onAnchorChange: (points) => {
+      syncCircleFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'circle') return
+    stopAreaDraw()
+    message.success('已添加圆')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -115,7 +184,7 @@ function resetFormToInitial(): void {
   form.longitude = null
   form.latitude = null
   form.height = 0
-  form.radius = 25_000
+  form.radius = null
   form.showFill = true
   form.color = DEFAULT_FILL_COLOR
   form.alpha = 1
@@ -141,12 +210,8 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
   else form.outlineColor = hex
 }
 
-function disarmCoordPick(): void {
-  coordPickArmed.value = false
-}
-
 function onRowClick(record: CircleSnapshot): void {
-  disarmCoordPick()
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Circle?.getCircle(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -157,16 +222,14 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Circle?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    disarmCoordPick()
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
   message.success('已删除')
 }
 
-const primaryButtonText = computed(() => (selectedId.value ? '确定' : '标绘'))
-
-const pickCoordButtonType = computed(() => (coordPickArmed.value ? ('primary' as const) : ('default' as const)))
+const primaryButtonText = computed(() => (selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制'))
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
@@ -210,7 +273,7 @@ function addCircleFromForm(): void {
   const v = mapStore.getViewer()
   if (!C || !v || v.isDestroyed()) return
 
-  disarmCoordPick()
+  stopAreaDraw()
   const idOpt = form.id.trim() || undefined
   const entity = C.add(v, {
     id: idOpt,
@@ -244,62 +307,47 @@ function onPrimaryClick(): void {
     applyUpdateToSelected()
     return
   }
-  addCircleFromForm()
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（圆心 + 边缘）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  form.longitude = null
+  form.latitude = null
+  const ok = am.start(v, buildCircleStartParams())
+  if (!ok) {
+    message.error('无法开始圆绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Circle 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addCircleFromForm()
 }
 
 function onCancelSelect(): void {
   selectedId.value = null
-  disarmCoordPick()
+  stopAreaDraw()
   resetFormToInitial()
-}
-
-function onToggleCoordPick(): void {
-  if (coordPickArmed.value) {
-    coordPickArmed.value = false
-    message.info('已取消拾取经纬度')
-    return
-  }
-  coordPickArmed.value = true
-  message.info('请在地图上左键点击拾取经纬度')
-}
-
-function isValidPickLonLat(pick: MouseEventPickPayload): boolean {
-  return Number.isFinite(pick.longitude) && Number.isFinite(pick.latitude)
-}
-
-/** 将拾取结果写入表单；成功返回 true */
-function applyPickToFormLonLat(pick: MouseEventPickPayload): boolean {
-  if (!isValidPickLonLat(pick)) {
-    message.warning('未能拾取到有效坐标，请点击地球可见区域后重试')
-    return false
-  }
-  form.longitude = pick.longitude
-  form.latitude = pick.latitude
-  if (Number.isFinite(pick.height)) {
-    form.height = pick.height
-  }
-  return true
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!coordPickArmed.value) return
-  if (!applyPickToFormLonLat(pick)) return
-  coordPickArmed.value = false
-  message.success('已写入经纬度')
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
-  mouseBinder = binder
 }
 
 const columns: TableColumnType<CircleSnapshot>[] = [
@@ -356,8 +404,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -369,8 +418,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -411,7 +461,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="绘制后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -424,7 +475,8 @@ onBeforeUnmount(() => {
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="绘制后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -474,6 +526,8 @@ onBeforeUnmount(() => {
                       :max="2000000"
                       :step="1000"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -528,6 +582,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
+                      <!-- 原「地图拾取经纬度」按钮：已由「绘制」直接 am.start
                       <a-tooltip :title="coordPickArmed ? '取消拾取' : '地图拾取经纬度'">
                         <a-button
                           :type="pickCoordButtonType"
@@ -538,6 +593,7 @@ onBeforeUnmount(() => {
                           <template #icon><EnvironmentOutlined /></template>
                         </a-button>
                       </a-tooltip>
+                      -->
                       <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onPrimaryClick">
                         {{ primaryButtonText }}
                       </a-button>

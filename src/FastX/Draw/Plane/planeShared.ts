@@ -381,6 +381,20 @@ export function pickPlaneVideoFromSource(
     : undefined;
 }
 
+function targetDataTouchesPlaneMaterial(td: unknown): boolean {
+  if (!td || typeof td !== "object") return false;
+  const t = td as Record<string, unknown>;
+  return (
+    t.materialType !== undefined ||
+    t.color !== undefined ||
+    t.alpha !== undefined ||
+    t.imageUrl !== undefined ||
+    t.videoUrl !== undefined ||
+    t.imageRepeat !== undefined ||
+    t.video !== undefined
+  );
+}
+
 export function materialPatchTouchesPlane(
   source: PlaneMaterialSource,
   isCreate: boolean,
@@ -398,6 +412,7 @@ export function materialPatchTouchesPlane(
     source.style?.imageUrl !== undefined ||
     source.style?.videoUrl !== undefined ||
     source.style?.imageRepeat !== undefined ||
-    source.style?.video !== undefined
+    source.style?.video !== undefined ||
+    targetDataTouchesPlaneMaterial(source.targetData)
   );
 }

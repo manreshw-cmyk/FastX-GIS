@@ -18,6 +18,40 @@ import type {
 } from 'cesium'
 import type * as Cesium from 'cesium'
 import type { ShapeParams, ShapeType } from '../Draw/PolylineVolume/shape'
+import type Point from '../Draw/Point'
+import type PointCollection from '../Draw/Point/PointCollection'
+import type Label from '../Draw/Label'
+import type LabelCollection from '../Draw/Label/LabelCollection'
+import type Billboard from '../Draw/Billboard'
+import type BillboardCollection from '../Draw/Billboard/BillboardCollection'
+import type Model from '../Draw/Model'
+import type ModelCollection from '../Draw/Model/ModelCollection'
+import type PolyLine from '../Draw/PolyLine'
+import type PolyLineCollection from '../Draw/PolyLine/PolyLineCollection'
+import type Polygon from '../Draw/Polygon'
+import type PolygonCollection from '../Draw/Polygon/PolygonCollection'
+import type Circle from '../Draw/Circle'
+import type CircleCollection from '../Draw/Circle/CircleCollection'
+import type Rectangle from '../Draw/Rectangle'
+import type RectangleCollection from '../Draw/Rectangle/RectangleCollection'
+import type Sector from '../Draw/Sector'
+import type SectorCollection from '../Draw/Sector/SectorCollection'
+import type Corridor from '../Draw/Corridor'
+import type CorridorCollection from '../Draw/Corridor/CorridorCollection'
+import type Cylinder from '../Draw/Cylinder'
+import type CylinderCollection from '../Draw/Cylinder/CylinderCollection'
+import type Ellipsoid from '../Draw/Ellipsoid'
+import type EllipsoidCollection from '../Draw/Ellipsoid/EllipsoidCollection'
+import type Wall from '../Draw/Wall'
+import type Runway from '../Draw/Runway'
+import type RunwayCollection from '../Draw/Runway/RunwayCollection'
+import type Box from '../Draw/Box'
+import type BoxCollection from '../Draw/Box/BoxCollection'
+import type PolylineVolume from '../Draw/PolylineVolume'
+import type PolylineVolumeCollection from '../Draw/PolylineVolume/PolylineVolumeCollection'
+import type Plane from '../Draw/Plane'
+import type PlaneCollection from '../Draw/Plane/PlaneCollection'
+import type Path from '../Draw/Path'
 
 // --- Utils / timelineClock (Utils/timelineClock.ts) ---
 
@@ -226,6 +260,7 @@ export interface AddBillboardOptions {
   show?: boolean
   description?: string
   targetData?: Record<string, unknown>
+  areaDraft?: boolean
 }
 
 export interface UpdateBillboardProperties {
@@ -250,6 +285,7 @@ export interface UpdateBillboardProperties {
   description?: string
   targetData?: Record<string, unknown>
   style?: BillboardStyleOptions
+  areaDraft?: boolean
 }
 
 export interface BillboardSnapshot {
@@ -335,6 +371,8 @@ export interface AddBoxOptions {
   id?: string
   position?: PointPositionInput
   positions?: BoxPositionsTuple
+  /** 空域管理鼠标绘制草稿 */
+  areaDraft?: boolean
   /** 长宽高（米），默认 [200, 200, 200] */
   dimensions?: BoxDimensionsInput
   style?: BoxStyleOptions
@@ -352,6 +390,7 @@ export interface AddBoxOptions {
 }
 
 export interface UpdateBoxProperties {
+  areaDraft?: boolean
   longitude?: number
   latitude?: number
   height?: number
@@ -467,7 +506,11 @@ export interface AddCircleOptions {
   position?: CircleCenterInput
   center?: CircleCenterInput
   positions?: CircleCenterTuple
-  /** 半径（米） */
+  /** 空域管理草稿顶点（如圆心 + 半径控制点） */
+  draftVertices?: readonly LngLatHeight[]
+  /** 空域管理鼠标绘制草稿：放宽圆心/半径校验 */
+  areaDraft?: boolean
+  /** 半径（米）；`areaDraft` 时可为 0 */
   radius: number
   style?: CircleStyleOptions
   color?: string
@@ -484,11 +527,15 @@ export interface AddCircleOptions {
 }
 
 export interface UpdateCircleProperties {
+  /** 传 `false` 且原为草稿时，提交为正式圆（`ConstantProperty` 图形） */
+  areaDraft?: boolean
+  center?: CircleCenterInput
   longitude?: number
   latitude?: number
   height?: number
   position?: CircleCenterInput
   positions?: CircleCenterTuple
+  draftVertices?: readonly LngLatHeight[]
   radius?: number
   color?: string | Color
   alpha?: number
@@ -599,6 +646,8 @@ export interface CorridorStyleOptions {
 export interface AddCorridorOptions {
   id?: string
   positions: CorridorVertexInput[]
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean
   width: number
   height?: number
   extrudedHeight?: number
@@ -618,6 +667,8 @@ export interface AddCorridorOptions {
 
 export interface UpdateCorridorProperties {
   positions?: CorridorVertexInput[]
+  /** 传 `false` 且原为草稿时，提交为正式廊道（仍须 ≥2 顶点） */
+  areaDraft?: boolean
   width?: number
   height?: number
   extrudedHeight?: number
@@ -725,6 +776,7 @@ export interface AddCylinderOptions {
   position?: CylinderCenterInput
   center?: CylinderCenterInput
   positions?: CylinderCenterTuple
+  areaDraft?: boolean
   /** 与 `center: { longitude, latitude, height }` 等价；勿与 `position` / `center` / `positions` 混用（若后者有值则优先用后者） */
   longitude?: number
   latitude?: number
@@ -749,6 +801,7 @@ export interface AddCylinderOptions {
 }
 
 export interface UpdateCylinderProperties {
+  areaDraft?: boolean
   longitude?: number
   latitude?: number
   height?: number
@@ -880,6 +933,7 @@ export interface EllipsoidStyleOptions {
 
 export interface AddEllipsoidOptions {
   id?: string;
+  areaDraft?: boolean;
   /** 中心点位置 */
   position: PositionInput;
   /** 椭球体样式 */
@@ -907,6 +961,7 @@ export interface AddEllipsoidOptions {
 }
 
 export interface UpdateEllipsoidProperties {
+  areaDraft?: boolean;
   /** 中心点位置 */
   position?: PositionInput;
   /** 半径 */
@@ -1085,6 +1140,7 @@ export interface AddLabelOptions {
   show?: boolean
   description?: string
   targetData?: Record<string, unknown>
+  areaDraft?: boolean
 }
 
 export interface UpdateLabelProperties {
@@ -1114,6 +1170,7 @@ export interface UpdateLabelProperties {
   show?: boolean
   description?: string
   targetData?: Record<string, unknown>
+  areaDraft?: boolean
 }
 
 export interface LabelSnapshot {
@@ -1231,6 +1288,7 @@ export interface AddModelOptions {
   show?: boolean;
   description?: string;
   targetData?: Record<string, unknown>;
+  areaDraft?: boolean;
 }
 
 export interface UpdateModelProperties {
@@ -1252,6 +1310,7 @@ export interface UpdateModelProperties {
   description?: string;
   targetData?: Record<string, unknown>;
   style?: ModelStyleOptions;
+  areaDraft?: boolean;
 }
 
 export interface ModelSnapshot {
@@ -1410,6 +1469,7 @@ export interface PlaneStyleOptions {
 
 export interface AddPlaneOptions {
   id?: string;
+  areaDraft?: boolean;
   position?: PlaneCenterInput;
   positions?: PlanePositionsTuple;
   /** 平面宽、高（米） */
@@ -1437,6 +1497,7 @@ export interface AddPlaneOptions {
 }
 
 export interface UpdatePlaneProperties {
+  areaDraft?: boolean;
   longitude?: number;
   latitude?: number;
   height?: number;
@@ -1630,6 +1691,7 @@ export interface AddPointOptions {
   description?: string
   /** 自定义业务数据（对应原 `primitive._targetData`） */
   targetData?: Record<string, unknown>
+  areaDraft?: boolean
 }
 
 export interface UpdatePointProperties {
@@ -1650,6 +1712,8 @@ export interface UpdatePointProperties {
   description?: string
   targetData?: Record<string, unknown>
   style?: PointStyleOptions
+  /** 传 `false` 且原为草稿时，提交为正式点 */
+  areaDraft?: boolean
 }
 
 export interface PointSnapshot {
@@ -1795,6 +1859,8 @@ export interface WallParams {
 export interface AddPolylineOptions {
   id?: string;
   positions: readonly PolylineLngLatTuple[] | readonly Cesium.Cartesian3[];
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean;
   lineKind?: PolylineLineKind;
   color?: string;
   alpha?: number;
@@ -1821,6 +1887,8 @@ export interface AddPolylineOptions {
 
 export interface UpdatePolylineProperties {
   positions?: readonly PolylineLngLatTuple[] | readonly Cesium.Cartesian3[];
+  /** 传 `false` 且原为草稿时，提交为正式折线（仍须 ≥2 顶点） */
+  areaDraft?: boolean;
   lineKind?: PolylineLineKind;
   color?: string | Color;
   alpha?: number;
@@ -1928,9 +1996,14 @@ export interface PolygonStyleOptions {
   zIndex?: number
 }
 
+/** 空域管理 `start` 草稿写入 `targetData` 的标记键（`getAllPolygons` 等会过滤） */
+export const AREA_DRAFT_TARGET_KEY = '__areaDraft'
+
 export interface AddPolygonOptions {
   id?: string
   positions: PolygonVertexInput[]
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean
   style?: PolygonStyleOptions
   /**
    * 整块多边形沿法线/挤出方向的拉伸高度（米），映射 `PolygonGraphics.extrudedHeight`；全环共用一个数值。
@@ -1950,6 +2023,8 @@ export interface AddPolygonOptions {
 
 export interface UpdatePolygonProperties {
   positions?: PolygonVertexInput[]
+  /** 传 `false` 且原为草稿时，提交为正式多边形（仍须 ≥3 顶点） */
+  areaDraft?: boolean
   extrudedHeight?: number
   color?: string | Color
   alpha?: number
@@ -2033,6 +2108,8 @@ export interface AddPolylineVolumeOptions {
   id?: string
   /** 路径顶点（度 / 米），至少 2 项 */
   positions: PolylineVolumeLngLatTuple[] | number[][]
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean
   shapeType?: ShapeType | string
   /** 传给 `createShape` 的参数；缺省时按 `shapeType` 使用内置默认尺寸 */
   shapeParams?: ShapeParams
@@ -2054,6 +2131,8 @@ export interface AddPolylineVolumeOptions {
 
 export interface UpdatePolylineVolumeProperties {
   positions?: PolylineVolumeLngLatTuple[] | number[][]
+  /** 传 `false` 且原为草稿时，提交为正式折线体（仍须 ≥2 顶点） */
+  areaDraft?: boolean
   shapeType?: ShapeType | string
   shapeParams?: ShapeParams
   cornerType?: keyof typeof Cesium.CornerType
@@ -2179,6 +2258,7 @@ export interface RectangleStyleOptions {
 
 export interface AddRectangleOptions {
   id?: string
+  areaDraft?: boolean
   /** 西、南、东、北边界（度） */
   west: number
   south: number
@@ -2199,6 +2279,7 @@ export interface AddRectangleOptions {
 }
 
 export interface UpdateRectangleProperties {
+  areaDraft?: boolean
   west?: number
   south?: number
   east?: number
@@ -2311,6 +2392,7 @@ export interface RunwayStyleOptions {
 
 export interface AddRunwayOptions {
   id?: string
+  areaDraft?: boolean
   /** 起点、终点，长度须为 2（与廊道 `positions` 一致） */
   positions?: RunwayVertexInput[]
   /** 兼容：与 `latitude`/`height` 组成起点，`end*` 组成终点 */
@@ -2351,6 +2433,7 @@ export interface AddRunwayOptions {
 }
 
 export interface UpdateRunwayProperties {
+  areaDraft?: boolean
   positions?: RunwayVertexInput[]
   longitude?: number
   latitude?: number
@@ -2468,15 +2551,17 @@ export interface SectorCollectionSnapshot {
 
 export interface AddSectorOptions {
   id?: string
+  areaDraft?: boolean
   position?: CircleCenterInput
   center?: CircleCenterInput
   positions?: CircleCenterTuple
-  /** 半径（米），必填且 &gt; 0 */
+  draftVertices?: readonly LngLatHeight[]
+  /** 半径（米）；`areaDraft` 时可为 0 */
   radius: number
-  /** 起始方位角（度），自北顺时针 */
-  startAzimuthDegrees: number
+  /** 起始方位角（度），自北顺时针；草稿定半径阶段可省略 */
+  startAzimuthDegrees?: number
   /** 结束方位角（度），自北顺时针；可小于起始角，内部按跨越 360° 展开 */
-  endAzimuthDegrees: number
+  endAzimuthDegrees?: number
   /** 圆弧分段数，越大弧边越平滑，默认 32 */
   arcSegments?: number
   style?: PolygonStyleOptions
@@ -2494,12 +2579,14 @@ export interface AddSectorOptions {
 }
 
 export interface UpdateSectorProperties {
+  areaDraft?: boolean
   longitude?: number
   latitude?: number
   height?: number
   position?: CircleCenterInput
   center?: CircleCenterInput
   positions?: CircleCenterTuple
+  draftVertices?: readonly LngLatHeight[]
   radius?: number
   startAzimuthDegrees?: number
   endAzimuthDegrees?: number
@@ -2604,6 +2691,8 @@ export interface AddWallOptions {
   id?: string;
   /** 轮廓点数组（至少2个点） */
   positions: WallPosition[];
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean;
   style?: WallStyleOptions;
 
   // ========== 快捷方式 ==========
@@ -2638,6 +2727,8 @@ export interface AddWallOptions {
 
 export interface UpdateWallProperties {
   positions?: WallPosition[];
+  /** 传 `false` 且原为草稿时，提交为正式墙体（仍须 ≥2 顶点） */
+  areaDraft?: boolean;
   materialType?: MaterialType;
   color?: string | Cesium.Color;
   imageUrl?: string;
@@ -2802,6 +2893,168 @@ export interface LayerOverviewMapOptions {
   imageryProviderOptions?: Omit<UrlTemplateImageryProvider.ConstructorOptions, 'url'>
 }
 
+// --- AreaManager (areaManager/index.ts) ---
+
+/** 与 Draw 各子模块一一对应；`path` 仅支持 `draw` 直接回显（需 `position` 时间属性） */
+export type AreaDrawShapeType =
+  | 'point'
+  | 'label'
+  | 'billboard'
+  | 'model'
+  | 'polyline'
+  | 'polygon'
+  | 'rectangle'
+  | 'circle'
+  | 'sector'
+  | 'corridor'
+  | 'cylinder'
+  | 'ellipsoid'
+  | 'wall'
+  | 'runway'
+  | 'box'
+  | 'polylineVolume'
+  | 'plane'
+  | 'path'
+
+export type AreaDrawInteractionMode = 'single' | 'twoClick' | 'threeClick' | 'polyline'
+
+/**
+ * `draw()` 回显时的落库方式（仅 `draw` 使用，`start` 鼠标绘制固定为 Entity）：
+ * - `entity` → 各 Draw 类 `add`
+ * - `primitive` → 各 `*Collection` 批量 Primitive
+ */
+export type AreaDrawRenderMode = 'entity' | 'primitive'
+
+/** 鼠标绘制时的预览样式（锚点 / 跟随点 / 预览线面） */
+export interface AreaDrawPreviewStyle {
+  /** 已点击固定锚点颜色，默认 `#22cc44` */
+  anchorPointColor?: string
+  anchorPointPixelSize?: number
+  anchorPointOutlineColor?: string
+  anchorPointOutlineWidth?: number
+  /** 鼠标跟随点颜色，默认 `#22cc44` */
+  cursorPointColor?: string
+  cursorPointPixelSize?: number
+  cursorPointOutlineColor?: string
+  cursorPointOutlineWidth?: number
+  /** 预览线/面颜色 */
+  lineColor?: string
+  lineWidth?: number
+  fillColor?: string
+  fillAlpha?: number
+  outlineColor?: string
+  outlineWidth?: number
+  /**
+   * `start` 鼠标预览期间提升场景抗锯齿（FXAA + MSAA），`end`/`cancel` 后恢复；
+   * 默认 `true`。
+   */
+  antialias?: boolean
+}
+
+/** 鼠标交互 `start()` 入参（逐点绘制，固定走 Entity，不含 `renderMode`） */
+export interface AreaDrawStartParams {
+  shapeType: AreaDrawShapeType
+  id?: string
+  targetData?: Record<string, unknown>
+  preview?: AreaDrawPreviewStyle
+  /** 矩形/圆：第二点左键后是否自动结束（默认 true） */
+  autoFinishOnSecondClick?: boolean
+  /** 每新增一个锚点后回调（用于页面同步顶点列表等） */
+  /** 第二参数为已落锚点数；mousemove 预览时 points 含光标且 anchorCount 为锚点数 */
+  onAnchorChange?: (points: LngLatHeight[], anchorCount?: number) => void
+  /** 折线/多边形最终样式，会传给对应 Draw 类 */
+  color?: string
+  alpha?: number
+  width?: number
+  showFill?: boolean
+  outline?: boolean
+  outlineColor?: string
+  outlineAlpha?: number
+  outlineWidth?: number
+  style?: Record<string, unknown>
+  description?: string
+  show?: boolean
+  [key: string]: unknown
+}
+
+/** 数据回显 `draw()` 入参：在 `AreaDrawStartParams` 基础上增加 `renderMode` */
+export interface AreaDrawDirectParams extends AreaDrawStartParams {
+  /** 按数据量选择回显方式，默认 `entity` */
+  renderMode?: AreaDrawRenderMode
+}
+
+export interface AreaDrawResult {
+  id: string
+  shapeType: AreaDrawShapeType
+  /** 鼠标 `start` 完成恒为 `entity`；`draw` 完成与入参 `renderMode` 一致 */
+  renderMode: AreaDrawRenderMode
+  /** `entity` 时有值；`primitive` 时通过 id 访问 Collection */
+  entity?: import('cesium').Entity
+}
+
+/** `draw()` 返回值 */
+export interface AreaDrawOutput {
+  id: string
+  renderMode: AreaDrawRenderMode
+  entity?: import('cesium').Entity
+}
+
+export type AreaDrawPublishCallback = (result: AreaDrawResult) => void
+
+export interface AreaShapeInteractionRule {
+  mode: AreaDrawInteractionMode
+  minPoints: number
+  interactive: boolean
+  /** `draw({ renderMode: 'primitive' })` 是否可用 */
+  supportsPrimitive: boolean
+}
+
+/** AreaManager 注入的 Entity 绘制 API（各 Draw 子模块） */
+export interface AreaManagerEntityApis {
+  point: Point
+  label: Label
+  billboard: Billboard
+  model: Model
+  polyLine: PolyLine
+  polygon: Polygon
+  circle: Circle
+  rectangle: Rectangle
+  sector: Sector
+  corridor: Corridor
+  cylinder: Cylinder
+  ellipsoid: Ellipsoid
+  wall: Wall
+  runway: Runway
+  box: Box
+  polylineVolume: PolylineVolume
+  plane: Plane
+  path: Path
+}
+
+/** AreaManager 注入的 Primitive 批量 API（各 Collection 类） */
+export interface AreaManagerPrimitiveApis {
+  pointCollection: PointCollection
+  labelCollection: LabelCollection
+  billboardCollection: BillboardCollection
+  modelCollection: ModelCollection
+  polyLineCollection: PolyLineCollection
+  polygonCollection: PolygonCollection
+  circleCollection: CircleCollection
+  rectangleCollection: RectangleCollection
+  sectorCollection: SectorCollection
+  corridorCollection: CorridorCollection
+  cylinderCollection: CylinderCollection
+  ellipsoidCollection: EllipsoidCollection
+  runwayCollection: RunwayCollection
+  boxCollection: BoxCollection
+  polylineVolumeCollection: PolylineVolumeCollection
+  planeCollection: PlaneCollection
+}
+
+export interface AreaManagerDrawApis extends AreaManagerEntityApis, AreaManagerPrimitiveApis {}
+
+export type AreaManagerOptions = Partial<AreaManagerDrawApis>
+
 // --- MouseEvent (MouseEvent/index.ts) ---
 
 export interface MouseEventPickPayload {
@@ -2827,6 +3080,8 @@ export interface MouseEventListenOptions {
   onMiddleClick?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
   onMiddleDown?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
   onMiddleUp?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
+  /** 鼠标移动（绘图缓冲坐标拾取） */
+  onMouseMove?: (pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void
   /** 第二参数恒为 `undefined`；滚轮增量在 `pick.wheelDelta` */
   onWheel?: (pick: MouseEventPickPayload, entity: undefined) => void
 }

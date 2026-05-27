@@ -8,6 +8,8 @@ import {
   DEFAULT_PLANE_VIDEO,
   normalizePlaneVideoOptions,
   type LegacyPlaneVideoOptions,
+  type AreaDrawStartParams,
+  type LngLatHeight,
   type MouseEventListenOptions,
   type MouseEventPickPayload,
   type PlaneMaterialTypeValue,
@@ -31,6 +33,8 @@ const materialTypeOptions: { value: PlaneMaterialTypeValue; label: string }[] = 
 ]
 
 const mapStore = useMapLayerStore()
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 /** 与廊道/折线体示例一致：仅拾取中心点写入表单，「标绘」用当前表单提交 */
 const coordPickArmed = ref(false)
 const selectedId = ref<string | null>(null)
@@ -40,8 +44,8 @@ const form = reactive({
   longitude: 120.95,
   latitude: 23.75,
   height: 500,
-  width: 800,
-  planeHeight: 600,
+  width: 80000,
+  planeHeight: 60000,
   headingDegrees: 0,
   pitchDegrees: 0,
   rollDegrees: 0,
@@ -87,6 +91,84 @@ function hex6ForColorInput(css: string): string {
 function finiteNum(v: unknown, fallback: number): number {
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? n : fallback
+}
+
+function haversineM(a: LngLatHeight, b: LngLatHeight): number {
+  const R = 6371000
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const lat1 = (a.latitude * Math.PI) / 180
+  const lat2 = (b.latitude * Math.PI) / 180
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+function syncPlaneFromAnchors(points: LngLatHeight[]): void {
+  if (points.length >= 1) {
+    form.longitude = points[0]!.longitude
+    form.latitude = points[0]!.latitude
+    form.height = points[0]!.height ?? 0
+  }
+  if (points.length >= 2) {
+    const span = haversineM(points[0]!, points[1]!)
+    form.width = span
+    form.planeHeight = span
+  }
+}
+
+function buildPlaneStartParams(): AreaDrawStartParams {
+  const payload = planeEntityPayload()
+  return {
+    shapeType: 'plane',
+    id: form.id.trim() || undefined,
+    height: 0,
+    dimensions: { width: form.width, height: form.planeHeight },
+    headingDegrees: payload.headingDegrees,
+    pitchDegrees: payload.pitchDegrees,
+    rollDegrees: payload.rollDegrees,
+    materialType: payload.materialType,
+    color: payload.color,
+    alpha: payload.alpha,
+    imageUrl: payload.imageUrl,
+    videoUrl: payload.videoUrl,
+    imageRepeat: payload.imageRepeat,
+    video: payload.video,
+    fill: payload.fill,
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { ...payload, showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#00bcd4',
+      cursorPointColor: '#00bcd4',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+    },
+    onAnchorChange: (points) => {
+      syncPlaneFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'plane') return
+    stopAreaDraw()
+    message.success('已添加平面')
+    refreshTable()
+    resetFormToInitial()
+  })
 }
 
 function updateTableScrollY(): void {
@@ -185,8 +267,8 @@ function resetFormToInitial(): void {
   form.longitude = 120.95
   form.latitude = 23.75
   form.height = 500
-  form.width = 800
-  form.planeHeight = 600
+  form.width = 80000
+  form.planeHeight = 60000
   form.headingDegrees = 0
   form.pitchDegrees = 0
   form.rollDegrees = 0
@@ -217,6 +299,7 @@ function onCancelSelect(): void {
 }
 
 function onRowClick(record: PlaneSnapshot): void {
+  stopAreaDraw()
   disarmPick()
   selectedId.value = record.id
   const snap = window.FastX?.Plane?.getPlane(record.id)
@@ -235,7 +318,9 @@ function onDeleteRow(id: string, e: Event): void {
   message.success('已删除')
 }
 
-const primaryEntityText = computed(() => (selectedId.value ? '确定' : '标绘'))
+const primaryEntityText = computed(() =>
+  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 const primaryButtonType = computed(() => {
   if (coordPickArmed.value && !selectedId.value) return 'default' as const
@@ -460,8 +545,48 @@ function addPlaneFromForm(): void {
 }
 
 function onEntityPrimary(): void {
-  if (selectedId.value) applyUpdateToSelected()
-  else addPlaneFromForm()
+  if (selectedId.value) {
+    applyUpdateToSelected()
+    return
+  }
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('平面至少需要 2 个点（中心 + 边缘）')
+      return
+    }
+    if (!validateMaterialForSubmit()) return
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  if (!readPlaneDims()) {
+    message.warning('平面宽、高须为有效正数（米）')
+    return
+  }
+  const ok = am.start(v, buildPlaneStartParams())
+  if (!ok) {
+    message.error('无法开始平面绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束绘制！')
+
+  // --- Plane 单类 add（不用空域管理时注释上一段，改用本行）---
+  // addPlaneFromForm()
 }
 
 function toggleCoordPick(): void {
@@ -565,7 +690,9 @@ onMounted(async () => {
   }
   viewerRef = v
   refreshTable()
-  bindMouse(v)
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -575,6 +702,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  stopAreaDraw()
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef
@@ -869,18 +997,8 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
-                      <a-tooltip title="地图拾取中心点">
-                        <a-button
-                          :type="coordPickArmed ? 'primary' : 'default'"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="拾取中心"
-                          @click="toggleCoordPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
                       <a-button
-                        :type="primaryButtonType"
+                        type="primary"
                         class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex"
                         @click="onEntityPrimary"
                       >

@@ -5,6 +5,8 @@ import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
 import type {
+  AreaDrawStartParams,
+  LngLatHeight,
   MouseEventListenOptions,
   MouseEventPickPayload,
   RunwayFlowBandStyle,
@@ -22,6 +24,8 @@ const DEFAULT_OUTLINE_COLOR = '#e8ecf2'
 
 const mapStore = useMapLayerStore()
 
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedId = ref<string | null>(null)
 
 /** 地图拾取：依次拾取起点、终点写入点列表（与廊道「地图追加顶点」同类交互） */
@@ -163,6 +167,71 @@ type MapMouseBinder = {
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
 
+function syncRunwayFromAnchors(points: LngLatHeight[]): void {
+  const rows = runwayPoints.value
+  if (points.length >= 1) {
+    const r0 = rows[0]!
+    runwayPoints.value = [
+      {
+        ...r0,
+        longitude: points[0]!.longitude,
+        latitude: points[0]!.latitude,
+        height: points[0]!.height ?? 0,
+      },
+      rows[1]!,
+    ]
+  }
+  if (points.length >= 2) {
+    const r1 = runwayPoints.value[1]!
+    runwayPoints.value = [
+      runwayPoints.value[0]!,
+      {
+        ...r1,
+        longitude: points[1]!.longitude,
+        latitude: points[1]!.latitude,
+        height: points[1]!.height ?? 0,
+      },
+    ]
+  }
+}
+
+function buildRunwayStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'runway',
+    id: form.id.trim() || undefined,
+    ...runwayStylePayload(),
+    preview: {
+      anchorPointColor: '#00aaff',
+      cursorPointColor: '#00aaff',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineWidth: form.outlineWidth,
+    },
+    onAnchorChange: (points) => {
+      syncRunwayFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'runway') return
+    stopAreaDraw()
+    message.success('已添加跑道')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
+
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
   if (!shell) return
@@ -293,6 +362,7 @@ function resetFormToInitial(): void {
 function onCancelSelect(): void {
   selectedId.value = null
   disarmRunwayPick()
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -305,6 +375,7 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
 }
 
 function onRowClick(record: RunwaySnapshot): void {
+  stopAreaDraw()
   disarmRunwayPick()
   selectedId.value = record.id
   const snap = window.FastX?.Runway?.getRunway(record.id)
@@ -316,6 +387,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Runway?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
+    stopAreaDraw()
     disarmRunwayPick()
     resetFormToInitial()
   }
@@ -323,7 +395,9 @@ function onDeleteRow(id: string, e: Event): void {
   message.success('已删除')
 }
 
-const primaryRunwayText = computed(() => (selectedId.value ? '确定' : '标绘'))
+const primaryRunwayText = computed(() =>
+  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 /** 与 Runway.add / update 共用的样式与流动参数（起终点由 positions 单独传） */
 function runwayStylePayload() {
@@ -398,7 +472,40 @@ function onRunwayPrimary(): void {
     applyUpdateToSelected()
     return
   }
-  addRunwayFromForm()
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（起点 + 终点）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  runwayPoints.value = createEmptyRunwayPoints()
+  const ok = am.start(v, buildRunwayStartParams())
+  if (!ok) {
+    message.error('无法开始跑道绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Runway 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addRunwayFromForm()
 }
 
 function addRunwayFromForm(): void {
@@ -418,6 +525,7 @@ function addRunwayFromForm(): void {
   const v = mapStore.getViewer()
   if (!R || !v || v.isDestroyed()) return
 
+  stopAreaDraw()
   const p0 = runwayPoints.value[0]!
   const p1 = runwayPoints.value[1]!
   const idOpt = form.id.trim() || undefined
@@ -580,8 +688,10 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   updateRunwayPointScrollY()
@@ -600,6 +710,9 @@ onBeforeUnmount(() => {
   runwayPointResizeObserver = null
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef
@@ -612,7 +725,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="map-tool-float map-tool-float--hzd-point">
-    <XDialog :width="640" height="85vh">
+    <XDialog :width="560" height="85vh">
       <div class="hzd-dialog-body">
         <div class="map-tool-head hzd-page-title">{{ title }}</div>
 
@@ -826,17 +939,6 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <div class="hzd-actions-primary-row">
-                      <a-tooltip title="地图拾取起点与终点">
-                        <a-button
-                          :type="runwayPickArmed ? 'primary' : 'default'"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="地图拾取"
-                          :disabled="!!selectedId"
-                          @click="toggleRunwayPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
                       <a-button
                         type="primary"
                         block

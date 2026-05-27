@@ -5,12 +5,35 @@ import type { PointPositionInput } from '../Point'
 import { svgMarkupToDataUri } from './svgDataUri'
 
 import type { AddBillboardOptions, BillboardPositionsTuple, BillboardSnapshot, BillboardStyleOptions, UpdateBillboardProperties } from '../../Types'
+import {
+  type AreaDraftPointsHolder,
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftPositionProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+} from '../../Utils/areaDraft'
 export type { AddBillboardOptions, BillboardPositionsTuple, BillboardSnapshot, BillboardStyleOptions, UpdateBillboardProperties }
 
-interface BillboardRecord {
+interface BillboardRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function resolveUpdateCartesian(p: UpdateBillboardProperties): Cesium.Cartesian3 | undefined {
+  if (p.position !== undefined) return toCartesian3(p.position)
+  if (p.positions !== undefined) {
+    if (p.positions.length < 2) return undefined
+    return positionFromTuple(p.positions)
+  }
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0
+    return Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), Number(h))
+  }
+  return undefined
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -120,6 +143,12 @@ function mergeBillboardGraphics(
   if (hr !== undefined) bg.heightReference = new Cesium.ConstantProperty(hr)
   else if (isCreate) bg.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
 
+  if (st?.disableDepthTestDistance !== undefined) {
+    bg.disableDepthTestDistance = new Cesium.ConstantProperty(st.disableDepthTestDistance)
+  } else if (isCreate) {
+    bg.disableDepthTestDistance = new Cesium.ConstantProperty(Number.POSITIVE_INFINITY)
+  }
+
   const rotDeg =
     (options as AddBillboardOptions).rotationDegrees ?? (options as UpdateBillboardProperties).rotationDegrees
   if (rotDeg !== undefined) {
@@ -145,9 +174,6 @@ function mergeBillboardGraphics(
   }
   if (st?.distanceDisplayCondition !== undefined) {
     bg.distanceDisplayCondition = new Cesium.ConstantProperty(st.distanceDisplayCondition)
-  }
-  if (st?.disableDepthTestDistance !== undefined) {
-    bg.disableDepthTestDistance = new Cesium.ConstantProperty(st.disableDepthTestDistance)
   }
 }
 
@@ -200,6 +226,10 @@ export default class Billboard {
     const id = options.id?.trim() ? options.id : createRandomXgxId('bb')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const position = resolveAddCartesian(options)
     if (!position) return undefined
     const imageUri = resolveImageUri(options)
@@ -227,6 +257,82 @@ export default class Billboard {
     viewer.entities.add(entity)
     this.data.set(id, { viewer, entity, targetData: td })
     return entity
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddBillboardOptions): Entity | undefined {
+    const position = resolveAddCartesian(options)
+    if (!position) return undefined
+
+    const imageUri = resolveImageUri(options)
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    if (imageUri) td.imageUri = imageUri
+    if (options.rotationDegrees !== undefined) td.rotationDegrees = options.rotationDegrees
+
+    const bg = new Cesium.BillboardGraphics()
+    mergeBillboardGraphics(bg, options, imageUri, true)
+
+    const rec: BillboardRecord = {
+      viewer,
+      entity: new Cesium.Entity({ id, show: options.show !== false }),
+      targetData: td,
+    }
+    setDraftPoints(rec, [position])
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    rec.entity.billboard = bg
+    if (options.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    viewer.entities.add(rec.entity)
+    this.data.set(id, rec)
+    return rec.entity
+  }
+
+  private applyBillboardPatch(rec: BillboardRecord, p: UpdateBillboardProperties): void {
+    const nextUri = resolveImageUri({ image: p.image, svg: p.svg })
+    const bg = rec.entity.billboard ?? (rec.entity.billboard = new Cesium.BillboardGraphics())
+    mergeBillboardGraphics(bg, p, nextUri, false)
+    if (nextUri !== undefined) {
+      rec.targetData = { ...rec.targetData, imageUri: nextUri }
+    }
+    if (p.rotationDegrees !== undefined) {
+      rec.targetData = { ...rec.targetData, rotationDegrees: p.rotationDegrees }
+    }
+  }
+
+  private commitAreaDraft(rec: BillboardRecord, p: UpdateBillboardProperties): boolean {
+    const pts = getDraftPoints(rec)
+    const pos = resolveUpdateCartesian(p) ?? (pts.length ? pts[pts.length - 1] : undefined)
+    if (!pos) return false
+    commitEntityPosition(rec.entity, pos)
+    clearAreaDraftTargetData(rec.targetData)
+    delete rec.draftPoints
+    this.applyBillboardPatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
+  }
+
+  private updateAreaDraft(rec: BillboardRecord, p: UpdateBillboardProperties): boolean {
+    markAreaDraftTargetData(rec.targetData)
+    const pos = resolveUpdateCartesian(p)
+    if (pos) setDraftPoints(rec, [pos])
+    else if (!getDraftPoints(rec).length) {
+      const cur = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
+      if (cur) setDraftPoints(rec, [cur])
+    }
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    this.applyBillboardPatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
   }
 
   addBatch(
@@ -266,6 +372,14 @@ export default class Billboard {
     if (!rec) return false
 
     const p = properties
+    const td = rec.targetData
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      return this.commitAreaDraft(rec, p)
+    }
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
+
     if (p.position !== undefined) {
       rec.entity.position = new Cesium.ConstantPositionProperty(toCartesian3(p.position))
     } else if (p.positions !== undefined) {
@@ -278,21 +392,12 @@ export default class Billboard {
       )
     }
 
-    const nextUri = resolveImageUri({ image: p.image, svg: p.svg })
-    const bg = rec.entity.billboard ?? (rec.entity.billboard = new Cesium.BillboardGraphics())
-    mergeBillboardGraphics(bg, p, nextUri, false)
-
-    if (nextUri !== undefined) {
-      rec.targetData = { ...rec.targetData, imageUri: nextUri }
-    }
+    this.applyBillboardPatch(rec, p)
 
     if (p.show !== undefined) rec.entity.show = p.show
     if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
     if (p.targetData !== undefined) {
       rec.targetData = { ...rec.targetData, ...p.targetData }
-    }
-    if (p.rotationDegrees !== undefined) {
-      rec.targetData = { ...rec.targetData, rotationDegrees: p.rotationDegrees }
     }
     return true
   }
@@ -326,7 +431,7 @@ export default class Billboard {
 
   getBillboard(id: string): BillboardSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos)

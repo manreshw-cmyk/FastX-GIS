@@ -3,12 +3,88 @@ import type { Color, Entity, Property, Viewer } from "cesium";
 import { createRandomXgxId } from "../../Coordinates";
 
 import type { AddEllipsoidOptions, EllipsoidSnapshot, EllipsoidStyleOptions, PositionInput, UpdateEllipsoidProperties } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftRadiusProperty,
+  draftRadiusFromPoints,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
 export type { AddEllipsoidOptions, EllipsoidSnapshot, EllipsoidStyleOptions, PositionInput, UpdateEllipsoidProperties }
 
-interface EllipsoidRecord {
+interface EllipsoidRecord extends AreaDraftPointsHolder {
   viewer: Viewer;
   entity: Entity;
   targetData: Record<string, unknown>;
+}
+
+function createDraftEllipsoidCenterProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.PositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const pts = getPoints();
+    return pts.length ? Cesium.Cartesian3.clone(pts[0]!) : Cesium.Cartesian3.ZERO;
+  }, false);
+}
+
+function createDraftEllipsoidRadiiProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.Property {
+  return new Cesium.CallbackProperty(() => {
+    const r = draftRadiusFromPoints(getPoints());
+    return new Cesium.Cartesian3(r, r, r);
+  }, false);
+}
+
+function applyAreaDraftGraphics(rec: EllipsoidRecord, options: AddEllipsoidOptions): void {
+  const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec);
+  rec.entity.position = createDraftEllipsoidCenterProperty(getPts);
+  const eg = new Cesium.EllipsoidGraphics();
+  eg.radii = createDraftEllipsoidRadiiProperty(getPts);
+  mergeEllipsoidGraphics(
+    eg,
+    options.style ?? {},
+    {
+      outline: options.outline,
+      outlineWidth: options.outlineWidth,
+      color: options.color,
+      alpha: options.alpha,
+      outlineColor: options.outlineColor,
+      outlineAlpha: options.outlineAlpha,
+    },
+    true,
+  );
+  rec.entity.ellipsoid = eg;
+}
+
+function commitAreaDraftRecord(rec: EllipsoidRecord, options: AddEllipsoidOptions): boolean {
+  const pts = getDraftPoints(rec);
+  if (!pts.length) return false;
+  const center = pts[0]!;
+  const r = draftRadiusFromPoints(pts);
+  if (!Number.isFinite(r) || r <= 0) return false;
+  const radii = new Cesium.Cartesian3(r, r, r);
+
+  clearAreaDraftTargetData(rec.targetData);
+  rec.draftPoints = undefined;
+
+  commitEntityPosition(rec.entity, center);
+  const eg = rec.entity.ellipsoid ?? (rec.entity.ellipsoid = new Cesium.EllipsoidGraphics());
+  eg.radii = new Cesium.ConstantProperty(radii);
+  mergeEllipsoidGraphics(
+    eg,
+    { ...(options.style ?? {}), radii },
+    {
+      outline: options.outline,
+      outlineWidth: options.outlineWidth,
+      color: options.color,
+      alpha: options.alpha,
+      outlineColor: options.outlineColor,
+      outlineAlpha: options.outlineAlpha,
+    },
+    false,
+  );
+  return true;
 }
 
 /**
@@ -326,6 +402,10 @@ export default class Ellipsoid {
     const id = options.id?.trim() ? options.id : createRandomXgxId("el");
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined;
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options);
+    }
+
     // 解析位置
     const position = toCartesian3(options.position);
 
@@ -375,6 +455,43 @@ export default class Ellipsoid {
       },
     });
 
+    return entity;
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddEllipsoidOptions): Entity | undefined {
+    const position = toCartesian3(options.position);
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    });
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description);
+    }
+
+    const td = {
+      ...this.cloneTargetData(options.targetData),
+      ...echoStyleFieldsFromAddOptions(options),
+    };
+    markAreaDraftTargetData(td);
+
+    const rec: EllipsoidRecord = { viewer, entity, targetData: td };
+    const rHint =
+      typeof options.radii === "number" && options.radii > 0
+        ? options.radii
+        : 1;
+    const pts: Cesium.Cartesian3[] = [Cesium.Cartesian3.clone(position)];
+    const carto = Cesium.Cartographic.fromCartesian(position);
+    pts.push(
+      Cesium.Cartesian3.fromRadians(
+        carto.longitude + rHint / Cesium.Ellipsoid.WGS84.maximumRadius,
+        carto.latitude,
+        carto.height,
+      ),
+    );
+    setDraftPoints(rec, pts);
+    applyAreaDraftGraphics(rec, options);
+    viewer.entities.add(entity);
+    this.data.set(id, rec);
     return entity;
   }
 
@@ -436,6 +553,31 @@ export default class Ellipsoid {
     if (!rec) return false;
 
     const p = properties;
+    const td = rec.targetData;
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p);
+      if (p.position !== undefined) {
+        const c = toCartesian3(p.position);
+        const pts = getDraftPoints(rec);
+        if (pts.length) pts[0] = Cesium.Cartesian3.clone(c);
+        else setDraftPoints(rec, [c]);
+      }
+      return commitAreaDraftRecord(rec, {
+        style: p.style,
+        outline: p.outline,
+        outlineWidth: p.outlineWidth,
+        color: typeof p.color === "string" ? p.color : undefined,
+        alpha: p.alpha,
+        outlineColor: typeof p.outlineColor === "string" ? p.outlineColor : undefined,
+        outlineAlpha: p.outlineAlpha,
+        position: p.position ?? { longitude: 0, latitude: 0 },
+      } as AddEllipsoidOptions);
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p);
+    }
 
     // 更新位置
     if (p.position !== undefined) {
@@ -515,6 +657,64 @@ export default class Ellipsoid {
     return true;
   }
 
+  private applyStylePatchToTargetData(rec: EllipsoidRecord, p: UpdateEllipsoidProperties): void {
+    const styleEcho = echoStyleFieldsFromUpdate(p);
+    if (Object.keys(styleEcho).length || p.targetData !== undefined) {
+      rec.targetData = {
+        ...rec.targetData,
+        ...styleEcho,
+        ...(p.targetData ?? {}),
+      };
+    }
+  }
+
+  private updateAreaDraft(rec: EllipsoidRecord, p: UpdateEllipsoidProperties): boolean {
+    markAreaDraftTargetData(rec.targetData);
+    this.applyStylePatchToTargetData(rec, p);
+
+    if (p.position !== undefined) {
+      const c = toCartesian3(p.position);
+      const pts = getDraftPoints(rec);
+      const r =
+        p.radii !== undefined
+          ? typeof p.radii === "number"
+            ? p.radii
+            : draftRadiusFromPoints(pts)
+          : draftRadiusFromPoints(pts);
+      if (pts.length >= 2) {
+        pts[0] = Cesium.Cartesian3.clone(c);
+        setDraftPoints(rec, pts);
+      } else {
+        const carto = Cesium.Cartographic.fromCartesian(c);
+        const rim = Cesium.Cartesian3.fromRadians(
+          carto.longitude + r / Cesium.Ellipsoid.WGS84.maximumRadius,
+          carto.latitude,
+          carto.height,
+        );
+        setDraftPoints(rec, [c, rim]);
+      }
+    } else if (p.radii !== undefined) {
+      const pts = getDraftPoints(rec);
+      if (pts.length >= 1) {
+        const c = pts[0]!;
+        const rad = typeof p.radii === "number" ? p.radii : draftRadiusFromPoints(pts);
+        const carto = Cesium.Cartographic.fromCartesian(c);
+        const rim = Cesium.Cartesian3.fromRadians(
+          carto.longitude + rad / Cesium.Ellipsoid.WGS84.maximumRadius,
+          carto.latitude,
+          carto.height,
+        );
+        setDraftPoints(rec, [Cesium.Cartesian3.clone(c), rim]);
+      }
+    }
+
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
+    return true;
+  }
+
   /**
    * 批量更新
    */
@@ -561,7 +761,7 @@ export default class Ellipsoid {
    */
   getEllipsoid(id: string): EllipsoidSnapshot | null {
     const rec = this.takeIfAlive(id);
-    if (!rec) return null;
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null;
 
     const position = sampleProperty<Cesium.Cartesian3>(rec.entity.position);
     if (!position) return null;

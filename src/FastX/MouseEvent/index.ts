@@ -6,6 +6,7 @@ import type { MouseEventListenOptions, MouseEventPickPayload } from '../Types'
 export type { MouseEventListenOptions, MouseEventPickPayload }
 
 export type PositionedEvent = Cesium.ScreenSpaceEventHandler.PositionedEvent
+export type MotionEvent = Cesium.ScreenSpaceEventHandler.MotionEvent
 
 /** `scene.pick` 最上层对象的 `id`（常为 Entity）；无拾取则为 `undefined` */
 export type MouseEventPickedEntity = unknown
@@ -39,6 +40,7 @@ function pickTopEntityId(viewer: Viewer, windowPosition: Cesium.Cartesian2): Mou
 export class XgxMouseEvent {
   private handler: Cesium.ScreenSpaceEventHandler | null = null
   private lastRightClickAt = 0
+  private contextMenuBlocker: ((e: Event) => void) | null = null
   private wheelMoveListener: ((ev: globalThis.MouseEvent) => void) | null = null
   private wheelCanvas: HTMLCanvasElement | null = null
   private lastWheelClientX = 0
@@ -58,6 +60,19 @@ export class XgxMouseEvent {
     }
   }
 
+  /** MOUSE_MOVE 为 MotionEvent，拾取坐标须用 endPosition */
+  private wrapMotion(
+    cb: ((pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void) | undefined,
+  ): Cesium.ScreenSpaceEventHandler.MotionEventCallback | undefined {
+    if (!cb) return undefined
+    return (e: MotionEvent) => {
+      const pos = e.endPosition
+      const pick = buildPickPayload(this.viewer, pos)
+      const entity = pickTopEntityId(this.viewer, pos)
+      cb(pick, entity)
+    }
+  }
+
   /**
    * 注册监听；再次调用会先 `destroy` 再重建。
    * @param doubleClickMs 判定右键双击的最大间隔（毫秒）
@@ -69,6 +84,7 @@ export class XgxMouseEvent {
 
     const h = new Cesium.ScreenSpaceEventHandler(canvas)
     this.handler = h
+    this.wheelCanvas = canvas
 
     const setPos = (
       cb: ((pick: MouseEventPickPayload, entity: MouseEventPickedEntity) => void) | undefined,
@@ -101,15 +117,21 @@ export class XgxMouseEvent {
       }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     } else {
       setPos(options.onRightClick, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
+      if (options.onRightClick) {
+        this.contextMenuBlocker = (e) => e.preventDefault()
+        canvas.addEventListener('contextmenu', this.contextMenuBlocker, { capture: true })
+      }
     }
 
     setPos(options.onMiddleDown, Cesium.ScreenSpaceEventType.MIDDLE_DOWN)
     setPos(options.onMiddleUp, Cesium.ScreenSpaceEventType.MIDDLE_UP)
     setPos(options.onMiddleClick, Cesium.ScreenSpaceEventType.MIDDLE_CLICK)
 
+    const motion = this.wrapMotion(options.onMouseMove)
+    if (motion) h.setInputAction(motion, Cesium.ScreenSpaceEventType.MOUSE_MOVE)
+
     if (options.onWheel) {
       const wcb = options.onWheel
-      this.wheelCanvas = canvas
       this.wheelMoveListener = (ev: globalThis.MouseEvent) => {
         this.lastWheelClientX = ev.clientX
         this.lastWheelClientY = ev.clientY
@@ -132,6 +154,10 @@ export class XgxMouseEvent {
 
   destroy(): void {
     this.lastRightClickAt = 0
+    if (this.contextMenuBlocker && this.wheelCanvas) {
+      this.wheelCanvas.removeEventListener('contextmenu', this.contextMenuBlocker, { capture: true })
+    }
+    this.contextMenuBlocker = null
     if (this.wheelMoveListener && this.wheelCanvas) {
       this.wheelCanvas.removeEventListener('mousemove', this.wheelMoveListener)
     }

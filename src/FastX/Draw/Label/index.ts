@@ -4,14 +4,37 @@ import { createRandomXgxId } from '../../Coordinates'
 import type { PointPositionInput, PointPositionsTuple } from '../Point'
 
 import type { AddLabelOptions, LabelSnapshot, LabelStyleOptions, UpdateLabelProperties } from '../../Types'
+import {
+  type AreaDraftPointsHolder,
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftPositionProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+} from '../../Utils/areaDraft'
 export type { AddLabelOptions, LabelSnapshot, LabelStyleOptions, UpdateLabelProperties }
 
 export type LabelPositionsTuple = PointPositionsTuple
 
-interface LabelRecord {
+interface LabelRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+}
+
+function resolveUpdateCartesian(p: UpdateLabelProperties): Cesium.Cartesian3 | undefined {
+  if (p.position !== undefined) return toCartesian3(p.position)
+  if (p.positions !== undefined) {
+    if (p.positions.length < 2) return undefined
+    return positionFromTuple(p.positions)
+  }
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0
+    return Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), Number(h))
+  }
+  return undefined
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -205,6 +228,10 @@ export default class Label {
     const id = options.id?.trim() ? options.id : createRandomXgxId('lbl')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const position = resolveAddCartesian(options)
     if (!position) return undefined
 
@@ -224,6 +251,75 @@ export default class Label {
     viewer.entities.add(entity)
     this.data.set(id, { viewer, entity, targetData: this.cloneTargetData(options.targetData) })
     return entity
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddLabelOptions): Entity | undefined {
+    const position = resolveAddCartesian(options)
+    if (!position) return undefined
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    const lg = new Cesium.LabelGraphics()
+    mergeLabelGraphics(lg, options, true)
+
+    const rec: LabelRecord = {
+      viewer,
+      entity: new Cesium.Entity({ id, show: options.show !== false }),
+      targetData: td,
+    }
+    setDraftPoints(rec, [position])
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    rec.entity.label = lg
+    if (options.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    viewer.entities.add(rec.entity)
+    this.data.set(id, rec)
+    return rec.entity
+  }
+
+  private applyLabelPatch(rec: LabelRecord, p: UpdateLabelProperties): void {
+    const lg = rec.entity.label ?? (rec.entity.label = new Cesium.LabelGraphics())
+    const patch: UpdateLabelProperties & { _fillCss?: string } = { ...p }
+    if (p.fillColor !== undefined || p.fontColor !== undefined) {
+      patch._fillCss = (p.fillColor ?? p.fontColor) as string
+    }
+    mergeLabelGraphics(lg, patch, false)
+  }
+
+  private commitAreaDraft(rec: LabelRecord, p: UpdateLabelProperties): boolean {
+    const pts = getDraftPoints(rec)
+    const pos = resolveUpdateCartesian(p) ?? (pts.length ? pts[pts.length - 1] : undefined)
+    if (!pos) return false
+    commitEntityPosition(rec.entity, pos)
+    clearAreaDraftTargetData(rec.targetData)
+    delete rec.draftPoints
+    this.applyLabelPatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
+  }
+
+  private updateAreaDraft(rec: LabelRecord, p: UpdateLabelProperties): boolean {
+    markAreaDraftTargetData(rec.targetData)
+    const pos = resolveUpdateCartesian(p)
+    if (pos) setDraftPoints(rec, [pos])
+    else if (!getDraftPoints(rec).length) {
+      const cur = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
+      if (cur) setDraftPoints(rec, [cur])
+    }
+    rec.entity.position = createDraftPositionProperty(() => getDraftPoints(rec))
+    this.applyLabelPatch(rec, p)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData }
+    }
+    return true
   }
 
   addBatch(viewer: Viewer, items: AddLabelOptions[]): { succeeded: Entity[]; failedIds: string[] } {
@@ -257,6 +353,14 @@ export default class Label {
     if (!rec) return false
 
     const p = properties
+    const td = rec.targetData
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      return this.commitAreaDraft(rec, p)
+    }
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
+
     if (p.position !== undefined) {
       rec.entity.position = new Cesium.ConstantPositionProperty(toCartesian3(p.position))
     } else if (p.positions !== undefined) {
@@ -269,12 +373,7 @@ export default class Label {
       )
     }
 
-    const lg = rec.entity.label ?? (rec.entity.label = new Cesium.LabelGraphics())
-    const patch: UpdateLabelProperties & { _fillCss?: string } = { ...p }
-    if (p.fillColor !== undefined || p.fontColor !== undefined) {
-      patch._fillCss = (p.fillColor ?? p.fontColor) as string
-    }
-    mergeLabelGraphics(lg, patch, false)
+    this.applyLabelPatch(rec, p)
 
     if (p.show !== undefined) rec.entity.show = p.show
     if (p.description !== undefined) rec.entity.description = new Cesium.ConstantProperty(p.description)
@@ -293,7 +392,7 @@ export default class Label {
 
   getLabel(id: string): LabelSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position)
     if (!pos) return null
     const carto = Cesium.Cartographic.fromCartesian(pos)

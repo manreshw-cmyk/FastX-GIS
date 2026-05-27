@@ -5,8 +5,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type {
   AddPolylineOptions,
-  MouseEventListenOptions,
-  MouseEventPickPayload,
+  AreaDrawStartParams,
+  LngLatHeight,
   PolylineLineKind,
   PolylineSnapshot,
 } from '../../../../FastX'
@@ -45,9 +45,13 @@ export function useHzxldcxrPolylineDemo() {
   const DEFAULT_COLOR = '#00d4ff'
   const mapStore = useMapLayerStore()
 
-  const plotArmed = ref(false)
+  /** 空域管理（FastX 全局单例，示例变量统一命名为 am） */
+  let am = window.FastX?.AreaManager
+
+  /** 绘制中（用于按钮文案；am.active 非响应式） */
+  const isAreaDrawing = ref(false)
+
   const selectedId = ref<string | null>(null)
-  const previewLineId = ref<string | null>(null)
   const draftVertices = ref<Array<{ longitude: number; latitude: number; height: number }>>([])
 
   const form = reactive({
@@ -96,16 +100,14 @@ export function useHzxldcxrPolylineDemo() {
   const tableScrollY = ref(160)
   let tableResizeObserver: ResizeObserver | null = null
 
-  type MapMouseBinder = {
-    listen: (options: MouseEventListenOptions) => void
-    destroy: () => void
-  }
-
   let viewerRef: Viewer | null = null
-  let mouseBinder: MapMouseBinder | null = null
 
-  function genPreviewId(): string {
-    return `xgx_pl_preview_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+  function syncDraftVerticesFromPick(points: LngLatHeight[]): void {
+    draftVertices.value = points.map((p) => ({
+      longitude: p.longitude,
+      latitude: p.latitude,
+      height: p.height ?? 0,
+    }))
   }
 
   function updateTableScrollY(): void {
@@ -402,44 +404,44 @@ export function useHzxldcxrPolylineDemo() {
     }
   }
 
-  function syncPreviewPolyline(v: Viewer): void {
-    const PL = window.FastX?.PolyLine
-    if (!PL || draftVertices.value.length < 2) return
-    const tuples = draftVertices.value.map(
-      (p) => [p.longitude, p.latitude, p.height] as [number, number, number],
-    )
-    const common = buildPlOptionsBase(true)
-    if (!previewLineId.value) {
-      const pid = genPreviewId()
-      previewLineId.value = pid
-      PL.add(v, {
-        ...common,
-        id: pid,
-        positions: tuples,
-        targetData: { isPreview: true },
-      })
-    } else {
-      PL.updatePolyline(previewLineId.value, {
-        ...common,
-        positions: tuples,
-      })
+  function buildPolylineStartParams(): AreaDrawStartParams {
+    return {
+      shapeType: 'polyline',
+      id: form.id.trim() || undefined,
+      ...buildPlOptionsBase(false),
+      preview: {
+        anchorPointColor: '#00d4ff',
+        cursorPointColor: '#00d4ff',
+        lineColor: form.color,
+        outlineColor: form.color,
+        outlineWidth: effectiveWidth(),
+      },
+      onAnchorChange: (points) => {
+        syncDraftVerticesFromPick(points)
+        if (points.length === 0) isAreaDrawing.value = false
+      },
     }
   }
 
-  function clearPreview(): void {
-    const v = mapStore.getViewer()
-    const PL = window.FastX?.PolyLine
-    const pid = previewLineId.value
-    if (v && !v.isDestroyed() && PL && pid) {
-      PL.remove(pid)
-    }
-    previewLineId.value = null
+  function stopAreaDraw(): void {
+    am?.cancel()
+    isAreaDrawing.value = false
     draftVertices.value = []
   }
 
+  function setupAreaManagerPublish(): void {
+    if (!am) return
+    am.publish((result) => {
+      if (result.shapeType !== 'polyline') return
+      stopAreaDraw()
+      message.success('已添加折线')
+      refreshTable()
+      resetFormToInitial()
+    })
+  }
+
   function onRowClick(record: RowRecord): void {
-    plotArmed.value = false
-    clearPreview()
+    stopAreaDraw()
     selectedId.value = record.id
     const snap = window.FastX?.PolyLine?.getPolyline(record.id)
     if (snap) fillFormFromSnapshot(snap)
@@ -450,8 +452,7 @@ export function useHzxldcxrPolylineDemo() {
     window.FastX?.PolyLine?.remove(id)
     if (selectedId.value === id) {
       selectedId.value = null
-      clearPreview()
-      plotArmed.value = false
+      stopAreaDraw()
       resetFormToInitial()
     }
     refreshTable()
@@ -460,8 +461,7 @@ export function useHzxldcxrPolylineDemo() {
 
   function onCancelSelect(): void {
     selectedId.value = null
-    clearPreview()
-    plotArmed.value = false
+    stopAreaDraw()
     resetFormToInitial()
   }
 
@@ -479,7 +479,8 @@ export function useHzxldcxrPolylineDemo() {
     }
   }
 
-  function finishDraftPolyline(): void {
+  /** PolyLine 单类 `add` 绘制（不经过空域管理）。 */
+  function addPolylineFromForm(): void {
     const v = mapStore.getViewer()
     const PL = window.FastX?.PolyLine
     if (!v || v.isDestroyed() || !PL) return
@@ -491,16 +492,12 @@ export function useHzxldcxrPolylineDemo() {
       (p) => [p.longitude, p.latitude, p.height] as [number, number, number],
     )
     const idOpt = form.id.trim() || undefined
-    const pid = previewLineId.value
-    if (pid) PL.remove(pid)
-    previewLineId.value = null
+    stopAreaDraw()
     const entity = PL.add(v, {
       ...buildPlOptionsBase(false),
       id: idOpt,
       positions: tuples,
     })
-    draftVertices.value = []
-    plotArmed.value = false
     if (!entity) {
       message.error('添加失败：id 可能重复，请修改 id 后重试')
       return
@@ -512,16 +509,7 @@ export function useHzxldcxrPolylineDemo() {
 
   const primaryButtonText = computed(() => {
     if (selectedId.value) return '确定'
-    if (plotArmed.value) {
-      if (draftVertices.value.length >= 2) return '完成线段'
-      return '取消标绘'
-    }
-    return '标绘'
-  })
-
-  const primaryButtonType = computed(() => {
-    if (plotArmed.value && !selectedId.value && draftVertices.value.length < 2) return 'default' as const
-    return 'primary' as const
+    return isAreaDrawing.value ? '完成标绘' : '绘制'
   })
 
   function onPrimaryClick(): void {
@@ -529,53 +517,40 @@ export function useHzxldcxrPolylineDemo() {
       applyUpdateToSelected()
       return
     }
-    if (plotArmed.value) {
-      if (draftVertices.value.length >= 2) {
-        finishDraftPolyline()
+
+    am = window.FastX?.AreaManager
+    if (!am) {
+      message.error('FastX.AreaManager 未就绪')
+      return
+    }
+
+    // --- 空域管理：鼠标绘制 start / end ---
+    if (isAreaDrawing.value) {
+      if (am.pointCount < 2) {
+        message.warning('至少需要 2 个顶点')
         return
       }
-      clearPreview()
-      plotArmed.value = false
-      resetFormToInitial()
-      message.info('已取消标绘')
+      am.end()
+      isAreaDrawing.value = false
       return
     }
-    clearPreview()
-    selectedId.value = null
-    resetFormToInitial()
-    plotArmed.value = true
-    message.info('请在地图上依次左键点击添加顶点，至少 2 点后点「完成线段」')
-  }
 
-  function onMapLeftClick(pick: MouseEventPickPayload): void {
-    if (!plotArmed.value || selectedId.value) return
-    if (Number.isNaN(pick.longitude) || Number.isNaN(pick.latitude)) {
-      message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
-      return
-    }
     const v = mapStore.getViewer()
-    if (!v || v.isDestroyed()) return
-    draftVertices.value.push({
-      longitude: pick.longitude,
-      latitude: pick.latitude,
-      height: 0,
-    })
-    syncPreviewPolyline(v)
-    message.success(`已添加顶点 ${draftVertices.value.length}`)
-  }
-
-  function bindMouse(v: Viewer): void {
-    const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-    if (!Ctor) {
-      message.error('window.FastX.MouseEvent 未就绪')
+    if (!v || v.isDestroyed()) {
+      message.error('地图未就绪')
       return
     }
-    mouseBinder?.destroy()
-    const binder = new Ctor(v)
-    binder.listen({
-      onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-    })
-    mouseBinder = binder
+    draftVertices.value = []
+    const ok = am.start(v, buildPolylineStartParams())
+    if (!ok) {
+      message.error('无法开始折线绘制')
+      return
+    }
+    isAreaDrawing.value = true
+    message.info('鼠标左键点击绘制，右键结束')
+
+    // --- PolyLine 单类 add（不用空域管理时注释上一段，改用下方）---
+    // addPolylineFromForm()
   }
 
   const lineKindLabels: Record<PolylineLineKind, string> = {
@@ -639,8 +614,9 @@ export function useHzxldcxrPolylineDemo() {
       return
     }
     viewerRef = v
+    am = window.FastX?.AreaManager
+    setupAreaManagerPublish()
     refreshTable()
-    bindMouse(v)
     await nextTick()
     updateTableScrollY()
     tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -652,8 +628,9 @@ export function useHzxldcxrPolylineDemo() {
   onBeforeUnmount(() => {
     tableResizeObserver?.disconnect()
     tableResizeObserver = null
-    mouseBinder?.destroy()
-    mouseBinder = null
+    am?.cancel()
+    am?.unpublish()
+    isAreaDrawing.value = false
     const v = viewerRef
     viewerRef = null
     if (v && !v.isDestroyed()) {
@@ -664,7 +641,7 @@ export function useHzxldcxrPolylineDemo() {
   return {
     title,
     form,
-    plotArmed,
+    isAreaDrawing,
     selectedId,
     draftVertices,
     tableData,
@@ -675,7 +652,6 @@ export function useHzxldcxrPolylineDemo() {
     arcTypeFormOptions: ARC_TYPE_FORM_OPTIONS,
     cornerTypeFormOptions: CORNER_TYPE_FORM_OPTIONS,
     primaryButtonText,
-    primaryButtonType,
     onPrimaryClick,
     onCancelSelect,
     onColorPick,

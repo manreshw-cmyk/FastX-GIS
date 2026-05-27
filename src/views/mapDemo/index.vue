@@ -1,10 +1,13 @@
 ﻿<script setup lang="ts">
 import { computed, defineAsyncComponent, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { Component } from 'vue'
+import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
+import { useUserStore } from '../../stores/modules/user'
 import type { MenuProps } from 'ant-design-vue'
 import { AppstoreOutlined } from '@ant-design/icons-vue'
+import HomeHeader from '../../components/HomeHeader/index.vue'
 import HomeSidebar from '../../components/HomeSidebar/index.vue'
 import { homeMenuTree } from '../../common/home-content'
 import { mapDemoComponentMetaMap } from './components/common/component-map'
@@ -12,7 +15,9 @@ import { resolveMapBaseUrls } from '../../config/map-runtime'
 import type { XMapConfig } from '../../FastX/components/x-map.types'
 
 const router = useRouter()
+const userStore = useUserStore()
 const mapLayerStore = useMapLayerStore()
+const username = computed(() => userStore.userInfo?.username ?? '')
 const demoModules = import.meta.glob('./*.vue')
 const firstCardKey = homeMenuTree[0]?.children[0]?.key ?? ''
 
@@ -172,6 +177,13 @@ const handleBackHome = async () => {
   await router.push('/home')
 }
 
+const handleLogout = async () => {
+  userStore.clearUserInfo()
+  message.destroy()
+  message.success({ content: '已退出登录', duration: 3 })
+  await router.push('/login')
+}
+
 function onMapReady() {
   const o = xMapConfig.orientation
   mapLayerStore.setInitialMapView(
@@ -196,6 +208,8 @@ function onMapReady() {
 
 <template>
   <a-layout class="map-demo-layout">
+    <HomeHeader :username="username" @logout="handleLogout" />
+
     <a-layout has-sider class="main-layout">
       <HomeSidebar :menu-items="menuItems" :active-key="activeMenuKey" @select="handleSelectMenu" />
 
@@ -232,14 +246,16 @@ function onMapReady() {
   height: 100vh;
 
   .main-layout {
-    height: 100%;
+    min-height: calc(100vh - 64px);
     background: #f2f6fb;
   }
 
   .content-wrap {
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-width: 0;
+    min-height: 0;
   }
 
   .content-head {
@@ -1239,5 +1255,16 @@ function onMapReady() {
   color: rgba(255, 255, 255, 0.95) !important;
   font-weight: 600;
   background: rgba(70, 120, 200, 0.38) !important;
+}
+
+/* 空域标绘：无地图拾取时主按钮铺满一行 */
+.map-demo-panel .hzd-actions-primary-row--solo {
+  display: block;
+  width: 100%;
+}
+
+.map-demo-panel .hzd-actions-primary-row--solo .map-tool-primary-btn.hzd-primary-tall {
+  width: 100%;
+  display: block;
 }
 </style>

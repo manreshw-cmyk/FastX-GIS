@@ -1,6 +1,17 @@
 import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
+import {
+  clearAreaDraftTargetData,
+  createDraftPolylinePositionsProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+  type DraftCartesiansOption,
+  cloneDraftPoints,
+} from '../../Utils/areaDraft'
 
 import type { AddCorridorOptions, CorridorSnapshot, CorridorStyleOptions, UpdateCorridorProperties } from '../../Types'
 export type { AddCorridorOptions, CorridorSnapshot, CorridorStyleOptions, UpdateCorridorProperties }
@@ -11,7 +22,7 @@ export type CorridorLngLatTuple = readonly [lng: number, lat: number, height?: n
 /** 顶点：笛卡尔、经纬高对象或三元组 */
 export type CorridorVertexInput = Cesium.Cartesian3 | LngLatHeight | CorridorLngLatTuple
 
-interface CorridorRecord {
+interface CorridorRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
@@ -42,9 +53,21 @@ function vertexToCartesian3(v: CorridorVertexInput, result = new Cesium.Cartesia
   return Cesium.Cartesian3.fromDegrees(p.longitude, p.latitude, h, undefined, result)
 }
 
-function lineToCartesian3Array(line: CorridorVertexInput[]): Cesium.Cartesian3[] | undefined {
-  if (!Array.isArray(line) || line.length < 2) return undefined
+function lineToCartesian3Array(
+  line: CorridorVertexInput[],
+  minVertices = 2,
+): Cesium.Cartesian3[] | undefined {
+  if (!Array.isArray(line) || line.length < minVertices) return undefined
   return line.map((p) => vertexToCartesian3(p))
+}
+
+function resolveDraftLineCartesians(
+  options: { positions?: CorridorVertexInput[] } & DraftCartesiansOption,
+  minVertices = 1,
+): Cesium.Cartesian3[] | undefined {
+  if (options.draftCartesians?.length) return cloneDraftPoints(options.draftCartesians)
+  if (options.positions !== undefined) return lineToCartesian3Array(options.positions, minVertices)
+  return undefined
 }
 
 /** 从 `targetData.positions` 还原为 `number[][]`（与 `getValue` 采样失败时作回退） */
@@ -188,6 +211,116 @@ function mergeCorridorGraphics(
   if (st?.zIndex !== undefined) cg.zIndex = new Cesium.ConstantProperty(st.zIndex)
 }
 
+function resolveCorridorStyleFromTargetData(td: Record<string, unknown>): {
+  width: number
+  height: number
+  extrudedHeight?: number
+  cornerType: Cesium.CornerType
+  fillColor: Color
+  showFill: boolean
+  outline: boolean
+  outlineColor: Color
+  outlineWidth: number
+  style?: CorridorStyleOptions
+} {
+  const showFill = td.showFill !== false
+  const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+  const fillColor =
+    toColor(String(td.color ?? '#00b96b'), showFill ? alpha : 0) ??
+    Cesium.Color.LIME.withAlpha(showFill ? alpha : 0)
+  const outline = td.outline !== false
+  const outlineColor =
+    toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+    Cesium.Color.WHITE
+  const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+  const width = typeof td.width === 'number' ? td.width : 1
+  const height = typeof td.height === 'number' ? td.height : 0
+  const extrRaw = td.extrudedHeight
+  const extrudedHeight =
+    typeof extrRaw === 'number' && Number.isFinite(extrRaw) ? extrRaw : undefined
+  const cornerType =
+    typeof td.cornerType === 'number'
+      ? (td.cornerType as Cesium.CornerType)
+      : parseCornerType(td.cornerType as keyof typeof Cesium.CornerType)
+  return {
+    width,
+    height,
+    extrudedHeight,
+    cornerType,
+    fillColor,
+    showFill,
+    outline,
+    outlineColor,
+    outlineWidth,
+    style: td.styleSnapshot as CorridorStyleOptions | undefined,
+  }
+}
+
+function applyAreaDraftCorridorGraphics(rec: CorridorRecord): void {
+  const st = resolveCorridorStyleFromTargetData(rec.targetData)
+  const getPoints = (): Cesium.Cartesian3[] => getDraftPoints(rec)
+  const corridor = new Cesium.CorridorGraphics()
+  corridor.positions = createDraftPolylinePositionsProperty(getPoints)
+  corridor.width = new Cesium.ConstantProperty(st.width)
+  corridor.height = new Cesium.ConstantProperty(st.height)
+  corridor.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  corridor.extrudedHeightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  if (st.extrudedHeight !== undefined && Number.isFinite(st.extrudedHeight)) {
+    corridor.extrudedHeight = new Cesium.ConstantProperty(st.extrudedHeight)
+  }
+  corridor.cornerType = new Cesium.ConstantProperty(st.cornerType)
+  corridor.fill = new Cesium.ConstantProperty(st.showFill)
+  corridor.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  corridor.outline = new Cesium.ConstantProperty(st.outline)
+  corridor.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  corridor.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+  const style = st.style
+  if (style?.granularity !== undefined) {
+    corridor.granularity = new Cesium.ConstantProperty(style.granularity)
+  }
+  if (style?.shadows !== undefined) corridor.shadows = new Cesium.ConstantProperty(style.shadows)
+  if (style?.distanceDisplayCondition !== undefined) {
+    corridor.distanceDisplayCondition = new Cesium.ConstantProperty(style.distanceDisplayCondition)
+  }
+  if (style?.classificationType !== undefined) {
+    corridor.classificationType = new Cesium.ConstantProperty(style.classificationType)
+  }
+  if (style?.zIndex !== undefined) corridor.zIndex = new Cesium.ConstantProperty(style.zIndex)
+  rec.entity.corridor = corridor
+}
+
+function commitAreaDraftCorridorRecord(rec: CorridorRecord): boolean {
+  const positionsNums = rec.targetData.positions as number[][] | undefined
+  if (!positionsNums?.length) return false
+  const line = lineToCartesian3Array(
+    positionsNums.map((t) => [Number(t[0]), Number(t[1]), Number(t[2] ?? 0)] as CorridorLngLatTuple),
+  )
+  if (!line) return false
+
+  const st = resolveCorridorStyleFromTargetData(rec.targetData)
+  const cg = rec.entity.corridor ?? (rec.entity.corridor = new Cesium.CorridorGraphics())
+  mergeCorridorGraphics(
+    cg,
+    {
+      positions: line,
+      width: st.width,
+      height: st.height,
+      extrudedHeight: st.extrudedHeight,
+      cornerType: st.cornerType,
+      fillColor: st.fillColor,
+      showFill: st.showFill,
+      outline: st.outline,
+      outlineColor: st.outlineColor,
+      outlineWidth: st.outlineWidth,
+      style: st.style,
+    },
+    false,
+  )
+  clearAreaDraftTargetData(rec.targetData)
+  rec.draftPoints = undefined
+  return true
+}
+
 /**
  * 廊道（`Entity` + `CorridorGraphics`）。单例：首参传入 `viewer`。
  */
@@ -218,6 +351,10 @@ export default class Corridor {
     if (!viewer || viewer.isDestroyed()) return undefined
     const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('cor')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
+
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
 
     const w = Number(options.width)
     if (!Number.isFinite(w) || w <= 0) return undefined
@@ -288,6 +425,52 @@ export default class Corridor {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddCorridorOptions): Entity | undefined {
+    const w = Number(options.width)
+    if (!Number.isFinite(w) || w <= 0) return undefined
+
+    const cartesianLine = resolveDraftLineCartesians(options, 1)
+    if (!cartesianLine) return undefined
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    td.positions = cartesianLine.map((c) => {
+      const carto = Cesium.Cartographic.fromCartesian(c)
+      return [
+        Cesium.Math.toDegrees(carto.longitude),
+        Cesium.Math.toDegrees(carto.latitude),
+        carto.height,
+      ] as number[]
+    })
+    td.width = w
+    td.height = options.height ?? 0
+    td.extrudedHeight = options.extrudedHeight ?? 0
+    td.cornerType = parseCornerType(options.cornerType)
+    td.color = options.color ?? '#00b96b'
+    td.alpha = options.alpha ?? 1
+    td.showFill = options.showFill !== false
+    td.outline = options.outline !== false
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = options.outlineWidth ?? 2
+    if (options.style) td.styleSnapshot = { ...options.style }
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: CorridorRecord = { viewer, entity, targetData: td }
+    setDraftPoints(rec, cartesianLine)
+    applyAreaDraftCorridorGraphics(rec)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   addCorridors(viewer: Viewer, items: AddCorridorOptions[]): string[] {
     if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
     const ids: string[] = []
@@ -309,6 +492,32 @@ export default class Corridor {
     if (!rec) return false
     const p = properties
     const td = rec.targetData
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      const line = resolveDraftLineCartesians(p, 1)
+      if (line?.length) {
+        td.positions = line.map((c) => {
+          const carto = Cesium.Cartographic.fromCartesian(c)
+          return [
+            Cesium.Math.toDegrees(carto.longitude),
+            Cesium.Math.toDegrees(carto.latitude),
+            carto.height,
+          ] as number[]
+        })
+        setDraftPoints(rec, line)
+      } else if (p.positions !== undefined) {
+        const fromPos = lineToCartesian3Array(p.positions, 1)
+        if (!fromPos) return false
+        td.positions = lineToNumberTuples(p.positions)
+        setDraftPoints(rec, fromPos)
+      }
+      return commitAreaDraftCorridorRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
 
     if (p.targetData !== undefined) Object.assign(td, p.targetData)
 
@@ -414,6 +623,57 @@ export default class Corridor {
     return true
   }
 
+  private applyStylePatchToTargetData(rec: CorridorRecord, p: UpdateCorridorProperties): void {
+    const td = rec.targetData
+    if (p.targetData !== undefined) Object.assign(td, p.targetData)
+    if (p.width !== undefined) td.width = p.width
+    if (p.height !== undefined) td.height = p.height
+    if (p.extrudedHeight !== undefined) td.extrudedHeight = p.extrudedHeight
+    if (p.cornerType !== undefined) td.cornerType = parseCornerType(p.cornerType)
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+  }
+
+  private updateAreaDraft(rec: CorridorRecord, p: UpdateCorridorProperties): boolean {
+    const td = rec.targetData
+    markAreaDraftTargetData(td)
+    this.applyStylePatchToTargetData(rec, p)
+
+    const line = resolveDraftLineCartesians(p, 1)
+    if (line?.length) {
+      setDraftPoints(rec, line)
+      td.positions = line.map((c) => {
+        const carto = Cesium.Cartographic.fromCartesian(c)
+        return [
+          Cesium.Math.toDegrees(carto.longitude),
+          Cesium.Math.toDegrees(carto.latitude),
+          carto.height,
+        ] as number[]
+      })
+    } else if (p.positions !== undefined) {
+      const fromPos = lineToCartesian3Array(p.positions, 1)
+      if (!fromPos) return false
+      setDraftPoints(rec, fromPos)
+      td.positions = lineToNumberTuples(p.positions)
+    }
+
+    applyAreaDraftCorridorGraphics(rec)
+
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
   updateCorridors(updates: Array<{ id: string } & UpdateCorridorProperties>): Array<{ id: string; success: boolean }> {
     return updates.map(({ id, ...rest }) => ({ id, success: this.updateCorridor(id, rest) }))
   }
@@ -440,7 +700,7 @@ export default class Corridor {
 
   getCorridor(id: string): CorridorSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const cg = rec.entity.corridor
     const posArr = cg ? sampleProperty<Cesium.Cartesian3[]>(cg.positions) : undefined
     const positions: number[][] = []
@@ -531,11 +791,12 @@ export default class Corridor {
     return this.takeIfAlive(id) !== undefined
   }
 
-  getIds(viewer?: Viewer): string[] {
+  getIds(viewer?: Viewer, opts?: { includeDraft?: boolean }): string[] {
     const out: string[] = []
     for (const [id, rec] of this.data) {
       if (!this.isRecordAlive(rec)) continue
       if (viewer !== undefined && rec.viewer !== viewer) continue
+      if (!opts?.includeDraft && isAreaDraftTargetData(rec.targetData)) continue
       out.push(id)
     }
     return out

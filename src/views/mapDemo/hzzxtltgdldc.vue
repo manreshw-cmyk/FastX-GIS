@@ -1,15 +1,16 @@
 ﻿<script setup lang="ts">
-import { ClearOutlined, DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { ClearOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PolylineVolumeSnapshot } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, PolylineVolumeSnapshot } from '../../FastX'
 import { defaultShapeParamsForType, parseShapeTypeKey, resolveShapeParamsFromTargetData } from '../../FastX/Draw/PolylineVolume/index'
 import type { ShapeParams } from '../../FastX/Draw/PolylineVolume/shape'
 import { ShapeType } from '../../FastX/Draw/PolylineVolume/shape'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
+import { bindAreaManagerPublish } from './components/common/useAreaManagerPublish'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（PolylineVolume）折线体（立体管道）类（底层 entity）'
@@ -46,7 +47,8 @@ const shapeTypeOptions = (Object.values(ShapeType) as ShapeType[]).map((value) =
 }))
 
 const mapStore = useMapLayerStore()
-const vertexPickArmed = ref(false)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedEntityId = ref<string | null>(null)
 /** 表格回显写入 `shapeType` 时不应触发「重置为默认截面参数」 */
 const suppressShapeTypeChange = ref(false)
@@ -80,7 +82,7 @@ const formEntity = reactive({
   outline: false,
   outlineColor: DEFAULT_OUTLINE,
   outlineAlpha: 0.9,
-  outlineWidth: 1,
+  outlineWidth: 500,
   show: true,
 })
 
@@ -92,9 +94,68 @@ const vertexTableScrollY = ref(96)
 let tableResizeObserver: ResizeObserver | null = null
 let vertexResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = { listen: (options: MouseEventListenOptions) => void; destroy: () => void }
 let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+
+function syncDraftVerticesFromPick(points: LngLatHeight[]): void {
+  draftVertices.value = points.map((p) => ({
+    key: newVertexKey(),
+    longitude: p.longitude,
+    latitude: p.latitude,
+    height: p.height ?? 0,
+  }))
+}
+
+function buildPolylineVolumeStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'polylineVolume',
+    id: formEntity.id.trim() || undefined,
+    shapeParams: shapeParamsState.value,
+    cornerType: formEntity.cornerType,
+    granularity: formEntity.granularity,
+    color: formEntity.color,
+    alpha: fillAlphaForEntity(),
+    fill: formEntity.showFill,
+    outline: formEntity.outline,
+    outlineColor: formEntity.outlineColor,
+    outlineAlpha: formEntity.outlineAlpha,
+    outlineWidth: formEntity.outlineWidth,
+    show: formEntity.show,
+    targetData: {
+      shapeType: formEntity.shapeType,
+      shapeParams: shapeParamsState.value,
+      cornerType: formEntity.cornerType,
+      granularity: formEntity.granularity,
+      alpha: formEntity.alpha,
+      outlineAlpha: formEntity.outlineAlpha,
+    },
+    preview: {
+      lineColor: formEntity.color,
+      anchorPointColor: '#00bcd4',
+      cursorPointColor: '#00bcd4',
+    },
+    onAnchorChange: (points) => {
+      syncDraftVerticesFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  bindAreaManagerPublish(
+    'polylineVolume',
+    () => {
+      message.success('已添加折线体 Entity')
+      refreshTable()
+      resetFormEntity()
+    },
+    stopAreaDraw,
+  )
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -237,7 +298,10 @@ function fillFormEntityFromSnapshot(s: PolylineVolumeSnapshot): void {
   const tdOA =
     typeof td.outlineAlpha === 'number' && Number.isFinite(td.outlineAlpha) ? td.outlineAlpha : undefined
   formEntity.outlineAlpha = tdOA ?? outParsed.alpha
-  formEntity.outlineWidth = s.outlineWidth ?? 1
+  formEntity.outlineWidth =
+    typeof td.outlineWidth === 'number' && Number.isFinite(td.outlineWidth)
+      ? td.outlineWidth
+      : (s.outlineWidth ?? 500)
   formEntity.show = s.show !== false
 
   const posRows = Array.isArray(s.positions) ? s.positions : []
@@ -261,17 +325,13 @@ function resetFormEntity(): void {
   formEntity.outline = false
   formEntity.outlineColor = DEFAULT_OUTLINE
   formEntity.outlineAlpha = 0.9
-  formEntity.outlineWidth = 1
+  formEntity.outlineWidth = 500
   formEntity.show = true
   draftVertices.value = []
 }
 
-function disarmPick(): void {
-  vertexPickArmed.value = false
-}
-
 function onEntityRowClick(record: PolylineVolumeSnapshot): void {
-  disarmPick()
+  stopAreaDraw()
   selectedEntityId.value = record.id
   const snap = window.FastX?.PolylineVolume?.getPolylineVolume(record.id)
   if (snap) fillFormEntityFromSnapshot(snap)
@@ -282,7 +342,6 @@ function onDeleteEntityRow(id: string, e: Event): void {
   window.FastX?.PolylineVolume?.remove(id)
   if (selectedEntityId.value === id) {
     selectedEntityId.value = null
-    disarmPick()
     resetFormEntity()
   }
   refreshTable()
@@ -299,7 +358,9 @@ function onClearDraftVertices(): void {
   message.info('已清空路径顶点')
 }
 
-const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '标绘'))
+const primaryEntityText = computed(() =>
+  selectedEntityId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
@@ -327,8 +388,13 @@ function applyEntityUpdate(): void {
     targetData: {
       cornerType: formEntity.cornerType,
       granularity: formEntity.granularity,
+      color: formEntity.color,
       alpha: formEntity.alpha,
+      fill: formEntity.showFill,
+      outline: formEntity.outline,
+      outlineColor: formEntity.outlineColor,
       outlineAlpha: formEntity.outlineAlpha,
+      outlineWidth: formEntity.outlineWidth,
     },
   })
   if (ok) {
@@ -345,7 +411,6 @@ function addEntityFromForm(): void {
   const P = window.FastX?.PolylineVolume
   const v = mapStore.getViewer()
   if (!P || !v || v.isDestroyed()) return
-  disarmPick()
   const idOpt = formEntity.id.trim() || undefined
   const entity = P.add(v, {
     id: idOpt,
@@ -365,8 +430,13 @@ function addEntityFromForm(): void {
     targetData: {
       cornerType: formEntity.cornerType,
       granularity: formEntity.granularity,
+      color: formEntity.color,
       alpha: formEntity.alpha,
+      fill: formEntity.showFill,
+      outline: formEntity.outline,
+      outlineColor: formEntity.outlineColor,
       outlineAlpha: formEntity.outlineAlpha,
+      outlineWidth: formEntity.outlineWidth,
     },
   })
   if (!entity) {
@@ -379,51 +449,49 @@ function addEntityFromForm(): void {
 }
 
 function onEntityPrimary(): void {
-  if (selectedEntityId.value) applyEntityUpdate()
-  else addEntityFromForm()
+  if (selectedEntityId.value) {
+    applyEntityUpdate()
+    return
+  }
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('路径至少需要 2 个顶点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  draftVertices.value = []
+  const ok = am.start(v, buildPolylineVolumeStartParams())
+  if (!ok) {
+    message.error('无法开始折线体绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- PolylineVolume 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addEntityFromForm()
 }
 
 function onCancelEntitySelect(): void {
   selectedEntityId.value = null
-  disarmPick()
   resetFormEntity()
-}
-
-function toggleVertexPick(): void {
-  if (vertexPickArmed.value) {
-    vertexPickArmed.value = false
-    message.info('已取消地图添加顶点')
-    return
-  }
-  vertexPickArmed.value = true
-  message.info('请在地图上左键点击，依次追加路径顶点')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!vertexPickArmed.value) return
-  if (!Number.isFinite(pick.longitude) || !Number.isFinite(pick.latitude)) {
-    message.warning('未能拾取到有效坐标')
-    return
-  }
-  draftVertices.value.push({
-    key: newVertexKey(),
-    longitude: pick.longitude,
-    latitude: pick.latitude,
-    height: Number.isFinite(pick.height) ? pick.height : 0,
-  })
-  message.success(`已添加顶点（共 ${draftVertices.value.length} 个）`)
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({ onLeftClick: onMapLeftClick })
-  mouseBinder = binder
 }
 
 const vertexColumns: TableColumnType<DraftVertex>[] = [
@@ -477,8 +545,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   updateVertexTableScrollY()
@@ -493,8 +562,9 @@ onBeforeUnmount(() => {
   vertexResizeObserver?.disconnect()
   tableResizeObserver = null
   vertexResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -664,7 +734,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">轮廓宽度</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.outlineWidth" class="hzd-control-fill" size="small" :min="0" :max="20" />
+                    <a-input-number v-model:value="formEntity.outlineWidth" class="hzd-control-fill" size="small" :min="0" />
                   </div>
                 </div>
                 <div class="hzd-field-row">
@@ -676,18 +746,8 @@ onBeforeUnmount(() => {
 
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
-                    <div class="hzd-actions-primary-row">
-                      <a-tooltip title="地图追加顶点">
-                        <a-button
-                          :type="vertexPickArmed ? 'primary' : 'default'"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="拾取顶点"
-                          @click="toggleVertexPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
-                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onEntityPrimary">
+                    <div class="hzd-actions-primary-row hzd-actions-primary-row--solo">
+                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall" @click="onEntityPrimary">
                         {{ primaryEntityText }}
                       </a-button>
                     </div>

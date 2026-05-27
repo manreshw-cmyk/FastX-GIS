@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { MouseEventListenOptions, MouseEventPickPayload, PointSnapshot } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, PointSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -17,7 +17,12 @@ const DEFAULT_OUTLINE_COLOR = '#1f1f1f'
 
 const mapStore = useMapLayerStore()
 
-const plotArmed = ref(false)
+/** 空域管理（FastX 全局单例，示例变量统一命名为 am） */
+let am = window.FastX?.AreaManager
+
+/** 绘制中（用于按钮文案；am.active 非响应式） */
+const isAreaDrawing = ref(false)
+
 const selectedId = ref<string | null>(null)
 
 const form = reactive({
@@ -42,13 +47,7 @@ const tableShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
-}
-
 let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -121,9 +120,57 @@ function resetFormToInitial(): void {
   form.show = true
 }
 
+function syncFormFromPick(points: LngLatHeight[]): void {
+  const p = points[points.length - 1]
+  if (!p) return
+  form.longitude = p.longitude
+  form.latitude = p.latitude
+  form.height = p.height ?? 0
+}
+
+function buildPointStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'point',
+    id: form.id.trim() || undefined,
+    color: form.color,
+    alpha: fillAlphaForApi(),
+    pixelSize: form.pixelSize,
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outlineWidth,
+    show: form.show,
+    targetData: { showFill: form.showFill },
+    preview: {
+      anchorPointColor: '#faad14',
+      cursorPointColor: '#faad14',
+    },
+    onAnchorChange: (points) => {
+      syncFormFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'point') return
+    stopAreaDraw()
+    message.success('已添加点')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
+
 function onCancelSelect(): void {
   selectedId.value = null
-  plotArmed.value = false
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -136,7 +183,7 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
 }
 
 function onRowClick(record: PointSnapshot): void {
-  plotArmed.value = false
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Point?.getPoint(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -147,7 +194,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Point?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    plotArmed.value = false
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
@@ -156,13 +203,7 @@ function onDeleteRow(id: string, e: Event): void {
 
 const primaryButtonText = computed(() => {
   if (selectedId.value) return '确定'
-  if (plotArmed.value) return '取消标绘'
-  return '标绘'
-})
-
-const primaryButtonType = computed(() => {
-  if (plotArmed.value && !selectedId.value) return 'default' as const
-  return 'primary' as const
+  return isAreaDrawing.value ? '完成标绘' : '绘制'
 })
 
 function applyUpdateToSelected(): void {
@@ -192,39 +233,20 @@ function applyUpdateToSelected(): void {
   }
 }
 
-function onPrimaryClick(): void {
-  if (selectedId.value) {
-    applyUpdateToSelected()
-    return
-  }
-  if (plotArmed.value) {
-    plotArmed.value = false
-    resetFormToInitial()
-    message.info('已取消标绘')
-    return
-  }
-  resetFormToInitial()
-  plotArmed.value = true
-  message.info('请在地图上左键点击放置一点，放置成功后自动结束标绘')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!plotArmed.value || selectedId.value) return
-  if (Number.isNaN(pick.longitude) || Number.isNaN(pick.latitude)) {
-    message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
-    return
-  }
+/** Point 单类 `add` 绘制（不经过空域管理）。表单坐标已齐全时可直接落图；与下方 `am.start` / `am.end` 二选一使用。 */
+function addPointFromForm(): void {
   const P = window.FastX?.Point
   const v = mapStore.getViewer()
   if (!P || !v || v.isDestroyed()) return
 
+  stopAreaDraw()
   const idOpt = form.id.trim() || undefined
   const entity = P.add(v, {
     id: idOpt,
     position: {
-      longitude: pick.longitude,
-      latitude: pick.latitude,
-      height: Number.isNaN(pick.height) ? form.height : pick.height,
+      longitude: form.longitude,
+      latitude: form.latitude,
+      height: form.height,
     },
     color: form.color,
     alpha: fillAlphaForApi(),
@@ -239,27 +261,51 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 
   if (!entity) {
     message.error('添加失败：id 可能重复，请修改 id 后重新标绘')
-    plotArmed.value = false
     return
   }
-  plotArmed.value = false
   message.success('已添加点')
   refreshTable()
   resetFormToInitial()
 }
 
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
+function onPrimaryClick(): void {
+  if (selectedId.value) {
+    applyUpdateToSelected()
     return
   }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
-  mouseBinder = binder
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 1) {
+      message.warning('至少需要 1 个点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  const ok = am.start(v, buildPointStartParams())
+  if (!ok) {
+    message.error('无法开始点绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Point 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addPointFromForm()
 }
 
 const columns: TableColumnType<PointSnapshot>[] = [
@@ -308,8 +354,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -321,8 +368,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -457,7 +505,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <a-button
-                      :type="primaryButtonType"
+                      type="primary"
                       block
                       class="map-tool-primary-btn hzd-primary-tall"
                       @click="onPrimaryClick"

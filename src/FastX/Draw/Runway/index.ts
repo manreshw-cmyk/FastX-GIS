@@ -13,6 +13,15 @@ import type {
   RunwayVertexInput,
   UpdateRunwayProperties,
 } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  createDraftPolylinePositionsProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
 export type {
   AddRunwayOptions,
   RunwayFlowBandStyle,
@@ -186,13 +195,85 @@ class RunwayFlowMaterialProperty implements MaterialProperty {
   }
 }
 
-interface RunwayRecord {
+interface RunwayRecord extends AreaDraftPointsHolder {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
   tickListener: (() => void) | null
   flowMatProp?: RunwayFlowMaterialProperty
   flowMaterial: Material | null
+}
+
+function resolveRunwayDraftPair(
+  options: AddRunwayOptions | UpdateRunwayProperties,
+  ellipsoid: Cesium.Ellipsoid,
+): Cesium.Cartesian3[] | undefined {
+  if (options.positions && options.positions.length >= 1) {
+    const verts = options.positions.length >= 2 ? options.positions : [options.positions[0]!, options.positions[0]!]
+    return lineToCartesian3Array(verts, ellipsoid)
+  }
+  const add = options as AddRunwayOptions
+  const pair = resolveTwoCartesianPositions(add, ellipsoid)
+  return pair ?? undefined
+}
+
+function applyAreaDraftCorridor(rec: RunwayRecord, ellipsoid: Cesium.Ellipsoid): void {
+  const td = rec.targetData
+  const wid = typeof td.width === 'number' ? td.width : 1
+  const height = typeof td.height === 'number' ? td.height : 0
+  const extrRaw = td.extrudedHeight
+  const extrudedHeight =
+    typeof extrRaw === 'number' && Number.isFinite(extrRaw) ? extrRaw : undefined
+  const cornerType =
+    typeof td.cornerType === 'number'
+      ? (td.cornerType as Cesium.CornerType)
+      : parseCornerType(td.cornerType as keyof typeof Cesium.CornerType)
+  const showFill = td.showFill !== false
+  const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+  const fillColor =
+    toColor(String(td.color ?? '#00aaff'), showFill ? alpha : 0) ??
+    Cesium.Color.CYAN.withAlpha(showFill ? alpha : 0)
+  const outline = td.outline !== false
+  const outlineColor =
+    toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+    Cesium.Color.WHITE
+  const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+
+  const cg = new Cesium.CorridorGraphics()
+  cg.positions = createDraftPolylinePositionsProperty(() => getDraftPoints(rec))
+  cg.width = new Cesium.ConstantProperty(wid)
+  cg.height = new Cesium.ConstantProperty(height)
+  cg.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  cg.extrudedHeightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
+  if (extrudedHeight !== undefined) {
+    cg.extrudedHeight = new Cesium.ConstantProperty(extrudedHeight)
+  }
+  cg.cornerType = new Cesium.ConstantProperty(cornerType)
+  cg.fill = new Cesium.ConstantProperty(showFill)
+  cg.material = new Cesium.ColorMaterialProperty(fillColor)
+  cg.outline = new Cesium.ConstantProperty(outline)
+  cg.outlineColor = new Cesium.ConstantProperty(outlineColor)
+  cg.outlineWidth = new Cesium.ConstantProperty(outlineWidth)
+  rec.entity.corridor = cg
+  rebuildRunwayFill(rec)
+}
+
+function commitAreaDraftRecord(rec: RunwayRecord): boolean {
+  const pts = getDraftPoints(rec)
+  if (pts.length < 2) return false
+  const ellipsoid = rec.viewer.scene.globe.ellipsoid
+  const line = [pts[0]!, pts[1]!]
+  const posTuples = cartesianPairToNumberTuples(line[0]!, line[1]!, ellipsoid)
+  const td = rec.targetData
+  td.positions = posTuples
+  clearAreaDraftTargetData(td)
+  rec.draftPoints = undefined
+
+  const cg = rec.entity.corridor ?? (rec.entity.corridor = new Cesium.CorridorGraphics())
+  cg.positions = new Cesium.ConstantProperty(line)
+  detachFlow(rec)
+  rebuildRunwayFill(rec)
+  return true
 }
 
 function unwrapRecordProxy(src: Record<string, unknown>): Record<string, unknown> {
@@ -645,6 +726,10 @@ export default class Runway {
     const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('rw')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const wid = Number(options.width)
     if (!Number.isFinite(wid) || wid <= 0) return undefined
 
@@ -756,6 +841,78 @@ export default class Runway {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddRunwayOptions): Entity | undefined {
+    const wid = Number(options.width)
+    if (!Number.isFinite(wid) || wid <= 0) return undefined
+    const ellipsoid = viewer.scene.globe.ellipsoid
+    const pair = resolveRunwayDraftPair(options, ellipsoid)
+    if (!pair || pair.length < 2) return undefined
+
+    const materialMode: RunwayMaterialMode =
+      options.materialMode === 'flowImage' || options.materialMode === 'flowColor'
+        ? options.materialMode
+        : 'flowColor'
+    const showFill = options.showFill !== false
+    const alpha = options.alpha ?? 1
+    const outline = options.outline !== false
+    const height = options.height ?? 0
+    const extrudedHeight = options.extrudedHeight
+    const cornerType = parseCornerType(options.cornerType)
+    const flowSpeed = options.flowSpeed ?? 0.8
+    const flowImageUrl =
+      typeof options.flowImageUrl === 'string' && options.flowImageUrl.trim() ? options.flowImageUrl.trim() : undefined
+
+    const p0 = pair[0]!
+    const p1 = pair[1]!
+    const posTuples =
+      options.positions && options.positions.length >= 1
+        ? lineToNumberTuples(options.positions.length >= 2 ? options.positions : [options.positions[0]!, options.positions[0]!])
+        : cartesianPairToNumberTuples(p0, p1, ellipsoid)
+
+    const td = this.cloneTargetData(options.targetData)
+    markAreaDraftTargetData(td)
+    td.positions = posTuples
+    td.width = wid
+    td.height = height
+    td.extrudedHeight = extrudedHeight ?? 0
+    td.cornerType = cornerType
+    td.color = options.color ?? '#00aaff'
+    td.alpha = alpha
+    td.showFill = showFill
+    td.outline = outline
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = options.outlineWidth ?? 2
+    td.materialMode = materialMode
+    td.flowSpeed = flowSpeed
+    td.flowBandStyle = options.flowBandStyle === 'single' ? 'single' : 'multi'
+    {
+      const n = Number(options.flowBandCount)
+      td.flowBandCount = !Number.isFinite(n) || n < 1 ? 8 : Math.min(64, Math.floor(n))
+    }
+    td.flowStAxis = options.flowStAxis === 'y' ? 'y' : 'x'
+    td.flowLengthFlip = options.flowLengthFlip === true
+    if (flowImageUrl) td.flowImageUrl = flowImageUrl
+    if (options.style) {
+      td.styleSnapshot = wrapPlainMutableRecord(options.style as unknown as Record<string, unknown>)
+    }
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: RunwayRecord = { viewer, entity, targetData: td, tickListener: null, flowMaterial: null }
+    setDraftPoints(rec, pair)
+    applyAreaDraftCorridor(rec, ellipsoid)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   addRunways(viewer: Viewer, items: AddRunwayOptions[]): string[] {
     if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
     const ids: string[] = []
@@ -778,6 +935,22 @@ export default class Runway {
     const p = properties
     const td = rec.targetData
     const ellipsoid = rec.viewer.scene.globe.ellipsoid
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      if (p.positions !== undefined) {
+        const line = lineToCartesian3Array(p.positions, ellipsoid)
+        if (line) {
+          setDraftPoints(rec, line)
+          td.positions = lineToNumberTuples(p.positions)
+        }
+      }
+      return commitAreaDraftRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p, ellipsoid)
+    }
 
     if (p.targetData !== undefined) {
       Object.assign(td, wrapPlainMutableRecord(p.targetData))
@@ -899,6 +1072,70 @@ export default class Runway {
     return true
   }
 
+  private applyStylePatchToTargetData(rec: RunwayRecord, p: UpdateRunwayProperties): void {
+    const td = rec.targetData
+    if (p.targetData !== undefined) {
+      Object.assign(td, wrapPlainMutableRecord(p.targetData))
+    }
+    if (p.width !== undefined) td.width = p.width
+    if (p.height !== undefined) td.height = p.height
+    if (p.extrudedHeight !== undefined) td.extrudedHeight = p.extrudedHeight
+    if (p.cornerType !== undefined) td.cornerType = parseCornerType(p.cornerType)
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.materialMode !== undefined) td.materialMode = p.materialMode
+    if (p.flowSpeed !== undefined) td.flowSpeed = p.flowSpeed
+    if (p.flowBandStyle !== undefined) td.flowBandStyle = p.flowBandStyle
+    if (p.flowBandCount !== undefined) {
+      const n = Number(p.flowBandCount)
+      if (Number.isFinite(n) && n >= 1) td.flowBandCount = Math.min(64, Math.floor(n))
+    }
+    if (p.flowStAxis !== undefined) td.flowStAxis = p.flowStAxis
+    if (p.flowLengthFlip !== undefined) td.flowLengthFlip = p.flowLengthFlip
+    if (p.flowImageUrl !== undefined) td.flowImageUrl = p.flowImageUrl
+    if (p.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+  }
+
+  private updateAreaDraft(rec: RunwayRecord, p: UpdateRunwayProperties, ellipsoid: Cesium.Ellipsoid): boolean {
+    const td = rec.targetData
+    markAreaDraftTargetData(td)
+    this.applyStylePatchToTargetData(rec, p)
+
+    if (p.positions !== undefined) {
+      const line = lineToCartesian3Array(p.positions, ellipsoid)
+      if (line) {
+        setDraftPoints(rec, line)
+        td.positions = lineToNumberTuples(p.positions)
+      }
+    } else if (p.longitude !== undefined && p.latitude !== undefined && p.endLongitude !== undefined && p.endLatitude !== undefined) {
+      const h0 = p.height ?? 0
+      const endH = p.endHeight ?? h0
+      const line = [
+        Cesium.Cartesian3.fromDegrees(Number(p.longitude), Number(p.latitude), h0, ellipsoid),
+        Cesium.Cartesian3.fromDegrees(Number(p.endLongitude), Number(p.endLatitude), endH, ellipsoid),
+      ]
+      setDraftPoints(rec, line)
+      td.positions = [
+        [Number(p.longitude), Number(p.latitude), h0],
+        [Number(p.endLongitude), Number(p.endLatitude), endH],
+      ]
+    }
+
+    applyAreaDraftCorridor(rec, ellipsoid)
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
   updateRunways(updates: Array<{ id: string } & UpdateRunwayProperties>): Array<{ id: string; success: boolean }> {
     return updates.map(({ id, ...rest }) => ({ id, success: this.updateRunway(id, rest) }))
   }
@@ -928,7 +1165,7 @@ export default class Runway {
 
   getRunway(id: string): RunwaySnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const cg = rec.entity.corridor
     const ellipsoid = rec.viewer.scene.globe.ellipsoid
     const posArr = cg ? sampleProperty<Cesium.Cartesian3[]>(cg.positions) : undefined

@@ -4,6 +4,16 @@ import { createRandomXgxId } from "../../Coordinates";
 import type { PointPositionInput } from "../Point";
 
 import type { AddModelOptions, ModelPositionsTuple, ModelSnapshot, ModelStyleOptions, UpdateModelProperties } from '../../Types'
+import {
+  type AreaDraftPointsHolder,
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  createDraftPositionProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+} from '../../Utils/areaDraft'
 export type { AddModelOptions, ModelPositionsTuple, ModelSnapshot, ModelStyleOptions, UpdateModelProperties }
 
 interface ModelOrientationDeg {
@@ -12,11 +22,30 @@ interface ModelOrientationDeg {
   roll: number;
 }
 
-interface ModelRecord {
+interface ModelRecord extends AreaDraftPointsHolder {
   viewer: Viewer;
   entity: Entity;
   targetData: Record<string, unknown>;
   orientationDeg: ModelOrientationDeg;
+}
+
+function resolveUpdateCartesian(
+  p: UpdateModelProperties,
+): Cesium.Cartesian3 | undefined {
+  if (p.position !== undefined) return toCartesian3(p.position);
+  if (p.positions !== undefined) {
+    if (p.positions.length < 2) return undefined;
+    return positionFromTuple(p.positions);
+  }
+  if (p.longitude !== undefined && p.latitude !== undefined) {
+    const h = p.height !== undefined ? p.height : 0;
+    return Cesium.Cartesian3.fromDegrees(
+      Number(p.longitude),
+      Number(p.latitude),
+      Number(h),
+    );
+  }
+  return undefined;
 }
 
 function toCartesian3(
@@ -224,6 +253,11 @@ export default class Model {
     if (!viewer || viewer.isDestroyed()) return undefined;
     const id = options.id?.trim() ? options.id : createRandomXgxId("mdl");
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined;
+
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options);
+    }
+
     if (!options.uri?.trim()) return undefined;
 
     const position = resolveAddCartesian(options);
@@ -257,6 +291,116 @@ export default class Model {
     viewer.entities.add(entity);
     this.data.set(id, rec);
     return entity;
+  }
+
+  private addAreaDraft(
+    viewer: Viewer,
+    id: string,
+    options: AddModelOptions,
+  ): Entity | undefined {
+    const position = resolveAddCartesian(options);
+    if (!position) return undefined;
+
+    const td = this.cloneTargetData(options.targetData);
+    markAreaDraftTargetData(td);
+    if (options.uri?.trim()) td.modelUri = options.uri.trim();
+
+    const orientationDeg = readOrientationDegFromOptions(
+      options,
+      defaultOrientationDeg(),
+    );
+    const mg = new Cesium.ModelGraphics();
+    if (options.uri?.trim()) mergeModelGraphics(mg, options, true);
+
+    const rec: ModelRecord = {
+      viewer,
+      entity: new Cesium.Entity({ id, show: options.show !== false }),
+      targetData: td,
+      orientationDeg,
+    };
+    setDraftPoints(rec, [position]);
+    rec.entity.position = createDraftPositionProperty(() =>
+      getDraftPoints(rec),
+    );
+    if (options.uri?.trim()) rec.entity.model = mg;
+    if (options.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(
+        options.description,
+      );
+    }
+    syncOrientationToTargetData(rec);
+    attachModelOrientationCallback(rec);
+
+    viewer.entities.add(rec.entity);
+    this.data.set(id, rec);
+    return rec.entity;
+  }
+
+  private applyModelPatch(rec: ModelRecord, p: UpdateModelProperties): void {
+    if (
+      p.headingDegrees !== undefined ||
+      p.pitchDegrees !== undefined ||
+      p.rollDegrees !== undefined
+    ) {
+      rec.orientationDeg = readOrientationDegFromOptions(
+        p,
+        rec.orientationDeg,
+      );
+    }
+    const mg =
+      rec.entity.model ?? (rec.entity.model = new Cesium.ModelGraphics());
+    mergeModelGraphics(mg, p, false);
+    if (p.uri !== undefined) {
+      rec.targetData = { ...rec.targetData, modelUri: p.uri };
+    }
+    syncOrientationToTargetData(rec);
+  }
+
+  private commitAreaDraft(
+    rec: ModelRecord,
+    p: UpdateModelProperties,
+  ): boolean {
+    const pts = getDraftPoints(rec);
+    const pos =
+      resolveUpdateCartesian(p) ?? (pts.length ? pts[pts.length - 1] : undefined);
+    if (!pos) return false;
+    commitEntityPosition(rec.entity, pos);
+    clearAreaDraftTargetData(rec.targetData);
+    delete rec.draftPoints;
+    this.applyModelPatch(rec, p);
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData };
+    }
+    return true;
+  }
+
+  private updateAreaDraft(
+    rec: ModelRecord,
+    p: UpdateModelProperties,
+  ): boolean {
+    markAreaDraftTargetData(rec.targetData);
+    const pos = resolveUpdateCartesian(p);
+    if (pos) setDraftPoints(rec, [pos]);
+    else if (!getDraftPoints(rec).length) {
+      const cur = sampleProperty<Cesium.Cartesian3>(rec.entity.position);
+      if (cur) setDraftPoints(rec, [cur]);
+    }
+    rec.entity.position = createDraftPositionProperty(() =>
+      getDraftPoints(rec),
+    );
+    this.applyModelPatch(rec, p);
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData };
+    }
+    return true;
   }
 
   addBatch(
@@ -303,6 +447,14 @@ export default class Model {
     if (!rec) return false;
 
     const p = properties;
+    const td = rec.targetData;
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      return this.commitAreaDraft(rec, p);
+    }
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p);
+    }
+
     if (p.position !== undefined) {
       rec.entity.position = new Cesium.ConstantPositionProperty(
         toCartesian3(p.position),
@@ -323,21 +475,7 @@ export default class Model {
       );
     }
 
-    if (
-      p.headingDegrees !== undefined ||
-      p.pitchDegrees !== undefined ||
-      p.rollDegrees !== undefined
-    ) {
-      rec.orientationDeg = readOrientationDegFromOptions(p, rec.orientationDeg);
-    }
-
-    const mg =
-      rec.entity.model ?? (rec.entity.model = new Cesium.ModelGraphics());
-    mergeModelGraphics(mg, p, false);
-
-    if (p.uri !== undefined) {
-      rec.targetData = { ...rec.targetData, modelUri: p.uri };
-    }
+    this.applyModelPatch(rec, p);
 
     if (p.show !== undefined) rec.entity.show = p.show;
     if (p.description !== undefined)
@@ -345,7 +483,6 @@ export default class Model {
     if (p.targetData !== undefined) {
       rec.targetData = { ...rec.targetData, ...p.targetData };
     }
-    syncOrientationToTargetData(rec);
     return true;
   }
 
@@ -380,7 +517,7 @@ export default class Model {
 
   getModel(id: string): ModelSnapshot | null {
     const rec = this.takeIfAlive(id);
-    if (!rec) return null;
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null;
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position);
     if (!pos) return null;
     const carto = Cesium.Cartographic.fromCartesian(pos);

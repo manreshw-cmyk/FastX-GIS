@@ -7,6 +7,17 @@
 import * as Cesium from "cesium";
 import type { Color, Entity, MaterialProperty, Property, Viewer } from "cesium";
 import { createRandomXgxId, type LngLatHeight } from "../../Coordinates";
+import {
+  clearAreaDraftTargetData,
+  createDraftPolylinePositionsProperty,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+  type DraftCartesiansOption,
+  cloneDraftPoints,
+} from "../../Utils/areaDraft";
 
 import type { AddPolylineOptions, ArrowPlacementType, ArrowPolylineParams, DashedPolylineParams, FlowingPolylineParams, GlowingPolylineParams, GradientPolylineParams, OutlinePolylineParams, PolylineClampToGroundFlag, PolylineGeometryMode, PolylineLineKind, PolylineLngLatTuple, PolylineSnapshot, PolylineStyleOptions, UpdatePolylineProperties, VolumeBlockParams, VolumeTubeParams, WallParams } from '../../Types'
 export type { AddPolylineOptions, ArrowPlacementType, ArrowPolylineParams, DashedPolylineParams, FlowingPolylineParams, GlowingPolylineParams, GradientPolylineParams, OutlinePolylineParams, PolylineClampToGroundFlag, PolylineGeometryMode, PolylineLineKind, PolylineLngLatTuple, PolylineSnapshot, PolylineStyleOptions, UpdatePolylineProperties, VolumeBlockParams, VolumeTubeParams, WallParams }
@@ -32,7 +43,7 @@ const GRADIENT_TEXTURE_WIDTH = 256;
 
 // ==================== 类型定义 ====================
 
-interface PolylineRecord {
+interface PolylineRecord extends AreaDraftPointsHolder {
   viewer: Viewer;
   entity: Entity;
   extraEntities: Entity[];
@@ -106,19 +117,33 @@ function isCartesian3Array(a: unknown): a is Cesium.Cartesian3[] {
 
 export function resolvePolylineCartesians(
   positions: readonly PolylineLngLatTuple[] | readonly Cesium.Cartesian3[],
+  minVertices = 2,
 ): Cesium.Cartesian3[] | undefined {
-  if (!positions || positions.length < 2) return undefined;
+  if (!positions || positions.length < minVertices) return undefined;
   if (isCartesian3Array(positions as unknown[])) {
     return (positions as Cesium.Cartesian3[]).map((p) =>
       Cesium.Cartesian3.clone(p),
     );
   }
   const out: Cesium.Cartesian3[] = [];
-  for (const t of positions as readonly PolylineLngLatTuple[]) {
-    const h = t[2] ?? 0;
-    out.push(Cesium.Cartesian3.fromDegrees(t[0], t[1], h));
+  for (const t of positions as readonly (PolylineLngLatTuple | LngLatHeight)[]) {
+    if (Array.isArray(t)) {
+      const h = t[2] ?? 0;
+      out.push(Cesium.Cartesian3.fromDegrees(t[0], t[1], h));
+      continue;
+    }
+    if (t && typeof t === "object" && "longitude" in t && "latitude" in t) {
+      const llh = t as LngLatHeight;
+      out.push(
+        Cesium.Cartesian3.fromDegrees(
+          Number(llh.longitude),
+          Number(llh.latitude),
+          llh.height ?? 0,
+        ),
+      );
+    }
   }
-  return out;
+  return out.length >= minVertices ? out : undefined;
 }
 
 function cartesiansToLngLatHeightArray(
@@ -762,6 +787,130 @@ function normalizeKind(k: PolylineLineKind | undefined): PolylineLineKind {
   return "solid";
 }
 
+function storePolylineMetadataFromOptions(
+  targetData: Record<string, unknown>,
+  options: AddPolylineOptions,
+  cartesians: Cesium.Cartesian3[],
+  lineKind: PolylineLineKind,
+  viewer: Viewer,
+): void {
+  const alpha = options.alpha ?? 1;
+  const clampReq = effectiveClampToGroundRequest(lineKind, options);
+  targetData.lineKind = lineKind;
+  targetData.geometryMode = geometryModeForKind(lineKind);
+  targetData.color = options.color ?? "#00d4ff";
+  targetData.alpha = alpha;
+  targetData.arcType = options.arcType ?? "GEODESIC";
+  targetData.cornerType = options.cornerType ?? "ROUNDED";
+  targetData.clampToGround = resolveClampToGround(
+    cartesians,
+    options.style,
+    clampReq,
+    viewer,
+    targetData,
+  );
+  if (options.clampToGround !== undefined) {
+    targetData.apiClampToGround = options.clampToGround;
+  }
+  targetData.polylineClampToGround =
+    lineKind === "clamp_ground" || options.polylineClampToGround === 1 ? 1 : 0;
+  targetData.lineWidth = options.width ?? 3;
+  if (options.dashed) targetData.dashed = { ...options.dashed };
+  if (options.outline) targetData.outline = { ...options.outline };
+  if (options.glowing) targetData.glowing = { ...options.glowing };
+  if (options.flowing) targetData.flowing = { ...options.flowing };
+  if (options.gradient) targetData.gradient = { ...options.gradient };
+  if (options.volumeBlock) targetData.volumeBlock = { ...options.volumeBlock };
+  if (options.volumeTube) targetData.volumeTube = { ...options.volumeTube };
+  if (options.wall) targetData.wall = { ...options.wall };
+  if (options.style) targetData.styleSnapshot = { ...options.style };
+  if (lineKind === "arrow" && options.arrow) {
+    targetData.arrow = { ...options.arrow };
+  } else {
+    delete targetData.arrow;
+  }
+  targetData.positionsSnapshot = cartesiansToLngLatHeightArray(cartesians);
+}
+
+function applyAreaDraftPolylineGraphics(rec: PolylineRecord): void {
+  const td = rec.targetData;
+  const alpha = typeof td.alpha === "number" ? td.alpha : 1;
+  const baseColor =
+    toColor(String(td.color ?? "#00d4ff"), alpha) ?? Cesium.Color.CYAN;
+  const width = typeof td.lineWidth === "number" ? td.lineWidth : 3;
+  disposeExtraEntities(rec.viewer, rec.extraEntities);
+  clearAllLineGraphics(rec.entity);
+  const pl = new Cesium.PolylineGraphics();
+  pl.positions = createDraftPolylinePositionsProperty(() => getDraftPoints(rec));
+  pl.material = new Cesium.ColorMaterialProperty(baseColor);
+  pl.width = new Cesium.ConstantProperty(width);
+  pl.clampToGround = new Cesium.ConstantProperty(false);
+  pl.arcType = new Cesium.ConstantProperty(Cesium.ArcType.GEODESIC);
+  rec.entity.polyline = pl;
+}
+
+function commitAreaDraftPolylineRecord(rec: PolylineRecord): boolean {
+  const snap = rec.targetData.positionsSnapshot as LngLatHeight[] | undefined;
+  if (!snap || snap.length < 2) return false;
+  const cartesians = lngLatSnapshotToCartesians(snap);
+  const lineKind = normalizeKind(rec.targetData.lineKind as PolylineLineKind | undefined);
+  const alpha = typeof rec.targetData.alpha === "number" ? rec.targetData.alpha : 1;
+  const baseColor =
+    toColor(String(rec.targetData.color ?? "#00d4ff"), alpha) ?? Cesium.Color.CYAN;
+  const material = buildPolylineMaterial(
+    lineKind,
+    baseColor,
+    rec.targetData.dashed as DashedPolylineParams,
+    rec.targetData.outline as OutlinePolylineParams,
+    rec.targetData.glowing as GlowingPolylineParams,
+    rec.targetData.flowing as FlowingPolylineParams,
+    rec.targetData.gradient as GradientPolylineParams,
+    rec.flowEpoch,
+  );
+  const opts: AddPolylineOptions = {
+    positions: cartesians,
+    lineKind,
+    color: String(rec.targetData.color ?? "#00d4ff"),
+    alpha,
+    width: typeof rec.targetData.lineWidth === "number" ? rec.targetData.lineWidth : undefined,
+    clampToGround:
+      typeof rec.targetData.apiClampToGround === "boolean"
+        ? rec.targetData.apiClampToGround
+        : undefined,
+    arcType: rec.targetData.arcType as AddPolylineOptions["arcType"],
+    cornerType: rec.targetData.cornerType as AddPolylineOptions["cornerType"],
+    style: rec.targetData.styleSnapshot as PolylineStyleOptions,
+    dashed: rec.targetData.dashed as DashedPolylineParams,
+    outline: rec.targetData.outline as OutlinePolylineParams,
+    glowing: rec.targetData.glowing as GlowingPolylineParams,
+    flowing: rec.targetData.flowing as FlowingPolylineParams,
+    gradient: rec.targetData.gradient as GradientPolylineParams,
+    volumeBlock: rec.targetData.volumeBlock as VolumeBlockParams,
+    volumeTube: rec.targetData.volumeTube as VolumeTubeParams,
+    wall: rec.targetData.wall as WallParams,
+    arrow: lineKind === "arrow" ? (rec.targetData.arrow as ArrowPolylineParams) : undefined,
+    polylineClampToGround:
+      typeof rec.targetData.polylineClampToGround === "number"
+        ? (rec.targetData.polylineClampToGround as PolylineClampToGroundFlag)
+        : undefined,
+  };
+  mountGraphics(
+    rec.viewer,
+    rec.entity,
+    rec.extraEntities,
+    cartesians,
+    opts,
+    lineKind,
+    material,
+    rec.targetData,
+  );
+  clearAreaDraftTargetData(rec.targetData);
+  rec.draftPoints = undefined;
+  rec.lineKind = lineKind;
+  rec.geometryMode = geometryModeForKind(lineKind);
+  return true;
+}
+
 // ==================== PolyLine 主类 ====================
 
 export default class PolyLine {
@@ -789,6 +938,10 @@ export default class PolyLine {
 
     const id = options.id?.trim() ? options.id : createRandomXgxId("pl");
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined;
+
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options);
+    }
 
     const cartesians = resolvePolylineCartesians(options.positions);
     if (!cartesians) return undefined;
@@ -831,41 +984,7 @@ export default class PolyLine {
     viewer.entities.add(entity);
     requestRenderIfPolylineClampToGround(viewer, entity);
 
-    // 保存元数据
-    targetData.lineKind = lineKind;
-    targetData.geometryMode = geometryModeForKind(lineKind);
-    targetData.color = options.color ?? "#00d4ff";
-    targetData.alpha = alpha;
-    targetData.arcType = options.arcType ?? "GEODESIC";
-    targetData.cornerType = options.cornerType ?? "ROUNDED";
-    const clampReq = effectiveClampToGroundRequest(lineKind, options);
-    targetData.clampToGround = resolveClampToGround(
-      cartesians,
-      options.style,
-      clampReq,
-      viewer,
-      targetData,
-    );
-    if (options.clampToGround !== undefined)
-      targetData.apiClampToGround = options.clampToGround;
-    targetData.polylineClampToGround =
-      lineKind === "clamp_ground" || options.polylineClampToGround === 1 ? 1 : 0;
-    targetData.lineWidth = options.width ?? 3;
-    if (options.dashed) targetData.dashed = { ...options.dashed };
-    if (options.outline) targetData.outline = { ...options.outline };
-    if (options.glowing) targetData.glowing = { ...options.glowing };
-    if (options.flowing) targetData.flowing = { ...options.flowing };
-    if (options.gradient) targetData.gradient = { ...options.gradient };
-    if (options.volumeBlock)
-      targetData.volumeBlock = { ...options.volumeBlock };
-    if (options.volumeTube) targetData.volumeTube = { ...options.volumeTube };
-    if (options.wall) targetData.wall = { ...options.wall };
-    if (options.style) targetData.styleSnapshot = { ...options.style };
-    if (lineKind === "arrow" && options.arrow)
-      targetData.arrow = { ...options.arrow };
-    else delete targetData.arrow;
-
-    targetData.positionsSnapshot = cartesiansToLngLatHeightArray(cartesians);
+    storePolylineMetadataFromOptions(targetData, options, cartesians, lineKind, viewer);
 
     this.data.set(id, {
       viewer,
@@ -877,6 +996,39 @@ export default class PolyLine {
       flowEpoch,
     });
 
+    return entity;
+  }
+
+  private addAreaDraft(viewer: Viewer, id: string, options: AddPolylineOptions): Entity | undefined {
+    const draftCarts = (options as AddPolylineOptions & DraftCartesiansOption).draftCartesians;
+    const cartesians = draftCarts?.length
+      ? cloneDraftPoints(draftCarts)
+      : resolvePolylineCartesians(options.positions, 1);
+    if (!cartesians) return undefined;
+
+    const lineKind = normalizeKind(options.lineKind);
+    const targetData = cloneTargetData(options.targetData);
+    markAreaDraftTargetData(targetData);
+    storePolylineMetadataFromOptions(targetData, options, cartesians, lineKind, viewer);
+
+    const entity = new Cesium.Entity({ id, show: options.show !== false });
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description);
+    }
+
+    const rec: PolylineRecord = {
+      viewer,
+      entity,
+      extraEntities: [],
+      targetData,
+      lineKind,
+      geometryMode: geometryModeForKind(lineKind),
+      flowEpoch: Cesium.JulianDate.clone(Cesium.JulianDate.now()),
+    };
+    setDraftPoints(rec, cartesians);
+    applyAreaDraftPolylineGraphics(rec);
+    viewer.entities.add(entity);
+    this.data.set(id, rec);
     return entity;
   }
 
@@ -925,6 +1077,31 @@ export default class PolyLine {
 
     const p = properties;
     const td = rec.targetData;
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p);
+      const draftCarts = (p as UpdatePolylineProperties & DraftCartesiansOption).draftCartesians;
+      if (draftCarts?.length) {
+        const next = cloneDraftPoints(draftCarts);
+        setDraftPoints(rec, next);
+        td.positionsSnapshot = cartesiansToLngLatHeightArray(next);
+      } else if (p.positions !== undefined) {
+        const next = resolvePolylineCartesians(p.positions, 1);
+        if (!next) return false;
+        setDraftPoints(rec, next);
+        td.positionsSnapshot = cartesiansToLngLatHeightArray(next);
+      } else {
+        const pts = getDraftPoints(rec);
+        if (pts.length >= 2) {
+          td.positionsSnapshot = cartesiansToLngLatHeightArray(pts);
+        }
+      }
+      return commitAreaDraftPolylineRecord(rec);
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p);
+    }
 
     if (p.targetData !== undefined) Object.assign(td, p.targetData);
     if (p.color !== undefined)
@@ -1024,6 +1201,68 @@ export default class PolyLine {
     return true;
   }
 
+  private applyStylePatchToTargetData(
+    rec: PolylineRecord,
+    p: UpdatePolylineProperties,
+  ): void {
+    const td = rec.targetData;
+    if (p.targetData !== undefined) Object.assign(td, p.targetData);
+    if (p.color !== undefined) {
+      td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color;
+    }
+    if (p.alpha !== undefined) td.alpha = p.alpha;
+    if (p.arcType !== undefined) td.arcType = p.arcType;
+    if (p.cornerType !== undefined) td.cornerType = p.cornerType;
+    if (p.clampToGround !== undefined) td.apiClampToGround = p.clampToGround;
+    if (p.polylineClampToGround !== undefined) {
+      td.polylineClampToGround = p.polylineClampToGround;
+    }
+    if (p.width !== undefined) td.lineWidth = p.width;
+    if (p.dashed) td.dashed = { ...p.dashed };
+    if (p.outline) td.outline = { ...p.outline };
+    if (p.glowing) td.glowing = { ...p.glowing };
+    if (p.flowing) td.flowing = { ...p.flowing };
+    if (p.gradient) td.gradient = { ...p.gradient };
+    if (p.volumeBlock) td.volumeBlock = { ...p.volumeBlock };
+    if (p.volumeTube) td.volumeTube = { ...p.volumeTube };
+    if (p.wall) td.wall = { ...p.wall };
+    if (p.arrow !== undefined) td.arrow = p.arrow ? { ...p.arrow } : undefined;
+    if (p.style) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style };
+    if (p.lineKind !== undefined) {
+      const nextKind = normalizeKind(p.lineKind);
+      td.lineKind = nextKind;
+      td.geometryMode = geometryModeForKind(nextKind);
+      if (nextKind !== "arrow") td.arrow = undefined;
+      td.polylineClampToGround = nextKind === "clamp_ground" ? 1 : 0;
+    }
+  }
+
+  private updateAreaDraft(rec: PolylineRecord, p: UpdatePolylineProperties): boolean {
+    const td = rec.targetData;
+    markAreaDraftTargetData(td);
+    this.applyStylePatchToTargetData(rec, p);
+
+    const draftCarts = (p as UpdatePolylineProperties & DraftCartesiansOption).draftCartesians;
+    if (draftCarts?.length) {
+      const next = cloneDraftPoints(draftCarts);
+      setDraftPoints(rec, next);
+      td.positionsSnapshot = cartesiansToLngLatHeightArray(next);
+    } else if (p.positions !== undefined) {
+      const next = resolvePolylineCartesians(p.positions, 1);
+      if (!next) return false;
+      setDraftPoints(rec, next);
+      td.positionsSnapshot = cartesiansToLngLatHeightArray(next);
+    }
+
+    applyAreaDraftPolylineGraphics(rec);
+
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
+    return true;
+  }
+
   updatePolylines(
     updates: Array<{ id: string } & UpdatePolylineProperties>,
   ): Array<{ id: string; success: boolean }> {
@@ -1054,7 +1293,7 @@ export default class PolyLine {
 
   getPolyline(id: string): PolylineSnapshot | null {
     const rec = this.takeIfAlive(id);
-    if (!rec) return null;
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null;
 
     const td = rec.targetData;
     const snap = td.positionsSnapshot as LngLatHeight[] | undefined;
@@ -1154,11 +1393,12 @@ export default class PolyLine {
     return this.takeIfAlive(id) !== undefined;
   }
 
-  getIds(viewer?: Viewer): string[] {
+  getIds(viewer?: Viewer, opts?: { includeDraft?: boolean }): string[] {
     const out: string[] = [];
     for (const [id, rec] of this.data) {
       if (!this.isRecordAlive(rec)) continue;
       if (viewer !== undefined && rec.viewer !== viewer) continue;
+      if (!opts?.includeDraft && isAreaDraftTargetData(rec.targetData)) continue;
       out.push(id);
     }
     return out;

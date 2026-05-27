@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { CylinderSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, CylinderSnapshot, LngLatHeight, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
@@ -13,6 +13,8 @@ const DEFAULT_FILL_COLOR = '#1890ff'
 const DEFAULT_OUTLINE_COLOR = '#ffffff'
 
 const mapStore = useMapLayerStore()
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const coordPickArmed = ref(false)
 const selectedEntityId = ref<string | null>(null)
 
@@ -53,6 +55,79 @@ let tableResizeObserver: ResizeObserver | null = null
 type MapMouseBinder = { listen: (options: MouseEventListenOptions) => void; destroy: () => void }
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+
+function haversineDistanceM(a: LngLatHeight, b: LngLatHeight): number {
+  const R = 6371008.8
+  const r0 = (a.latitude * Math.PI) / 180
+  const r1 = (b.latitude * Math.PI) / 180
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180
+  const dLon = ((b.longitude - a.longitude) * Math.PI) / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(r0) * Math.cos(r1) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+function syncCylinderFromAnchors(points: LngLatHeight[]): void {
+  if (points.length >= 1) {
+    formEntity.longitude = points[0]!.longitude
+    formEntity.latitude = points[0]!.latitude
+    formEntity.height = points[0]!.height ?? 0
+  }
+  if (points.length >= 2) {
+    const r = haversineDistanceM(points[0]!, points[1]!)
+    formEntity.topRadius = r
+    formEntity.bottomRadius = r
+  }
+}
+
+function buildCylinderStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'cylinder',
+    id: formEntity.id.trim() || undefined,
+    length: positiveLengthM(formEntity.length, 80_000),
+    topRadius: nonNegativeRadiusM(formEntity.topRadius, 15_000),
+    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 15_000),
+    headingDegrees: formEntity.headingDegrees,
+    pitchDegrees: formEntity.pitchDegrees,
+    rollDegrees: formEntity.rollDegrees,
+    color: formEntity.color,
+    alpha: fillAlphaForEntity(),
+    showFill: formEntity.showFill,
+    outline: formEntity.outline,
+    outlineColor: formEntity.outlineColor,
+    outlineAlpha: formEntity.outlineAlpha,
+    outlineWidth: formEntity.outlineWidth,
+    show: formEntity.show,
+    style: { slices: formEntity.slices },
+    targetData: { showFill: formEntity.showFill, slices: formEntity.slices },
+    preview: {
+      anchorPointColor: '#1890ff',
+      cursorPointColor: '#1890ff',
+      lineColor: formEntity.color,
+      fillColor: formEntity.color,
+      fillAlpha: formEntity.alpha,
+    },
+    onAnchorChange: (points) => {
+      syncCylinderFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'cylinder') return
+    stopAreaDraw()
+    message.success('已添加圆柱 / 圆锥')
+    refreshTable()
+    resetFormEntity()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -207,7 +282,9 @@ function nonNegativeRadiusM(n: unknown, fallback: number): number {
   return fallback
 }
 
-const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '标绘'))
+const primaryEntityText = computed(() =>
+  selectedEntityId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
@@ -254,6 +331,7 @@ function addEntityFromForm(): void {
   const C = window.FastX?.Cylinder
   const v = mapStore.getViewer()
   if (!C || !v || v.isDestroyed()) return
+  stopAreaDraw()
   coordPickArmed.value = false
   const idOpt = formEntity.id.trim() || undefined
   const entity = C.add(v, {
@@ -287,13 +365,51 @@ function addEntityFromForm(): void {
 }
 
 function onEntityPrimary(): void {
-  if (selectedEntityId.value) applyEntityUpdate()
-  else addEntityFromForm()
+  if (selectedEntityId.value) {
+    applyEntityUpdate()
+    return
+  }
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（轴心 + 边缘）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  formEntity.longitude = null
+  formEntity.latitude = null
+  const ok = am.start(v, buildCylinderStartParams())
+  if (!ok) {
+    message.error('无法开始圆柱 / 圆锥绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Cylinder 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addEntityFromForm()
 }
 
 function onCancelEntitySelect(): void {
   selectedEntityId.value = null
   coordPickArmed.value = false
+  stopAreaDraw()
   resetFormEntity()
 }
 
@@ -316,6 +432,7 @@ function onMapLeftClick(pick: MouseEventPickPayload): void {
 }
 
 function onEntityRowClick(record: CylinderSnapshot): void {
+  stopAreaDraw()
   coordPickArmed.value = false
   selectedEntityId.value = record.id
   const snap = window.FastX?.Cylinder?.getCylinder(record.id)
@@ -327,6 +444,7 @@ function onDeleteEntityRow(id: string, e: Event): void {
   window.FastX?.Cylinder?.remove(id)
   if (selectedEntityId.value === id) {
     selectedEntityId.value = null
+    stopAreaDraw()
     resetFormEntity()
   }
   refreshTable()
@@ -385,8 +503,10 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -396,6 +516,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef

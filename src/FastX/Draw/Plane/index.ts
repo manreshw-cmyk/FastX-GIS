@@ -21,6 +21,16 @@ import {
 } from "./planeShared";
 
 import type { AddPlaneOptions, PlaneCenterInput, PlanePositionsTuple, PlaneSnapshot, PlaneStyleOptions, UpdatePlaneProperties } from '../../Types'
+import {
+  clearAreaDraftTargetData,
+  commitEntityPosition,
+  draftRadiusFromPoints,
+  getDraftPoints,
+  isAreaDraftTargetData,
+  markAreaDraftTargetData,
+  setDraftPoints,
+  type AreaDraftPointsHolder,
+} from '../../Utils/areaDraft'
 export type { AddPlaneOptions, PlaneCenterInput, PlanePositionsTuple, PlaneSnapshot, PlaneStyleOptions, UpdatePlaneProperties }
 
 export {
@@ -35,7 +45,7 @@ export type {
   PlaneVideoOptions,
 } from "./planeShared";
 
-interface PlaneRecord {
+interface PlaneRecord extends AreaDraftPointsHolder {
   viewer: Viewer;
   entity: Entity;
   targetData: Record<string, unknown>;
@@ -45,6 +55,68 @@ interface PlaneRecord {
   videoElement?: HTMLVideoElement;
   videoEndedListener?: VideoEndedListener;
   videoOptions?: PlaneVideoOptions;
+}
+
+function createDraftPlaneCenterProperty(getPoints: () => Cesium.Cartesian3[]): Cesium.PositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const pts = getPoints();
+    return pts.length ? Cesium.Cartesian3.clone(pts[0]!) : Cesium.Cartesian3.ZERO;
+  }, false);
+}
+
+function resolvePlaneDimensionsFromTargetData(
+  td: Record<string, unknown>,
+  span: number,
+): { width: number; height: number } {
+  const raw = td.dimensions as { width?: number; height?: number } | undefined;
+  if (raw && typeof raw === "object") {
+    const w = finiteOr(raw.width, span);
+    const h = finiteOr(raw.height, span);
+    if (w > 0 && h > 0) return { width: w, height: h };
+  }
+  return { width: span, height: span };
+}
+
+function createDraftPlaneDimensionsProperty(
+  getPoints: () => Cesium.Cartesian3[],
+  td: Record<string, unknown>,
+): Cesium.Property {
+  return new Cesium.CallbackProperty(() => {
+    const raw = td.dimensions as { width?: number; height?: number } | undefined;
+    if (raw && typeof raw === "object" && finiteOr(raw.width, 0) > 0 && finiteOr(raw.height, 0) > 0) {
+      return new Cesium.Cartesian2(finiteOr(raw.width, 1), finiteOr(raw.height, 1));
+    }
+    const span = draftRadiusFromPoints(getPoints());
+    const dim = resolvePlaneDimensionsFromTargetData(td, span);
+    return new Cesium.Cartesian2(dim.width, dim.height);
+  }, false);
+}
+
+function applyAreaDraftGraphics(rec: PlaneRecord, options: AddPlaneOptions): void {
+  const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec);
+  rec.entity.position = createDraftPlaneCenterProperty(getPts);
+  attachPlaneOrientationCallback(rec);
+  const pg = new Cesium.PlaneGraphics();
+  pg.dimensions = createDraftPlaneDimensionsProperty(getPts, rec.targetData);
+  mergePlaneGraphics(pg, options, true, rec);
+  rec.entity.plane = pg;
+}
+
+function commitAreaDraftRecord(rec: PlaneRecord, options: AddPlaneOptions): boolean {
+  const pts = getDraftPoints(rec);
+  if (!pts.length) return false;
+  const center = pts[0]!;
+  const span = draftRadiusFromPoints(pts);
+  const dim = resolvePlaneDimensionsFromTargetData(rec.targetData, span);
+
+  clearAreaDraftTargetData(rec.targetData);
+  rec.draftPoints = undefined;
+
+  commitEntityPosition(rec.entity, center);
+  const pg = rec.entity.plane ?? (rec.entity.plane = new Cesium.PlaneGraphics());
+  pg.dimensions = new Cesium.ConstantProperty(new Cesium.Cartesian2(dim.width, dim.height));
+  mergePlaneGraphics(pg, options, true, rec);
+  return true;
 }
 
 const scratchCart = new Cesium.Cartesian3();
@@ -188,13 +260,25 @@ function createPlaneFillMaterial(
   const colorCss =
     (upd.color as string | undefined) ?? add.color ?? DEFAULT_COLOR;
   const alpha = finiteOr(upd.alpha ?? add.alpha, 0.85);
-  const imageUrl = (upd.imageUrl ?? add.imageUrl ?? st?.imageUrl)?.trim();
-  const videoUrl = (upd.videoUrl ?? add.videoUrl ?? st?.videoUrl)?.trim();
+  const td = options.targetData as Record<string, unknown> | undefined;
+  const imageUrl = (
+    upd.imageUrl ??
+    add.imageUrl ??
+    st?.imageUrl ??
+    (typeof td?.imageUrl === "string" ? td.imageUrl : undefined)
+  )?.trim();
+  const videoUrl = (
+    upd.videoUrl ??
+    add.videoUrl ??
+    st?.videoUrl ??
+    (typeof td?.videoUrl === "string" ? td.videoUrl : undefined)
+  )?.trim();
   const videoOpts = resolvePlaneVideoOptions(pickPlaneVideoFromSource(options));
   const repeat =
     upd.imageRepeat ??
     add.imageRepeat ??
     st?.imageRepeat ??
+    (td?.imageRepeat as { x?: number; y?: number } | undefined) ??
     DEFAULT_IMAGE_REPEAT;
 
   switch (materialType) {
@@ -468,6 +552,10 @@ export default class Plane {
       : createRandomXgxId("pln");
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined;
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options);
+    }
+
     const center = resolveCenterCartesian(options);
     if (!center) return undefined;
     if (!isFiniteCartesian3(center)) return undefined;
@@ -545,9 +633,90 @@ export default class Plane {
     return entity;
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddPlaneOptions): Entity | undefined {
+    const center = resolveCenterCartesian(options);
+    if (!center || !isFiniteCartesian3(center)) return undefined;
+
+    const dim = options.dimensions ?? DEFAULT_DIM;
+    const w = finiteOr(dim.width, DEFAULT_DIM.width);
+    const h = finiteOr(dim.height, DEFAULT_DIM.height);
+
+    const heading = finiteOr(options.headingDegrees, 0);
+    const pitch = finiteOr(options.pitchDegrees, 0);
+    const roll = finiteOr(options.rollDegrees, 0);
+    const materialType = resolvePlaneMaterialTypeFromSource(options, PlaneMaterialType.COLOR);
+
+    const entity = new Cesium.Entity({ id, show: options.show !== false });
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description);
+    }
+
+    const recordDraft: PlaneRecord = {
+      viewer,
+      entity,
+      targetData: {},
+      materialType,
+      orientationDeg: { heading, pitch, roll },
+    };
+
+    const mergedTd = syncPlaneTargetData(
+      this.cloneTargetData(options.targetData),
+      center,
+      { width: w, height: h },
+      { heading, pitch, roll },
+      materialType,
+      options.color ?? DEFAULT_COLOR,
+      finiteOr(options.alpha, 0.85),
+      options.imageUrl,
+      options.videoUrl,
+      undefined,
+      options.imageRepeat ?? DEFAULT_IMAGE_REPEAT,
+      options.outline === true,
+      options.outlineColor ?? DEFAULT_OUTLINE,
+      finiteOr(options.outlineAlpha, 0.9),
+      finiteOr(options.outlineWidth, 1),
+      options.fill !== false,
+    );
+    markAreaDraftTargetData(mergedTd);
+    recordDraft.targetData = mergedTd;
+
+    const pts: Cesium.Cartesian3[] = [Cesium.Cartesian3.clone(center)];
+    const carto = Cesium.Cartographic.fromCartesian(center);
+    pts.push(
+      Cesium.Cartesian3.fromRadians(
+        carto.longitude + w / Cesium.Ellipsoid.WGS84.maximumRadius,
+        carto.latitude,
+        carto.height,
+      ),
+    );
+    setDraftPoints(recordDraft, pts);
+    applyAreaDraftGraphics(recordDraft, options);
+    viewer.entities.add(entity);
+    this.data.set(id, recordDraft);
+    return entity;
+  }
+
   updatePlane(id: string, properties: UpdatePlaneProperties): boolean {
     const rec = this.takeIfAlive(id);
     if (!rec) return false;
+
+    const td = rec.targetData;
+
+    if (properties.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, properties);
+      if (properties.position !== undefined) {
+        const c = toCartesian3(properties.position);
+        setDraftPoints(rec, [c]);
+      }
+      return commitAreaDraftRecord(rec, {
+        ...properties,
+        position: properties.position ?? { longitude: 0, latitude: 0 },
+      } as AddPlaneOptions);
+    }
+
+    if (isAreaDraftTargetData(td) || properties.areaDraft === true) {
+      return this.updateAreaDraft(rec, properties);
+    }
 
     let center: Cesium.Cartesian3 | undefined;
     if (properties.position !== undefined) {
@@ -627,15 +796,14 @@ export default class Plane {
     const oc = sampleProperty<Color>(pg.outlineColor);
     const ow = finiteOr(sampleProperty<number>(pg.outlineWidth), 1);
 
-    const td = rec.targetData;
     const imageUrl = (properties.imageUrl ??
       properties.style?.imageUrl ??
-      td.imageUrl) as string | undefined;
+      rec.targetData.imageUrl) as string | undefined;
     const videoUrl = (properties.videoUrl ??
       properties.style?.videoUrl ??
-      td.videoUrl) as string | undefined;
+      rec.targetData.videoUrl) as string | undefined;
     const imageRepeatRaw =
-      properties.imageRepeat ?? properties.style?.imageRepeat ?? td.imageRepeat;
+      properties.imageRepeat ?? properties.style?.imageRepeat ?? rec.targetData.imageRepeat;
     const imageRepeat =
       imageRepeatRaw && typeof imageRepeatRaw === "object"
         ? {
@@ -652,7 +820,7 @@ export default class Plane {
     const videoRaw =
       properties.video ??
       properties.style?.video ??
-      (td.video as PlaneVideoOptions | undefined);
+      (rec.targetData.video as PlaneVideoOptions | undefined);
     const videoOpts =
       rec.materialType === PlaneMaterialType.VIDEO
         ? resolvePlaneVideoOptions(videoRaw ?? rec.videoOptions)
@@ -668,8 +836,8 @@ export default class Plane {
       { heading, pitch, roll },
       rec.materialType,
       colorToCss(fillCol) ??
-        (typeof td.color === "string" ? td.color : undefined),
-      finiteOr(fillCol?.alpha, finiteOr(td.alpha, 1)),
+        (typeof rec.targetData.color === "string" ? rec.targetData.color : undefined),
+      finiteOr(fillCol?.alpha, finiteOr(rec.targetData.alpha as number, 1)),
       typeof imageUrl === "string" && imageUrl.trim()
         ? imageUrl.trim()
         : undefined,
@@ -684,6 +852,56 @@ export default class Plane {
       ow,
       sampleProperty<boolean>(pg.fill) !== false,
     );
+    requestSceneRender(rec.viewer);
+    return true;
+  }
+
+  private applyStylePatchToTargetData(rec: PlaneRecord, p: UpdatePlaneProperties): void {
+    if (p.targetData !== undefined) {
+      rec.targetData = { ...rec.targetData, ...p.targetData };
+    }
+    if (p.dimensions !== undefined) {
+      rec.targetData.dimensions = {
+        width: finiteOr(p.dimensions.width, DEFAULT_DIM.width),
+        height: finiteOr(p.dimensions.height, DEFAULT_DIM.height),
+      };
+    }
+    if (p.headingDegrees !== undefined) rec.orientationDeg.heading = finiteOr(p.headingDegrees, 0);
+    if (p.pitchDegrees !== undefined) rec.orientationDeg.pitch = finiteOr(p.pitchDegrees, 0);
+    if (p.rollDegrees !== undefined) rec.orientationDeg.roll = finiteOr(p.rollDegrees, 0);
+  }
+
+  private updateAreaDraft(rec: PlaneRecord, p: UpdatePlaneProperties): boolean {
+    markAreaDraftTargetData(rec.targetData);
+    this.applyStylePatchToTargetData(rec, p);
+
+    if (p.position !== undefined) {
+      setDraftPoints(rec, [toCartesian3(p.position)]);
+    } else if (p.longitude !== undefined && p.latitude !== undefined) {
+      const h = finiteOr(p.height, finiteOr(rec.targetData.height as number, 0));
+      setDraftPoints(rec, [
+        Cesium.Cartesian3.fromDegrees(
+          finiteOr(p.longitude, 0),
+          finiteOr(p.latitude, 0),
+          h,
+        ),
+      ]);
+    }
+
+    if (p.headingDegrees !== undefined) rec.orientationDeg.heading = finiteOr(p.headingDegrees, 0);
+    if (p.pitchDegrees !== undefined) rec.orientationDeg.pitch = finiteOr(p.pitchDegrees, 0);
+    if (p.rollDegrees !== undefined) rec.orientationDeg.roll = finiteOr(p.rollDegrees, 0);
+
+    rec.entity.position = createDraftPlaneCenterProperty(() => getDraftPoints(rec));
+    attachPlaneOrientationCallback(rec);
+    const pl = rec.entity.plane ?? (rec.entity.plane = new Cesium.PlaneGraphics());
+    pl.dimensions = createDraftPlaneDimensionsProperty(() => getDraftPoints(rec), rec.targetData);
+    mergePlaneGraphics(pl, p, true, rec);
+
+    if (p.show !== undefined) rec.entity.show = p.show;
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description);
+    }
     requestSceneRender(rec.viewer);
     return true;
   }
@@ -751,7 +969,7 @@ export default class Plane {
 
   getPlane(id: string): PlaneSnapshot | null {
     const rec = this.takeIfAlive(id);
-    if (!rec) return null;
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null;
     const pos = sampleProperty<Cesium.Cartesian3>(rec.entity.position);
     if (
       !pos ||

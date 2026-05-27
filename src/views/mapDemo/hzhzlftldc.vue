@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { BoxSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, BoxSnapshot, LngLatHeight, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
@@ -15,6 +15,8 @@ const DEFAULT_OUTLINE = '#ffffff'
 
 const mapStore = useMapLayerStore()
 
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const plotArmed = ref(false)
 const selectedId = ref<string | null>(null)
 
@@ -23,9 +25,9 @@ const form = reactive({
   longitude: 120.95,
   latitude: 23.75,
   height: 0,
-  dimX: 200,
-  dimY: 200,
-  dimZ: 200,
+  dimX: 20000,
+  dimY: 20000,
+  dimZ: 20000,
   color: DEFAULT_FILL,
   alpha: 0.75,
   outline: true,
@@ -47,6 +49,70 @@ type MapMouseBinder = {
 
 let viewerRef: Viewer | null = null
 let mouseBinder: MapMouseBinder | null = null
+
+function syncBoxFromAnchors(points: LngLatHeight[]): void {
+  if (points.length >= 1) {
+    form.longitude = points[0]!.longitude
+    form.latitude = points[0]!.latitude
+    form.height = points[0]!.height ?? 0
+  }
+  if (points.length >= 2) {
+    form.longitude = (points[0]!.longitude + points[1]!.longitude) / 2
+    form.latitude = (points[0]!.latitude + points[1]!.latitude) / 2
+    form.height = ((points[0]!.height ?? 0) + (points[1]!.height ?? 0)) / 2
+  }
+}
+
+function buildBoxStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'box',
+    id: form.id.trim() || undefined,
+    height: 0,
+    dimensions: [form.dimX, form.dimY, form.dimZ],
+    color: form.color,
+    alpha: form.alpha,
+    outline: form.outline,
+    outlineColor: form.outlineColor,
+    outlineAlpha: form.outlineAlpha,
+    outlineWidth: form.outline ? form.outlineWidth : 0,
+    show: form.show,
+    targetData: {
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineAlpha: form.outlineAlpha,
+    },
+    preview: {
+      anchorPointColor: '#00bcd4',
+      cursorPointColor: '#00bcd4',
+      lineColor: form.color,
+      fillColor: form.color,
+      fillAlpha: form.alpha,
+      outlineColor: form.outlineColor,
+      outlineWidth: form.outlineWidth,
+    },
+    onAnchorChange: (points) => {
+      syncBoxFromAnchors(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'box') return
+    stopAreaDraw()
+    message.success('已添加盒子')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -101,9 +167,9 @@ function resetFormToInitial(): void {
   form.longitude = 120.95
   form.latitude = 23.75
   form.height = 0
-  form.dimX = 200
-  form.dimY = 200
-  form.dimZ = 200
+  form.dimX = 20000
+  form.dimY = 20000
+  form.dimZ = 20000
   form.color = DEFAULT_FILL
   form.alpha = 0.75
   form.outline = true
@@ -116,6 +182,7 @@ function resetFormToInitial(): void {
 function onCancelSelect(): void {
   selectedId.value = null
   plotArmed.value = false
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -126,6 +193,7 @@ function onColorPick(field: 'color' | 'outlineColor', ev: Event): void {
 }
 
 function onRowClick(record: BoxSnapshot): void {
+  stopAreaDraw()
   plotArmed.value = false
   selectedId.value = record.id
   const snap = window.FastX?.Box?.getBox(record.id)
@@ -138,22 +206,16 @@ function onDeleteRow(id: string, e: Event): void {
   if (selectedId.value === id) {
     selectedId.value = null
     plotArmed.value = false
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
   message.success('已删除')
 }
 
-const primaryButtonText = computed(() => {
-  if (selectedId.value) return '确定'
-  if (plotArmed.value) return '取消标绘'
-  return '标绘'
-})
-
-const primaryButtonType = computed(() => {
-  if (plotArmed.value && !selectedId.value) return 'default' as const
-  return 'primary' as const
-})
+const primaryButtonText = computed(() =>
+  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
+)
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
@@ -187,14 +249,39 @@ function onPrimaryClick(): void {
     applyUpdateToSelected()
     return
   }
-  if (plotArmed.value) {
-    plotArmed.value = false
-    resetFormToInitial()
-    message.info('已取消标绘')
+
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
     return
   }
-  plotArmed.value = true
-  message.info('请在地图上左键点击放置盒子，放置成功后自动结束标绘')
+
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 2) {
+      message.warning('至少需要 2 个点（对角）')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  plotArmed.value = false
+  const ok = am.start(v, buildBoxStartParams())
+  if (!ok) {
+    message.error('无法开始盒子绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+
+  // --- Box 单类 add（不用空域管理时注释上一段，改用下方 onMapLeftClick）---
 }
 
 function onMapLeftClick(pick: MouseEventPickPayload): void {
@@ -297,8 +384,10 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
+  // bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -310,6 +399,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   mouseBinder?.destroy()
   mouseBinder = null
   const v = viewerRef
@@ -448,7 +540,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <a-button
-                      :type="primaryButtonType"
+                      type="primary"
                       block
                       class="map-tool-primary-btn hzd-primary-tall"
                       @click="onPrimaryClick"

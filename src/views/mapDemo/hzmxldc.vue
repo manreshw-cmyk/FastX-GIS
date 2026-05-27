@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
-import type { ModelSnapshot, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
+import type { AreaDrawStartParams, LngLatHeight, ModelSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
@@ -11,7 +11,8 @@ const title = '绘制（Model）模型类（底层entity）'
 
 const mapStore = useMapLayerStore()
 
-const plotArmed = ref(false)
+let am = window.FastX?.AreaManager
+const isAreaDrawing = ref(false)
 const selectedId = ref<string | null>(null)
 
 const form = reactive({
@@ -40,13 +41,53 @@ let modelBlobUrl: string | null = null
 /** 本页创建过的 blob URL，卸载前统一释放 */
 const createdBlobUrls = new Set<string>()
 
-type MapMouseBinder = {
-  listen: (options: MouseEventListenOptions) => void
-  destroy: () => void
+let viewerRef: Viewer | null = null
+
+function syncFormFromPick(points: LngLatHeight[]): void {
+  const p = points[points.length - 1]
+  if (!p) return
+  form.longitude = p.longitude
+  form.latitude = p.latitude
+  form.height = p.height ?? 0
 }
 
-let viewerRef: Viewer | null = null
-let mouseBinder: MapMouseBinder | null = null
+function buildModelStartParams(): AreaDrawStartParams {
+  return {
+    shapeType: 'model',
+    id: form.id.trim() || undefined,
+    height: 0,
+    uri: form.modelUri.trim(),
+    scale: form.scale,
+    minimumPixelSize: form.minimumPixelSize,
+    runAnimations: form.runAnimations,
+    headingDegrees: form.headingDegrees,
+    pitchDegrees: form.pitchDegrees,
+    rollDegrees: form.rollDegrees,
+    show: form.show,
+    targetData: { modelUri: form.modelUri.trim() },
+    preview: { anchorPointColor: '#1890ff', cursorPointColor: '#1890ff' },
+    onAnchorChange: (points) => {
+      syncFormFromPick(points)
+      if (points.length === 0) isAreaDrawing.value = false
+    },
+  }
+}
+
+function stopAreaDraw(): void {
+  am?.cancel()
+  isAreaDrawing.value = false
+}
+
+function setupAreaManagerPublish(): void {
+  if (!am) return
+  am.publish((result) => {
+    if (result.shapeType !== 'model') return
+    stopAreaDraw()
+    message.success('已添加模型')
+    refreshTable()
+    resetFormToInitial()
+  })
+}
 
 function revokeBlobIfUnused(url: string | null): void {
   if (!url || !url.startsWith('blob:')) return
@@ -122,7 +163,7 @@ function resetFormToInitial(): void {
 
 function onCancelSelect(): void {
   selectedId.value = null
-  plotArmed.value = false
+  stopAreaDraw()
   resetFormToInitial()
 }
 
@@ -150,7 +191,7 @@ function onModelFile(ev: Event): void {
 }
 
 function onRowClick(record: ModelSnapshot): void {
-  plotArmed.value = false
+  stopAreaDraw()
   selectedId.value = record.id
   const snap = window.FastX?.Model?.getModel(record.id)
   if (snap) fillFormFromSnapshot(snap)
@@ -161,7 +202,7 @@ function onDeleteRow(id: string, e: Event): void {
   window.FastX?.Model?.remove(id)
   if (selectedId.value === id) {
     selectedId.value = null
-    plotArmed.value = false
+    stopAreaDraw()
     resetFormToInitial()
   }
   refreshTable()
@@ -170,14 +211,80 @@ function onDeleteRow(id: string, e: Event): void {
 
 const primaryButtonText = computed(() => {
   if (selectedId.value) return '确定'
-  if (plotArmed.value) return '取消标绘'
-  return '标绘'
+  return isAreaDrawing.value ? '完成标绘' : '绘制'
 })
 
-const primaryButtonType = computed(() => {
-  if (plotArmed.value && !selectedId.value) return 'default' as const
-  return 'primary' as const
-})
+function addModelFromForm(): void {
+  if (!form.modelUri.trim()) {
+    message.warning('请先上传 .glb 或 .gltf 模型')
+    return
+  }
+  const M = window.FastX?.Model
+  const v = mapStore.getViewer()
+  if (!M || !v || v.isDestroyed()) return
+  stopAreaDraw()
+  const idOpt = form.id.trim() || undefined
+  const entity = M.add(v, {
+    id: idOpt,
+    position: { longitude: form.longitude, latitude: form.latitude, height: form.height },
+    uri: form.modelUri.trim(),
+    scale: form.scale,
+    minimumPixelSize: form.minimumPixelSize,
+    runAnimations: form.runAnimations,
+    headingDegrees: form.headingDegrees,
+    pitchDegrees: form.pitchDegrees,
+    rollDegrees: form.rollDegrees,
+    show: form.show,
+    targetData: { modelUri: form.modelUri.trim() },
+  })
+  if (!entity) {
+    message.error('添加失败：id 可能重复，或模型地址无效')
+    return
+  }
+  message.success('已添加模型')
+  refreshTable()
+  resetFormToInitial()
+}
+
+function onPrimaryClick(): void {
+  if (selectedId.value) {
+    applyUpdateToSelected()
+    return
+  }
+  if (!form.modelUri.trim()) {
+    message.warning('请先上传 .glb 或 .gltf 模型后再开始绘制')
+    return
+  }
+  am = window.FastX?.AreaManager
+  if (!am) {
+    message.error('FastX.AreaManager 未就绪')
+    return
+  }
+  // --- 空域管理：鼠标绘制 start / end ---
+  if (isAreaDrawing.value) {
+    if (am.pointCount < 1) {
+      message.warning('至少需要 1 个点')
+      return
+    }
+    am.end()
+    isAreaDrawing.value = false
+    return
+  }
+  const v = mapStore.getViewer()
+  if (!v || v.isDestroyed()) {
+    message.error('地图未就绪')
+    return
+  }
+  const ok = am.start(v, buildModelStartParams())
+  if (!ok) {
+    message.error('无法开始模型绘制')
+    return
+  }
+  isAreaDrawing.value = true
+  message.info('鼠标左键点击绘制，右键结束')
+  // --- Model 单类 add（不用空域管理时注释上一段，改用下方）---
+  // addModelFromForm()
+}
 
 function applyUpdateToSelected(): void {
   const id = selectedId.value
@@ -208,79 +315,6 @@ function applyUpdateToSelected(): void {
   } else {
     message.error('保存失败，请确认该模型仍存在')
   }
-}
-
-function onPrimaryClick(): void {
-  if (selectedId.value) {
-    applyUpdateToSelected()
-    return
-  }
-  if (plotArmed.value) {
-    plotArmed.value = false
-    resetFormToInitial()
-    message.info('已取消标绘')
-    return
-  }
-  if (!form.modelUri.trim()) {
-    message.warning('请先上传 .glb 或 .gltf 模型后再开始标绘')
-    return
-  }
-  plotArmed.value = true
-  message.info('请在地图上左键点击放置模型，放置成功后自动结束标绘')
-}
-
-function onMapLeftClick(pick: MouseEventPickPayload): void {
-  if (!plotArmed.value || selectedId.value) return
-  if (Number.isNaN(pick.longitude) || Number.isNaN(pick.latitude)) {
-    message.warning('未能拾取到有效坐标，请点在地球可见区域后重试')
-    return
-  }
-  const M = window.FastX?.Model
-  const v = mapStore.getViewer()
-  if (!M || !v || v.isDestroyed()) return
-
-  const idOpt = form.id.trim() || undefined
-  const entity = M.add(v, {
-    id: idOpt,
-    position: {
-      longitude: pick.longitude,
-      latitude: pick.latitude,
-      height: Number.isNaN(pick.height) ? form.height : pick.height,
-    },
-    uri: form.modelUri.trim(),
-    scale: form.scale,
-    minimumPixelSize: form.minimumPixelSize,
-    runAnimations: form.runAnimations,
-    headingDegrees: form.headingDegrees,
-    pitchDegrees: form.pitchDegrees,
-    rollDegrees: form.rollDegrees,
-    show: form.show,
-    targetData: { modelUri: form.modelUri.trim() },
-  })
-
-  if (!entity) {
-    message.error('添加失败：id 可能重复，或模型地址无效')
-    plotArmed.value = false
-    return
-  }
-  plotArmed.value = false
-  message.success('已添加模型')
-  refreshTable()
-  resetFormToInitial()
-}
-
-function bindMouse(v: Viewer): void {
-  const Ctor = window.FastX?.MouseEvent as (new (viewer: Viewer) => MapMouseBinder) | undefined
-  if (!Ctor) {
-    message.error('window.FastX.MouseEvent 未就绪')
-    return
-  }
-  mouseBinder?.destroy()
-  const binder = new Ctor(v)
-  binder.listen({
-    onLeftClick: (pick: MouseEventPickPayload) => onMapLeftClick(pick),
-  })
-  mouseBinder = binder
 }
 
 const columns: TableColumnType<ModelSnapshot>[] = [
@@ -329,8 +363,9 @@ onMounted(async () => {
     return
   }
   viewerRef = v
+  am = window.FastX?.AreaManager
+  setupAreaManagerPublish()
   refreshTable()
-  bindMouse(v)
   await nextTick()
   updateTableScrollY()
   tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
@@ -342,8 +377,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   tableResizeObserver?.disconnect()
   tableResizeObserver = null
-  mouseBinder?.destroy()
-  mouseBinder = null
+  am?.cancel()
+  am?.unpublish()
+  isAreaDrawing.value = false
   const v = viewerRef
   viewerRef = null
   if (v && !v.isDestroyed()) {
@@ -489,7 +525,7 @@ onBeforeUnmount(() => {
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
                     <a-button
-                      :type="primaryButtonType"
+                      type="primary"
                       block
                       class="map-tool-primary-btn hzd-primary-tall"
                       @click="onPrimaryClick"

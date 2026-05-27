@@ -2,8 +2,15 @@ import * as Cesium from 'cesium'
 import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId, type LngLatHeight } from '../../Coordinates'
 
-import type { AddPolygonOptions, PolygonSnapshot, PolygonStyleOptions, UpdatePolygonProperties } from '../../Types'
+import {
+  AREA_DRAFT_TARGET_KEY,
+  type AddPolygonOptions,
+  type PolygonSnapshot,
+  type PolygonStyleOptions,
+  type UpdatePolygonProperties,
+} from '../../Types'
 export type { AddPolygonOptions, PolygonSnapshot, PolygonStyleOptions, UpdatePolygonProperties }
+export { AREA_DRAFT_TARGET_KEY }
 
 /** 多边形顶点：[经度, 纬度, 高度?]（度 / 米） */
 export type PolygonLngLatTuple = readonly [lng: number, lat: number, height?: number]
@@ -15,6 +22,12 @@ interface PolygonRecord {
   viewer: Viewer
   entity: Entity
   targetData: Record<string, unknown>
+  /** 空域草稿：动态外环（锚点 + 鼠标），由 CallbackProperty 读取 */
+  draftRing?: Cesium.Cartesian3[]
+}
+
+function isAreaDraftTargetData(td: Record<string, unknown>): boolean {
+  return td[AREA_DRAFT_TARGET_KEY] === true
 }
 
 function colorFromString(css: string, alpha = 1): Color {
@@ -42,9 +55,181 @@ function vertexToCartesian3(v: PolygonVertexInput, result = new Cesium.Cartesian
   return Cesium.Cartesian3.fromDegrees(p.longitude, p.latitude, h, undefined, result)
 }
 
-function ringToCartesian3Array(ring: PolygonVertexInput[]): Cesium.Cartesian3[] | undefined {
-  if (!Array.isArray(ring) || ring.length < 3) return undefined
+function ringToCartesian3Array(
+  ring: PolygonVertexInput[],
+  minVertices = 3,
+): Cesium.Cartesian3[] | undefined {
+  if (!Array.isArray(ring) || ring.length < minVertices) return undefined
   return ring.map((p) => vertexToCartesian3(p))
+}
+
+function resolvePolygonStyleFromTargetData(td: Record<string, unknown>): {
+  showFill: boolean
+  alpha: number
+  fillColor: Color
+  outline: boolean
+  outlineColor: Color
+  outlineWidth: number
+  extruded?: number
+  perPositionHeight: boolean
+  style?: PolygonStyleOptions
+} {
+  const showFill = td.showFill !== false
+  const alpha = typeof td.alpha === 'number' ? td.alpha : 1
+  const fillColor =
+    toColor(String(td.color ?? '#3388ff'), showFill ? alpha : 0) ?? Cesium.Color.BLUE.withAlpha(showFill ? alpha : 0)
+  const outline = td.outline !== false
+  const outlineColor =
+    toColor(String(td.outlineColor ?? '#ffffff'), typeof td.outlineAlpha === 'number' ? td.outlineAlpha : 1) ??
+    Cesium.Color.WHITE
+  const outlineWidth = typeof td.outlineWidth === 'number' ? td.outlineWidth : 2
+  const extruded =
+    typeof td.extrudedHeight === 'number' && Number.isFinite(td.extrudedHeight) && td.extrudedHeight !== 0
+      ? td.extrudedHeight
+      : undefined
+  const perPositionHeight = (td.styleSnapshot as PolygonStyleOptions | undefined)?.perPositionHeight !== false
+  return {
+    showFill,
+    alpha,
+    fillColor,
+    outline,
+    outlineColor,
+    outlineWidth,
+    extruded,
+    perPositionHeight,
+    style: td.styleSnapshot as PolygonStyleOptions | undefined,
+  }
+}
+
+function draftPolylinePositions(ring: Cesium.Cartesian3[]): Cesium.Cartesian3[] {
+  if (ring.length >= 2) return ring
+  if (ring.length === 1) {
+    const p = ring[0]!
+    return [p, Cesium.Cartesian3.clone(p)]
+  }
+  return [Cesium.Cartesian3.ZERO, Cesium.Cartesian3.ZERO]
+}
+
+function draftPolygonHierarchy(ring: Cesium.Cartesian3[]): Cesium.PolygonHierarchy {
+  if (ring.length >= 3) return new Cesium.PolygonHierarchy(ring)
+  if (ring.length === 2) {
+    const a = ring[0]!
+    const b = ring[1]!
+    return new Cesium.PolygonHierarchy([a, b, Cesium.Cartesian3.clone(a)])
+  }
+  if (ring.length === 1) {
+    const p = ring[0]!
+    return new Cesium.PolygonHierarchy([p, Cesium.Cartesian3.clone(p), Cesium.Cartesian3.clone(p)])
+  }
+  const z = Cesium.Cartesian3.ZERO
+  return new Cesium.PolygonHierarchy([z, z, z])
+}
+
+function applyAreaDraftGraphics(rec: PolygonRecord): void {
+  const entity = rec.entity
+  const st = resolvePolygonStyleFromTargetData(rec.targetData)
+  const getRing = (): Cesium.Cartesian3[] => rec.draftRing ?? []
+
+  entity.polyline = new Cesium.PolylineGraphics({
+    positions: new Cesium.CallbackProperty(() => draftPolylinePositions(getRing()), false),
+    width: new Cesium.ConstantProperty(Math.max(st.outlineWidth, 2)),
+    material: new Cesium.ColorMaterialProperty(st.outlineColor),
+    show: new Cesium.CallbackProperty(() => {
+      const n = getRing().length
+      return n > 0 && n < 3
+    }, false),
+  })
+
+  const polygon = new Cesium.PolygonGraphics()
+  polygon.hierarchy = new Cesium.CallbackProperty(() => draftPolygonHierarchy(getRing()), false)
+  polygon.fill = new Cesium.ConstantProperty(st.showFill)
+  polygon.material = new Cesium.ColorMaterialProperty(st.fillColor)
+  polygon.outline = new Cesium.ConstantProperty(st.outline)
+  polygon.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+  polygon.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+  polygon.perPositionHeight = new Cesium.ConstantProperty(st.perPositionHeight)
+  polygon.show = new Cesium.CallbackProperty(() => getRing().length >= 3, false)
+  if (st.extruded !== undefined) {
+    polygon.extrudedHeight = new Cesium.ConstantProperty(st.extruded)
+  }
+  const style = st.style
+  if (style?.arcType !== undefined) polygon.arcType = new Cesium.ConstantProperty(style.arcType)
+  if (style?.granularity !== undefined) polygon.granularity = new Cesium.ConstantProperty(style.granularity)
+  if (style?.shadows !== undefined) polygon.shadows = new Cesium.ConstantProperty(style.shadows)
+  if (style?.distanceDisplayCondition !== undefined) {
+    polygon.distanceDisplayCondition = new Cesium.ConstantProperty(style.distanceDisplayCondition)
+  }
+  if (style?.classificationType !== undefined) {
+    polygon.classificationType = new Cesium.ConstantProperty(style.classificationType)
+  }
+  if (style?.zIndex !== undefined) polygon.zIndex = new Cesium.ConstantProperty(style.zIndex)
+
+  entity.polygon = polygon
+}
+
+function refreshAreaDraftStyle(rec: PolygonRecord): void {
+  if (!rec.draftRing) return
+  const st = resolvePolygonStyleFromTargetData(rec.targetData)
+  const pg = rec.entity.polygon
+  const pl = rec.entity.polyline
+  if (pg) {
+    pg.fill = new Cesium.ConstantProperty(st.showFill)
+    pg.material = new Cesium.ColorMaterialProperty(st.fillColor)
+    pg.outline = new Cesium.ConstantProperty(st.outline)
+    pg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
+    pg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
+    pg.perPositionHeight = new Cesium.ConstantProperty(st.perPositionHeight)
+    if (st.extruded !== undefined) {
+      pg.extrudedHeight = new Cesium.ConstantProperty(st.extruded)
+    } else {
+      pg.extrudedHeight = undefined
+    }
+  }
+  if (pl) {
+    pl.width = new Cesium.ConstantProperty(Math.max(st.outlineWidth, 2))
+    pl.material = new Cesium.ColorMaterialProperty(st.outlineColor)
+  }
+}
+
+function commitAreaDraftRecord(rec: PolygonRecord): boolean {
+  const ring = ringToCartesian3Array(
+    (rec.targetData.positions as number[][]).map(
+      (t) => [Number(t[0]), Number(t[1]), Number(t[2] ?? 0)] as PolygonLngLatTuple,
+    ),
+    3,
+  )
+  if (!ring) return false
+
+  const st = resolvePolygonStyleFromTargetData(rec.targetData)
+  const pl = rec.entity.polyline
+  if (pl) {
+    pl.positions = new Cesium.ConstantProperty(ring)
+    pl.show = new Cesium.ConstantProperty(false)
+  }
+
+  const pg = rec.entity.polygon ?? (rec.entity.polygon = new Cesium.PolygonGraphics())
+  mergePolygonGraphics(
+    pg,
+    {
+      hierarchy: new Cesium.PolygonHierarchy(ring),
+      fillColor: st.fillColor,
+      showFill: st.showFill,
+      outline: st.outline,
+      outlineColor: st.outlineColor,
+      outlineWidth: st.outlineWidth,
+      extrudedHeight: st.extruded,
+      perPositionHeight: st.perPositionHeight,
+      style: st.style,
+    },
+    false,
+  )
+  pg.show = new Cesium.ConstantProperty(rec.entity.show !== false)
+
+  delete rec.targetData[AREA_DRAFT_TARGET_KEY]
+  rec.draftRing = undefined
+  // 仅隐藏草稿折线，勿置 undefined（否则下一帧 PolylineVisualizer 仍可能访问已释放几何）
+
+  return true
 }
 
 /** `hierarchy` 采样失败时从 `targetData.positions` 还原外环 */
@@ -179,6 +364,10 @@ export default class Polygon {
     const id = options.id?.trim() ? options.id.trim() : createRandomXgxId('poly')
     if (this.data.has(id) || viewer.entities.getById(id)) return undefined
 
+    if (options.areaDraft) {
+      return this.addAreaDraft(viewer, id, options)
+    }
+
     const cartesianRing = ringToCartesian3Array(options.positions)
     if (!cartesianRing) return undefined
 
@@ -237,6 +426,48 @@ export default class Polygon {
     return entity
   }
 
+  private addAreaDraft(viewer: Viewer, id: string, options: AddPolygonOptions): Entity | undefined {
+    const cartesianRing = ringToCartesian3Array(options.positions, 1)
+    if (!cartesianRing) return undefined
+
+    const showFill = options.showFill !== false
+    const alpha = options.alpha ?? 1
+    const outline = options.outline !== false
+    const extrudedHeight = options.extrudedHeight
+
+    const td = this.cloneTargetData(options.targetData)
+    td[AREA_DRAFT_TARGET_KEY] = true
+    td.positions = ringToNumberTuples(options.positions)
+    td.extrudedHeight = extrudedHeight ?? 0
+    td.color = options.color ?? '#3388ff'
+    td.alpha = alpha
+    td.showFill = showFill
+    td.outline = outline
+    td.outlineColor = options.outlineColor ?? '#ffffff'
+    td.outlineAlpha = options.outlineAlpha ?? 1
+    td.outlineWidth = options.outlineWidth ?? 2
+    if (options.style) td.styleSnapshot = { ...options.style }
+
+    const entity = new Cesium.Entity({
+      id,
+      show: options.show !== false,
+    })
+    if (options.description !== undefined) {
+      entity.description = new Cesium.ConstantProperty(options.description)
+    }
+
+    const rec: PolygonRecord = {
+      viewer,
+      entity,
+      targetData: td,
+      draftRing: cartesianRing.map((c) => Cesium.Cartesian3.clone(c)),
+    }
+    applyAreaDraftGraphics(rec)
+    viewer.entities.add(entity)
+    this.data.set(id, rec)
+    return entity
+  }
+
   addPolygons(viewer: Viewer, items: AddPolygonOptions[]): string[] {
     if (!viewer || viewer.isDestroyed() || !Array.isArray(items) || items.length === 0) return []
     const ids: string[] = []
@@ -258,6 +489,20 @@ export default class Polygon {
     if (!rec) return false
     const p = properties
     const td = rec.targetData
+
+    if (p.areaDraft === false && isAreaDraftTargetData(td)) {
+      this.applyStylePatchToTargetData(rec, p)
+      if (p.positions !== undefined) {
+        const ring = ringToCartesian3Array(p.positions, 3)
+        if (!ring) return false
+        td.positions = ringToNumberTuples(p.positions)
+      }
+      return commitAreaDraftRecord(rec)
+    }
+
+    if (isAreaDraftTargetData(td) || p.areaDraft === true) {
+      return this.updateAreaDraft(rec, p)
+    }
 
     if (p.targetData !== undefined) Object.assign(td, p.targetData)
 
@@ -348,6 +593,43 @@ export default class Polygon {
     return true
   }
 
+  private applyStylePatchToTargetData(rec: PolygonRecord, p: UpdatePolygonProperties): void {
+    const td = rec.targetData
+    if (p.targetData !== undefined) Object.assign(td, p.targetData)
+    if (p.extrudedHeight !== undefined) td.extrudedHeight = p.extrudedHeight
+    if (p.color !== undefined) td.color = p.color instanceof Cesium.Color ? colorToCss(p.color) : p.color
+    if (p.alpha !== undefined) td.alpha = p.alpha
+    if (p.showFill !== undefined) td.showFill = p.showFill
+    if (p.outline !== undefined) td.outline = p.outline
+    if (p.outlineColor !== undefined) {
+      td.outlineColor = p.outlineColor instanceof Cesium.Color ? colorToCss(p.outlineColor) : p.outlineColor
+    }
+    if (p.outlineAlpha !== undefined) td.outlineAlpha = p.outlineAlpha
+    if (p.outlineWidth !== undefined) td.outlineWidth = p.outlineWidth
+    if (p.style !== undefined) td.styleSnapshot = { ...(td.styleSnapshot as object), ...p.style }
+  }
+
+  private updateAreaDraft(rec: PolygonRecord, p: UpdatePolygonProperties): boolean {
+    const td = rec.targetData
+    td[AREA_DRAFT_TARGET_KEY] = true
+    this.applyStylePatchToTargetData(rec, p)
+
+    if (p.positions !== undefined) {
+      const ring = ringToCartesian3Array(p.positions, 1)
+      if (!ring) return false
+      rec.draftRing = ring
+      td.positions = ringToNumberTuples(p.positions)
+    }
+
+    refreshAreaDraftStyle(rec)
+
+    if (p.show !== undefined) rec.entity.show = p.show
+    if (p.description !== undefined) {
+      rec.entity.description = new Cesium.ConstantProperty(p.description)
+    }
+    return true
+  }
+
   updatePolygons(updates: Array<{ id: string } & UpdatePolygonProperties>): Array<{ id: string; success: boolean }> {
     return updates.map(({ id, ...rest }) => ({ id, success: this.updatePolygon(id, rest) }))
   }
@@ -374,7 +656,7 @@ export default class Polygon {
 
   getPolygon(id: string): PolygonSnapshot | null {
     const rec = this.takeIfAlive(id)
-    if (!rec) return null
+    if (!rec || isAreaDraftTargetData(rec.targetData)) return null
     const pg = rec.entity.polygon
     const hier = pg ? sampleProperty<Cesium.PolygonHierarchy>(pg.hierarchy) : undefined
     const positions: number[][] = []
@@ -456,11 +738,12 @@ export default class Polygon {
     return this.takeIfAlive(id) !== undefined
   }
 
-  getIds(viewer?: Viewer): string[] {
+  getIds(viewer?: Viewer, opts?: { includeDraft?: boolean }): string[] {
     const out: string[] = []
     for (const [id, rec] of this.data) {
       if (!this.isRecordAlive(rec)) continue
       if (viewer !== undefined && rec.viewer !== viewer) continue
+      if (!opts?.includeDraft && isAreaDraftTargetData(rec.targetData)) continue
       out.push(id)
     }
     return out
