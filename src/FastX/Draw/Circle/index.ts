@@ -3,7 +3,6 @@ import type { Color, Entity, Property, Viewer } from 'cesium'
 import { createRandomXgxId } from '../../Coordinates'
 
 import {
-  AREA_DRAFT_TARGET_KEY,
   type AddCircleOptions,
   type CircleCenterInput,
   type CircleCenterTuple,
@@ -77,7 +76,9 @@ function setCircleDraftFromVertices(
   td: Record<string, unknown>,
   vertices: readonly { longitude: number; latitude: number; height?: number }[],
 ): void {
-  const carts = vertices.map((p) => toCartesian3(p))
+  const carts = vertices.map((p) =>
+    toCartesian3({ longitude: p.longitude, latitude: p.latitude, height: p.height ?? 0 }),
+  )
   if (!carts.length) return
   setDraftPoints(rec, carts)
   storeCircleCenterInTargetData(td, carts[0]!)
@@ -141,17 +142,6 @@ function applyAreaDraftGraphics(rec: CircleRecord): void {
   if (style?.zIndex !== undefined) ellipse.zIndex = new Cesium.ConstantProperty(style.zIndex)
 
   entity.ellipse = ellipse
-}
-
-function refreshAreaDraftStyle(rec: CircleRecord): void {
-  const st = resolveCircleStyleFromTargetData(rec.targetData)
-  const eg = rec.entity.ellipse
-  if (!eg) return
-  eg.fill = new Cesium.ConstantProperty(st.showFill)
-  eg.material = new Cesium.ColorMaterialProperty(st.fillColor)
-  eg.outline = new Cesium.ConstantProperty(st.outline)
-  eg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
-  eg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
 }
 
 function storeCircleCenterInTargetData(td: Record<string, unknown>, center: Cesium.Cartesian3): void {

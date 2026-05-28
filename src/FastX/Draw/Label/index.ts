@@ -390,6 +390,12 @@ export default class Label {
     })
   }
 
+  getTargetData(id: string): Record<string, unknown> | undefined {
+    const rec = this.takeIfAlive(id)
+    if (!rec) return undefined
+    return { ...rec.targetData }
+  }
+
   getLabel(id: string): LabelSnapshot | null {
     const rec = this.takeIfAlive(id)
     if (!rec || isAreaDraftTargetData(rec.targetData)) return null

@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -410,6 +411,7 @@ onBeforeUnmount(() => {
     window.FastX?.Box?.clear(v)
   }
 })
+keepAlternateDemoEntry(bindMouse)
 </script>
 
 <template>

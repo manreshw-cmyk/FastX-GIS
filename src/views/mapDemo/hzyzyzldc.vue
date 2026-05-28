@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -527,6 +528,7 @@ onBeforeUnmount(() => {
     window.FastX?.Cylinder?.clear(v)
   }
 })
+keepAlternateDemoEntry(addEntityFromForm, bindMouse)
 </script>
 
 <template>

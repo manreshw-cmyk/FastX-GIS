@@ -152,23 +152,6 @@ function applyAreaDraftGraphics(rec: SectorRecord): void {
   rec.entity.polygon = polygon
 }
 
-function refreshAreaDraftStyle(rec: SectorRecord): void {
-  const st = resolveSectorStyleFromTargetData(rec.targetData)
-  const pg = rec.entity.polygon
-  if (!pg) return
-  pg.fill = new Cesium.ConstantProperty(st.showFill)
-  pg.material = new Cesium.ColorMaterialProperty(st.fillColor)
-  pg.outline = new Cesium.ConstantProperty(st.outline)
-  pg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
-  pg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
-  pg.perPositionHeight = new Cesium.ConstantProperty(st.perPositionHeight)
-  if (st.extruded !== undefined) {
-    pg.extrudedHeight = new Cesium.ConstantProperty(st.extruded)
-  } else {
-    pg.extrudedHeight = undefined
-  }
-}
-
 function storeSectorGeomInTargetData(td: Record<string, unknown>, g: ReturnType<typeof sectorGeomFromDraftPoints>): void {
   td.longitude = g.lon
   td.latitude = g.lat

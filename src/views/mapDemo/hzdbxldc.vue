@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 import { ClearOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -482,6 +483,7 @@ onBeforeUnmount(() => {
     window.FastX?.Polygon?.clear(v)
   }
 })
+keepAlternateDemoEntry(addPolygonFromForm)
 </script>
 
 <template>

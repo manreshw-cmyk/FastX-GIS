@@ -878,10 +878,10 @@ export default class Wall {
     if (cfg.colorStops !== undefined) rec.colorStops = cfg.colorStops
   }
 
-  private wallMaterialOptionsFromRecord(rec: WallRecord): AddWallOptions {
+  private wallMaterialOptionsFromRecord(rec: WallRecord): Record<string, unknown> {
     return {
       materialType: rec.materialType,
-      color: rec.solidColor,
+      color: typeof rec.solidColor === 'string' ? rec.solidColor : undefined,
       imageUrl: rec.imageUrl,
       repeat: rec.repeat,
       gradientStartColor: rec.gradientStartColor,
@@ -893,7 +893,7 @@ export default class Wall {
       outline: rec.targetData.outline as boolean | undefined,
       outlineColor: rec.targetData.outlineColor as string | undefined,
       outlineWidth: rec.targetData.outlineWidth as number | undefined,
-    } as AddWallOptions
+    }
   }
 
   private updateAreaDraftWallGraphics(rec: WallRecord, options: AddWallOptions): void {
@@ -1459,11 +1459,11 @@ export default class Wall {
     }
 
     this.updateAreaDraftWallGraphics(rec, {
+      ...this.wallMaterialOptionsFromRecord(rec),
       positions: rec.originalPositions,
       height: rec.targetData.height as number | undefined,
       extrudedHeight: rec.targetData.extrudedHeight as number | undefined,
       clampToGround: rec.targetData.clampToGround as boolean | undefined,
-      ...this.wallMaterialOptionsFromRecord(rec),
     } as AddWallOptions);
 
     if (p.show !== undefined) rec.entity.show = p.show;

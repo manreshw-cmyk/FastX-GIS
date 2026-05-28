@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 /** 组件已在 main.ts 中 `app.use(Antd)` 全局注册；`message` 为命令式 API 需单独引入；`TableColumnType` 为纯类型，构建后不会打入包体 */
-import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -244,7 +245,7 @@ function applyUpdateToSelected(): void {
     longitude: form.longitude,
     latitude: form.latitude,
     height: form.height,
-    radius: form.radius,
+    radius: form.radius ?? 0,
     color: form.color,
     alpha: fillAlphaForApi(),
     outline: form.outline,
@@ -282,7 +283,7 @@ function addCircleFromForm(): void {
       latitude: lat,
       height: form.height,
     },
-    radius: form.radius,
+    radius: form.radius ?? 0,
     color: form.color,
     alpha: fillAlphaForApi(),
     outline: form.outline,
@@ -427,6 +428,7 @@ onBeforeUnmount(() => {
     window.FastX?.Circle?.clear(v)
   }
 })
+keepAlternateDemoEntry(addCircleFromForm)
 </script>
 
 <template>

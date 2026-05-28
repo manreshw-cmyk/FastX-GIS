@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
-import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -411,6 +412,7 @@ onBeforeUnmount(() => {
   viewerRef = null
   if (v && !v.isDestroyed()) window.FastX?.Rectangle?.clear(v)
 })
+keepAlternateDemoEntry(addRectangleFromForm)
 </script>
 
 <template>

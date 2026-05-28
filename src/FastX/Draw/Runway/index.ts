@@ -217,7 +217,7 @@ function resolveRunwayDraftPair(
   return pair ?? undefined
 }
 
-function applyAreaDraftCorridor(rec: RunwayRecord, ellipsoid: Cesium.Ellipsoid): void {
+function applyAreaDraftCorridor(rec: RunwayRecord): void {
   const td = rec.targetData
   const wid = typeof td.width === 'number' ? td.width : 1
   const height = typeof td.height === 'number' ? td.height : 0
@@ -907,7 +907,7 @@ export default class Runway {
 
     const rec: RunwayRecord = { viewer, entity, targetData: td, tickListener: null, flowMaterial: null }
     setDraftPoints(rec, pair)
-    applyAreaDraftCorridor(rec, ellipsoid)
+    applyAreaDraftCorridor(rec)
     viewer.entities.add(entity)
     this.data.set(id, rec)
     return entity
@@ -1128,7 +1128,7 @@ export default class Runway {
       ]
     }
 
-    applyAreaDraftCorridor(rec, ellipsoid)
+    applyAreaDraftCorridor(rec)
     if (p.show !== undefined) rec.entity.show = p.show
     if (p.description !== undefined) {
       rec.entity.description = new Cesium.ConstantProperty(p.description)

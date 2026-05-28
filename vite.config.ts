@@ -5,7 +5,7 @@ import progress from "vite-plugin-progress";
 import { compression } from "vite-plugin-compression2";
 import colors from "picocolors";
 
-const OUT_DIR = "FastX GIS";
+const OUT_DIR = "FastXDist";
 
 /** 打包完成后输出绿色大字提示 */
 function fastxBuildSuccessBanner(): Plugin {
@@ -13,14 +13,14 @@ function fastxBuildSuccessBanner(): Plugin {
     name: "fastx-build-success-banner",
     apply: "build",
     closeBundle() {
-      // FastX GIS - 细线风格 ASCII 艺术字
+      // FastXDist - 细线风格 ASCII 艺术字
       const logo = `
-   ███████╗ █████╗ ███████╗████████╗██╗  ██╗     ██████╗ ██╗███████╗
-   ██╔════╝██╔══██╗██╔════╝╚══██╔══╝╚██╗██╔╝     ██╔══██╗██║██╔════╝
-   █████╗  ███████║███████╗   ██║    ╚███╔╝█████╗██████╔╝██║███████╗
-   ██╔══╝  ██╔══██║╚════██║   ██║    ██╔██╗╚════╝██╔══██╗██║╚════██║
-   ██║     ██║  ██║███████║   ██║   ██╔╝ ██╗     ██████╔╝██║███████║
-   ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝     ╚═════╝ ╚═╝╚══════╝
+  ███████╗ █████╗ ███████╗████████╗██╗  ██╗      ██████╗ ██╗███████╗████████╗
+  ██╔════╝██╔══██╗██╔════╝╚══██╔══╝╚██╗██╔╝      ██╔══██╗██║██╔════╝╚══██╔══╝
+  █████╗  ███████║███████╗   ██║    ╚███╔╝ █████╗██║  ██║██║███████╗   ██║
+  ██╔══╝  ██╔══██║╚════██║   ██║    ██╔██╗ ╚════╝██║  ██║██║╚════██║   ██║
+  ██║     ██║  ██║███████║   ██║   ██╔╝ ██╗      ██████╔╝██║███████║   ██║
+  ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝      ╚═════╝ ╚═╝╚══════╝   ╚═╝
       `;
 
       // 固定的开源时间
@@ -28,7 +28,7 @@ function fastxBuildSuccessBanner(): Plugin {
 
       console.log(
         colors.green(logo) +
-          `\n${colors.green("✓")} ${colors.bold("FastX GIS 构建完成")}\n` +
+          `\n${colors.green("✓")} ${colors.bold("FastXDist 构建完成")}\n` +
           `\n  ${colors.dim("📁 输出目录:")} ${colors.cyan(OUT_DIR)}` +
           `\n  ${colors.dim("📦 打包格式:")} ${colors.yellow("ESM + UMD + CJS")}` +
           `\n` +
@@ -50,7 +50,7 @@ function buildOnlyPlugins(): PluginOption[] {
       complete: colors.green("█"),
       incomplete: colors.gray("░"),
       clear: true,
-      format: `${colors.cyan(colors.bold("FastX GIS"))} ${colors.yellow("[:bar]")} ${colors.green(":percent")} | ${colors.dim(":current")}/${colors.dim(":total")} ${colors.blue(":eta")}s ${colors.magenta(":rate")}/s`,
+      format: `${colors.cyan(colors.bold("FastXDist"))} ${colors.yellow("[:bar]")} ${colors.green(":percent")} | ${colors.dim(":current")}/${colors.dim(":total")} ${colors.blue(":eta")}s ${colors.magenta(":rate")}/s`,
       callback() {
         // 进度条结束后留一行，最终成功信息由 closeBundle 横幅输出
         console.log(colors.dim("  正在压缩静态资源…"));

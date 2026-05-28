@@ -1,5 +1,6 @@
 /** PolyLine Entity 标绘示例：表单、表格、鼠标拾取（供 hzxldcxr.vue 使用） */
 import { message } from 'ant-design-vue'
+import { keepAlternateDemoEntry } from './keepAlternateDemoEntry'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
@@ -420,7 +421,7 @@ export function useHzxldcxrPolylineDemo() {
         syncDraftVerticesFromPick(points)
         if (points.length === 0) isAreaDrawing.value = false
       },
-    }
+    } as AreaDrawStartParams
   }
 
   function stopAreaDraw(): void {
@@ -637,6 +638,8 @@ export function useHzxldcxrPolylineDemo() {
       window.FastX?.PolyLine?.clear(v)
     }
   })
+
+  keepAlternateDemoEntry(addPolylineFromForm)
 
   return {
     title,

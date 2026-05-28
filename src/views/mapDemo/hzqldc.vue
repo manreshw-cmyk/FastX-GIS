@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 import { ClearOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -16,6 +17,7 @@ import type {
 } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
+import { bindAreaManagerPublish } from './components/common/useAreaManagerPublish'
 import { waitForMapViewer } from './components/common/useCoordinateDemo'
 
 const title = '绘制（Wall）墙类（底层entity）'
@@ -722,6 +724,7 @@ onBeforeUnmount(() => {
     window.FastX?.Wall?.clear(v)
   }
 })
+keepAlternateDemoEntry(addWallFromForm)
 </script>
 
 <template>

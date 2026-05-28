@@ -6,7 +6,6 @@ import type { AddEllipsoidOptions, EllipsoidSnapshot, EllipsoidStyleOptions, Pos
 import {
   clearAreaDraftTargetData,
   commitEntityPosition,
-  createDraftRadiusProperty,
   draftRadiusFromPoints,
   getDraftPoints,
   isAreaDraftTargetData,

@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
 /** 组件已在 main.ts 中 `app.use(Antd)` 全局注册；`message` 为命令式 API 需单独引入；`TableColumnType` 为纯类型，构建后不会打入包体 */
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -422,6 +423,7 @@ onBeforeUnmount(() => {
     window.FastX?.Label?.clear(v)
   }
 })
+keepAlternateDemoEntry(addLabelFromForm)
 </script>
 
 <template>

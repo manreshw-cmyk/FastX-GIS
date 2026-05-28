@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
-import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -128,7 +129,7 @@ function buildPlaneStartParams(): AreaDrawStartParams {
     pitchDegrees: payload.pitchDegrees,
     rollDegrees: payload.rollDegrees,
     materialType: payload.materialType,
-    color: payload.color,
+    color: form.color,
     alpha: payload.alpha,
     imageUrl: payload.imageUrl,
     videoUrl: payload.videoUrl,
@@ -713,6 +714,7 @@ onBeforeUnmount(() => {
   for (const url of createdVideoBlobUrls) URL.revokeObjectURL(url)
   createdVideoBlobUrls.clear()
 })
+keepAlternateDemoEntry(addPlaneFromForm, toggleCoordPick, bindMouse, primaryButtonType)
 </script>
 
 <template>

@@ -71,6 +71,10 @@ function cloneTargetData(td: unknown): Record<string, unknown> | undefined {
   return { ...(td as Record<string, unknown>) }
 }
 
+function draftOpts<T>(o: Record<string, unknown>): T {
+  return o as unknown as T
+}
+
 function lngLatAtGround(p: LngLatHeight): LngLatHeight {
   return { ...p, height: 0 }
 }
@@ -295,7 +299,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
   switch (shapeType) {
     case 'point':
       return {
-        add: (v, o) => apis.point.add(v, o as AddPointOptions),
+        add: (v, o) => apis.point.add(v, draftOpts<AddPointOptions>(o)),
         update: (id, o) => apis.point.updatePoint(id, o),
         remove: (id) => apis.point.remove(id),
         getEntity: (id) => apis.point.getEntity(id),
@@ -303,7 +307,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'label':
       return {
-        add: (v, o) => apis.label.add(v, o as AddLabelOptions),
+        add: (v, o) => apis.label.add(v, draftOpts<AddLabelOptions>(o)),
         update: (id, o) => apis.label.updateLabel(id, o),
         remove: (id) => apis.label.remove(id),
         getEntity: (id) => apis.label.getEntity(id),
@@ -311,7 +315,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'billboard':
       return {
-        add: (v, o) => apis.billboard.add(v, o as AddBillboardOptions),
+        add: (v, o) => apis.billboard.add(v, draftOpts<AddBillboardOptions>(o)),
         update: (id, o) => apis.billboard.updateBillboard(id, o),
         remove: (id) => apis.billboard.remove(id),
         getEntity: (id) => apis.billboard.getEntity(id),
@@ -319,7 +323,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'model':
       return {
-        add: (v, o) => apis.model.add(v, o as AddModelOptions),
+        add: (v, o) => apis.model.add(v, draftOpts<AddModelOptions>(o)),
         update: (id, o) => apis.model.updateModel(id, o),
         remove: (id) => apis.model.remove(id),
         getEntity: (id) => apis.model.getEntity(id),
@@ -327,7 +331,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'polyline':
       return {
-        add: (v, o) => apis.polyLine.add(v, o as AddPolylineOptions),
+        add: (v, o) => apis.polyLine.add(v, draftOpts<AddPolylineOptions>(o)),
         update: (id, o) => apis.polyLine.updatePolyline(id, o),
         remove: (id) => apis.polyLine.remove(id),
         getEntity: (id) => apis.polyLine.getEntity(id),
@@ -335,7 +339,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'polygon':
       return {
-        add: (v, o) => apis.polygon.add(v, o as AddPolygonOptions),
+        add: (v, o) => apis.polygon.add(v, draftOpts<AddPolygonOptions>(o)),
         update: (id, o) => apis.polygon.updatePolygon(id, o),
         remove: (id) => apis.polygon.remove(id),
         getEntity: (id) => apis.polygon.getEntity(id),
@@ -343,7 +347,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'circle':
       return {
-        add: (v, o) => apis.circle.add(v, o as AddCircleOptions),
+        add: (v, o) => apis.circle.add(v, draftOpts<AddCircleOptions>(o)),
         update: (id, o) => apis.circle.updateCircle(id, o),
         remove: (id) => apis.circle.remove(id),
         getEntity: (id) => apis.circle.getEntity(id),
@@ -351,7 +355,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'rectangle':
       return {
-        add: (v, o) => apis.rectangle.add(v, o as AddRectangleOptions),
+        add: (v, o) => apis.rectangle.add(v, draftOpts<AddRectangleOptions>(o)),
         update: (id, o) => apis.rectangle.updateRectangle(id, o),
         remove: (id) => apis.rectangle.remove(id),
         getEntity: (id) => apis.rectangle.getEntity(id),
@@ -359,7 +363,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'sector':
       return {
-        add: (v, o) => apis.sector.add(v, o as AddSectorOptions),
+        add: (v, o) => apis.sector.add(v, draftOpts<AddSectorOptions>(o)),
         update: (id, o) => apis.sector.updateSector(id, o),
         remove: (id) => apis.sector.remove(id),
         getEntity: (id) => apis.sector.getEntity(id),
@@ -367,7 +371,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'cylinder':
       return {
-        add: (v, o) => apis.cylinder.add(v, o as AddCylinderOptions),
+        add: (v, o) => apis.cylinder.add(v, draftOpts<AddCylinderOptions>(o)),
         update: (id, o) => apis.cylinder.updateCylinder(id, o),
         remove: (id) => apis.cylinder.remove(id),
         getEntity: (id) => apis.cylinder.getEntity(id),
@@ -375,7 +379,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'runway':
       return {
-        add: (v, o) => apis.runway.add(v, o as AddRunwayOptions),
+        add: (v, o) => apis.runway.add(v, draftOpts<AddRunwayOptions>(o)),
         update: (id, o) => apis.runway.updateRunway(id, o),
         remove: (id) => apis.runway.remove(id),
         getEntity: (id) => apis.runway.getEntity(id),
@@ -383,7 +387,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'corridor':
       return {
-        add: (v, o) => apis.corridor.add(v, o as AddCorridorOptions),
+        add: (v, o) => apis.corridor.add(v, draftOpts<AddCorridorOptions>(o)),
         update: (id, o) => apis.corridor.updateCorridor(id, o),
         remove: (id) => apis.corridor.remove(id),
         getEntity: (id) => apis.corridor.getEntity(id),
@@ -391,7 +395,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'ellipsoid':
       return {
-        add: (v, o) => apis.ellipsoid.add(v, o as AddEllipsoidOptions),
+        add: (v, o) => apis.ellipsoid.add(v, draftOpts<AddEllipsoidOptions>(o)),
         update: (id, o) => apis.ellipsoid.updateEllipsoid(id, o),
         remove: (id) => apis.ellipsoid.remove(id),
         getEntity: (id) => apis.ellipsoid.getEntity(id),
@@ -399,7 +403,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'wall':
       return {
-        add: (v, o) => apis.wall.add(v, o as AddWallOptions),
+        add: (v, o) => apis.wall.add(v, draftOpts<AddWallOptions>(o)),
         update: (id, o) => apis.wall.updateWall(id, o),
         remove: (id) => apis.wall.remove(id),
         getEntity: (id) => apis.wall.getEntity(id),
@@ -407,7 +411,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'polylineVolume':
       return {
-        add: (v, o) => apis.polylineVolume.add(v, o as AddPolylineVolumeOptions),
+        add: (v, o) => apis.polylineVolume.add(v, draftOpts<AddPolylineVolumeOptions>(o)),
         update: (id, o) => apis.polylineVolume.updatePolylineVolume(id, o),
         remove: (id) => apis.polylineVolume.remove(id),
         getEntity: (id) => apis.polylineVolume.getEntity(id),
@@ -415,7 +419,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'plane':
       return {
-        add: (v, o) => apis.plane.add(v, o as AddPlaneOptions),
+        add: (v, o) => apis.plane.add(v, draftOpts<AddPlaneOptions>(o)),
         update: (id, o) => apis.plane.updatePlane(id, o),
         remove: (id) => apis.plane.remove(id),
         getEntity: (id) => apis.plane.getEntity(id),
@@ -423,7 +427,7 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
       }
     case 'box':
       return {
-        add: (v, o) => apis.box.add(v, o as AddBoxOptions),
+        add: (v, o) => apis.box.add(v, draftOpts<AddBoxOptions>(o)),
         update: (id, o) => apis.box.updateBox(id, o),
         remove: (id) => apis.box.remove(id),
         getEntity: (id) => apis.box.getEntity(id),

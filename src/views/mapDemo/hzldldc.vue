@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
-import { ClearOutlined, DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { ClearOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -502,6 +503,7 @@ onBeforeUnmount(() => {
     window.FastX?.Corridor?.clear(v)
   }
 })
+keepAlternateDemoEntry(addEntityFromForm)
 </script>
 
 <template>

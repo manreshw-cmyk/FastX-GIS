@@ -340,6 +340,18 @@ function previewDistance(getPositions: () => Cartesian3[]): number {
   return Cesium.Cartesian3.distance(p[0]!, p[1]!)
 }
 
+function previewPositionAt0(getPositions: () => Cartesian3[]): Cesium.CallbackPositionProperty {
+  return new Cesium.CallbackPositionProperty(() => getPositions()[0] ?? Cesium.Cartesian3.ZERO, false)
+}
+
+function previewPositionMidpoint(getPositions: () => Cartesian3[]): Cesium.CallbackPositionProperty {
+  return new Cesium.CallbackPositionProperty(() => {
+    const p = getPositions()
+    if (p.length < 2) return p[0] ?? Cesium.Cartesian3.ZERO
+    return Cesium.Cartesian3.midpoint(p[0]!, p[1]!, new Cesium.Cartesian3())
+  }, false)
+}
+
 /** 固定 id + CallbackProperty 更新几何，避免 mousemove 反复 remove/add 导致闪烁 */
 function createStablePreviewEntity(
   viewer: Viewer,
@@ -404,7 +416,7 @@ function createStablePreviewEntity(
     case 'sector-disc':
       return viewer.entities.add({
         id,
-        position: new Cesium.CallbackProperty(() => getPositions()[0], false),
+        position: previewPositionAt0(getPositions),
         ellipse: {
           semiMajorAxis: new Cesium.CallbackProperty(() => previewDistance(getPositions), false),
           semiMinorAxis: new Cesium.CallbackProperty(() => previewDistance(getPositions), false),
@@ -430,7 +442,7 @@ function createStablePreviewEntity(
       }, false)
       return viewer.entities.add({
         id,
-        position: new Cesium.CallbackProperty(() => getPositions()[0], false),
+        position: previewPositionAt0(getPositions),
         ellipsoid: {
           radii: rCb,
           material: colorFromCss(fillColor, fillAlpha),
@@ -447,7 +459,7 @@ function createStablePreviewEntity(
       )
       return viewer.entities.add({
         id,
-        position: new Cesium.CallbackProperty(() => getPositions()[0], false),
+        position: previewPositionAt0(getPositions),
         cylinder: {
           length: lenCb,
           topRadius: rCb,
@@ -466,11 +478,7 @@ function createStablePreviewEntity(
       }, false)
       return viewer.entities.add({
         id,
-        position: new Cesium.CallbackProperty(() => {
-          const p = getPositions()
-          if (p.length < 2) return p[0] ?? Cesium.Cartesian3.ZERO
-          return Cesium.Cartesian3.midpoint(p[0]!, p[1]!, new Cesium.Cartesian3())
-        }, false),
+        position: previewPositionMidpoint(getPositions),
         box: {
           dimensions: dimCb,
           material: colorFromCss(fillColor, fillAlpha),
@@ -486,7 +494,7 @@ function createStablePreviewEntity(
       }, false)
       return viewer.entities.add({
         id,
-        position: new Cesium.CallbackProperty(() => getPositions()[0], false),
+        position: previewPositionAt0(getPositions),
         plane: {
           plane: new Cesium.Plane(Cesium.Cartesian3.UNIT_Z, 0),
           dimensions: spanCb,
@@ -1070,12 +1078,12 @@ export default class AreaManager {
     const restoreCamera = suspendCameraDragInputs(viewer.scene.screenSpaceCameraController)
     const handler = new Cesium.ScreenSpaceEventHandler(canvas)
 
-    handler.setInputAction((e) => {
+    handler.setInputAction((e: Cesium.ScreenSpaceEventHandler.PositionedEvent) => {
       const cartesian = pickCartesianAt(viewer, e.position)
       if (cartesian) this.onDrawLeftClick(cartesian)
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
 
-    handler.setInputAction((e) => {
+    handler.setInputAction((e: Cesium.ScreenSpaceEventHandler.MotionEvent) => {
       if (!this.isDrawing) return
       const cartesian = pickCartesianAt(viewer, e.endPosition)
       if (cartesian) this.updatePreview(cartesian)
