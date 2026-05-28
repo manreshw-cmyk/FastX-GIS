@@ -5,6 +5,7 @@ import { useUserStore } from '../stores/modules/user'
 const HomeView = () => import('../views/home/index.vue')
 const LoginView = () => import('../views/login/index.vue')
 const MapDemoView = () => import('../views/mapDemo/index.vue')
+const NotFoundView = () => import('../views/not-found/index.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,10 +35,19 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'notFound',
+      component: NotFoundView,
+    },
   ],
 })
 
 router.beforeEach((to) => {
+  if (to.name === 'notFound') {
+    return true
+  }
+
   const userStore = useUserStore(pinia)
   const hasLogin = !!userStore.userInfo
 

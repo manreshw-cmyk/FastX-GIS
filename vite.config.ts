@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { defineConfig, type Plugin, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
 import cesium from "vite-plugin-cesium";
@@ -6,6 +8,54 @@ import { compression } from "vite-plugin-compression2";
 import colors from "picocolors";
 
 const OUT_DIR = "FastXDist";
+const GITHUB_PAGES_BASE = "/FastX-GIS/";
+
+const CESIUM_BUILD_DIR = path.resolve("node_modules/cesium/Build/Cesium");
+
+/**
+ * vite-plugin-cesium 会把文件复制到 outDir + base + cesium（FastXDist/FastX-GIS/cesium），
+ * 禁用其 build 复制，改由 copyCesiumToDistRoot 写入 FastXDist/cesium。
+ */
+function disableCesiumNestedCopy(): Plugin {
+  return {
+    name: "disable-cesium-nested-copy",
+    apply: "build",
+    configResolved(config) {
+      const plugin = config.plugins.find((p) => p.name === "vite-plugin-cesium");
+      if (plugin) {
+        plugin.closeBundle = async () => {};
+      }
+    },
+  };
+}
+
+/** 构建时直接将 Cesium 静态资源复制到 FastXDist/cesium */
+function copyCesiumToDistRoot(): Plugin {
+  return {
+    name: "copy-cesium-to-dist-root",
+    apply: "build",
+    closeBundle() {
+      const targetCesium = path.resolve(OUT_DIR, "cesium");
+      const nestedRoot = path.resolve(OUT_DIR, "FastX-GIS");
+      if (!fs.existsSync(CESIUM_BUILD_DIR)) return;
+
+      // 清理历史构建遗留的嵌套目录
+      if (fs.existsSync(nestedRoot)) {
+        fs.rmSync(nestedRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      }
+
+      if (fs.existsSync(targetCesium)) {
+        fs.rmSync(targetCesium, {
+          recursive: true,
+          force: true,
+          maxRetries: 5,
+          retryDelay: 200,
+        });
+      }
+      fs.cpSync(CESIUM_BUILD_DIR, targetCesium, { recursive: true });
+    },
+  };
+}
 
 /** 打包完成后输出绿色大字提示 */
 function fastxBuildSuccessBanner(): Plugin {
@@ -68,16 +118,16 @@ function buildOnlyPlugins(): PluginOption[] {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     vue(),
     cesium(),
-    ...(command === "build" ? buildOnlyPlugins() : []),
+    ...(command === "build"
+      ? [disableCesiumNestedCopy(), copyCesiumToDistRoot(), ...buildOnlyPlugins()]
+      : []),
   ],
-  base:
-    process.env.NODE_ENV === "production"
-      ? "/FastX-GIS/" // github仓库名
-      : "/",
+  /** build 与 preview 均使用 GitHub Pages 子路径，与产物内资源引用一致 */
+  base: command === "build" || isPreview ? GITHUB_PAGES_BASE : "/",
   server: {
     port: 5173,
     strictPort: true,
