@@ -6,6 +6,7 @@ import type { LayerInitConfig } from '../Layer/types'
 import { Coordinates } from '../Coordinates'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import type { XMapConfig } from './x-map.types'
+import XMapToolbar from './x-map-toolbar.vue'
 
 defineOptions({ name: 'XMap' })
 
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 const cesiumId = `x-map-cesium-${Math.random().toString(36).slice(2, 11)}`
 const layerRef = ref<Layer | null>(null)
 const mouseStatusText = ref('层级: —  经度: —  纬度: —  高度: —')
+const mouseStatusVisible = ref(true)
 
 let removeMouseListener: (() => void) | null = null
 
@@ -141,7 +143,8 @@ defineExpose({
 <template>
   <div class="x-map-root">
     <div :id="cesiumId" class="x-map-cesium" />
-    <div class="x-map-mouse-status" aria-live="polite">{{ mouseStatusText }}</div>
+    <XMapToolbar v-model:mouse-status-visible="mouseStatusVisible" />
+    <div v-show="mouseStatusVisible" class="x-map-mouse-status" aria-live="polite">{{ mouseStatusText }}</div>
   </div>
 </template>
 
@@ -162,7 +165,7 @@ defineExpose({
 
 .x-map-mouse-status {
   position: absolute;
-  right: 12px;
+  left: 35%;
   bottom: 12px;
   z-index: 5;
   pointer-events: none;
@@ -170,7 +173,7 @@ defineExpose({
   max-width: calc(100% - 24px);
   overflow: hidden;
   text-overflow: ellipsis;
-  background: rgba(15, 28, 48, 0.72);
+  background: rgba(15, 28, 48, 0.4);
   backdrop-filter: blur(8px);
   border-radius: 4px;
   font:

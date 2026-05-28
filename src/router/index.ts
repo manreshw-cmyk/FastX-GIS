@@ -7,7 +7,7 @@ const LoginView = () => import('../views/login/index.vue')
 const MapDemoView = () => import('../views/mapDemo/index.vue')
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

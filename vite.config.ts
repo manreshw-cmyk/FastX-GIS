@@ -74,6 +74,10 @@ export default defineConfig(({ command }) => ({
     cesium(),
     ...(command === "build" ? buildOnlyPlugins() : []),
   ],
+  base:
+    process.env.NODE_ENV === "production"
+      ? "/FastX-GIS/" // github仓库名
+      : "/",
   server: {
     port: 5173,
     strictPort: true,

@@ -73,6 +73,19 @@ export {
 } from "./gridImagery";
 export type { LayerGridStyleOptions } from "./gridImagery";
 
+/** 比例尺横线固定像素宽度（仅数值随缩放变化） */
+const SCALE_BAR_LINE_PX = 80;
+const SCALE_BAR_BOTTOM_PX = 12;
+const SCALE_BAR_LEFT_PX = 12;
+
+/** 比例尺文字：与鼠标经纬度类似，连续小数变化 */
+function formatScaleBarLabel(meters: number): string {
+  if (!Number.isFinite(meters) || meters <= 0) return "—";
+  if (meters >= 1000) return `${(meters / 1000).toFixed(2)}KM`;
+  if (meters >= 1) return `${meters.toFixed(2)}M`;
+  return `${(meters * 100).toFixed(2)}CM`;
+}
+
 /**
  * FastX — 图层（Layer）+ 文档「基础工具（Tools）类」能力封装。
  *
@@ -106,6 +119,8 @@ export class Layer {
   private tileLevelPostRemove: (() => void) | null = null;
   private compassPostRemove: (() => void) | null = null;
   private scaleBarEl: HTMLElement | null = null;
+  private scaleBarLabelEl: HTMLElement | null = null;
+  private scaleBarLineEl: HTMLElement | null = null;
   private tileLevelEl: HTMLElement | null = null;
   private compassEl: HTMLElement | null = null;
 
@@ -1161,33 +1176,44 @@ export class Layer {
     const viewer = this.assertViewer();
     if (visible) {
       if (this.scaleBarEl) return;
-      const el = document.createElement("div");
-      el.style.cssText =
-        "position:absolute;left:12px;bottom:36px;z-index:8;padding:4px 8px;background:rgba(255,255,255,0.85);font:12px/1.4 sans-serif;border-radius:4px;pointer-events:none";
-      viewer.container.appendChild(el);
-      this.scaleBarEl = el;
+      const root = document.createElement("div");
+      root.className = "fx-map-scale-bar";
+      root.style.cssText =
+        `position:absolute;left:${SCALE_BAR_LEFT_PX}px;bottom:${SCALE_BAR_BOTTOM_PX}px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 12px;pointer-events:none;user-select:none;box-sizing:border-box`;
+
+      const label = document.createElement("div");
+      label.className = "fx-map-scale-bar__label";
+      label.style.cssText =
+        "color:rgba(255,255,255,0.94);font:12px/1.5 ui-sans-serif,system-ui,sans-serif;letter-spacing:0.02em;white-space:nowrap";
+
+      const line = document.createElement("div");
+      line.className = "fx-map-scale-bar__line";
+      line.style.cssText =
+        `position:relative;width:${SCALE_BAR_LINE_PX}px;height:0;flex-shrink:0;border-bottom:2px solid rgba(255,255,255,0.94);box-sizing:border-box`;
+
+      const tickStyle =
+        "position:absolute;bottom:0;width:2px;height:7px;background:#fff";
+      const tickL = document.createElement("span");
+      tickL.style.cssText = `${tickStyle};left:0`;
+      const tickR = document.createElement("span");
+      tickR.style.cssText = `${tickStyle};right:0`;
+      line.appendChild(tickL);
+      line.appendChild(tickR);
+
+      root.appendChild(label);
+      root.appendChild(line);
+      viewer.container.appendChild(root);
+
+      this.scaleBarEl = root;
+      this.scaleBarLabelEl = label;
+      this.scaleBarLineEl = line;
+
       const onPost = () => {
-        if (!this.viewer || !this.scaleBarEl) return;
-        const frustum = viewer.camera.frustum as Cesium.PerspectiveFrustum;
-        const distance = Cesium.Cartesian3.magnitude(viewer.camera.positionWC);
-        const px = new Cesium.Cartesian2();
-        if (frustum?.getPixelDimensions) {
-          const pixelRatio =
-            (typeof window !== "undefined" ? window.devicePixelRatio : 1) *
-            viewer.resolutionScale;
-          frustum.getPixelDimensions(
-            viewer.scene.drawingBufferWidth,
-            viewer.scene.drawingBufferHeight,
-            distance,
-            pixelRatio,
-            px,
-          );
-          const mPerPx = px.x;
-          this.scaleBarEl.textContent = `≈ ${mPerPx.toFixed(1)} m/px`;
-        } else {
-          this.scaleBarEl.textContent = `H ${(distance / 1000).toFixed(1)} km`;
-        }
+        const v = this.viewer;
+        if (!v || v.isDestroyed()) return;
+        this.updateScaleBarDom(v);
       };
+      onPost();
       this.scaleBarPostRemove =
         viewer.scene.postRender.addEventListener(onPost);
     } else {
@@ -1196,6 +1222,8 @@ export class Layer {
       if (this.scaleBarEl) {
         this.scaleBarEl.remove();
         this.scaleBarEl = null;
+        this.scaleBarLabelEl = null;
+        this.scaleBarLineEl = null;
       }
     }
   }
@@ -1389,6 +1417,87 @@ export class Layer {
   // 内部
   // ——————————————————————————————————————————————————————————————
 
+  /**
+   * 在屏幕某点测算「每像素对应多少米」（地表距离 / 像素跨度）。
+   * 优先 globe.pick，其次椭球拾取，最后用相机离地高度估算。
+   */
+  private getMetersPerPixelAtScreen(
+    viewer: Cesium.Viewer,
+    screenX: number,
+    screenY: number,
+    spanPx: number,
+  ): number | null {
+    const scene = viewer.scene;
+    const ellipsoid = scene.globe.ellipsoid;
+    const half = spanPx * 0.5;
+    const left = new Cesium.Cartesian2(screenX - half, screenY);
+    const right = new Cesium.Cartesian2(screenX + half, screenY);
+
+    const pickGround = (pos: Cesium.Cartesian2): Cesium.Cartesian3 | undefined => {
+      const ray = viewer.camera.getPickRay(pos, new Cesium.Ray());
+      if (!ray) return undefined;
+      const onGlobe = scene.globe.pick(ray, scene);
+      if (onGlobe) return onGlobe;
+      return viewer.camera.pickEllipsoid(pos, ellipsoid) ?? undefined;
+    };
+
+    const c0 = pickGround(left);
+    const c1 = pickGround(right);
+    if (c0 && c1) {
+      const ground = Cesium.Cartesian3.distance(c0, c1);
+      if (ground > 0) return ground / spanPx;
+    }
+
+    const height = viewer.camera.positionCartographic.height;
+    if (!Number.isFinite(height) || height <= 0) return null;
+
+    const frustum = viewer.camera.frustum as Cesium.PerspectiveFrustum;
+    if (!frustum?.getPixelDimensions) return null;
+
+    const px = new Cesium.Cartesian2();
+    const pixelRatio =
+      (typeof window !== "undefined" ? window.devicePixelRatio : 1) *
+      viewer.resolutionScale;
+    frustum.getPixelDimensions(
+      scene.drawingBufferWidth,
+      scene.drawingBufferHeight,
+      height,
+      pixelRatio,
+      px,
+    );
+    return Number.isFinite(px.x) && px.x > 0 ? px.x : null;
+  }
+
+  private updateScaleBarDom(viewer: Cesium.Viewer): void {
+    if (!this.scaleBarLabelEl || !this.scaleBarLineEl) return;
+
+    const containerRect = viewer.container.getBoundingClientRect();
+    const lineRect = this.scaleBarLineEl.getBoundingClientRect();
+    const sampleX =
+      lineRect.width > 0
+        ? lineRect.left - containerRect.left + lineRect.width * 0.5
+        : SCALE_BAR_LEFT_PX + 12 + SCALE_BAR_LINE_PX * 0.5;
+    const sampleY =
+      lineRect.height > 0
+        ? lineRect.top - containerRect.top + lineRect.height * 0.5
+        : viewer.scene.canvas.clientHeight - SCALE_BAR_BOTTOM_PX - 15;
+
+    const mPerPx = this.getMetersPerPixelAtScreen(
+      viewer,
+      sampleX,
+      sampleY,
+      SCALE_BAR_LINE_PX,
+    );
+
+    if (mPerPx == null || mPerPx <= 0) {
+      this.scaleBarLabelEl.textContent = "—";
+      return;
+    }
+
+    const distanceMeters = mPerPx * SCALE_BAR_LINE_PX;
+    this.scaleBarLabelEl.textContent = formatScaleBarLabel(distanceMeters);
+  }
+
   private disposeInternals(destroyMainViewer: boolean): void {
     this.scaleBarPostRemove?.();
     this.scaleBarPostRemove = null;
@@ -1399,6 +1508,8 @@ export class Layer {
     if (this.scaleBarEl) {
       this.scaleBarEl.remove();
       this.scaleBarEl = null;
+      this.scaleBarLabelEl = null;
+      this.scaleBarLineEl = null;
     }
     if (this.tileLevelEl) {
       this.tileLevelEl.remove();
