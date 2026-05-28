@@ -10,6 +10,8 @@
 
 FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `FastX`（`window.FastX`），提供图层、坐标、鼠标事件、Entity / Primitive 标绘等 API，并在 `/mapDemo` 中逐项演示。
 
+**在线演示**：[https://manreshw-cmyk.github.io/FastX-GIS/](https://manreshw-cmyk.github.io/FastX-GIS/)
+
 ---
 
 ## 技术栈

@@ -4,6 +4,8 @@
 
 基于 **Cesium** 二次封装的三维 GIS JavaScript SDK。提供统一的 `FastX` 全局 API（`window.FastX`），在保留 Cesium 完整能力的同时，简化图层管理、坐标换算、鼠标交互与 Entity / Primitive 标绘等常见开发流程。
 
+**在线演示**：[https://manreshw-cmyk.github.io/FastX-GIS/](https://manreshw-cmyk.github.io/FastX-GIS/)
+
 ---
 
 ## 特性
