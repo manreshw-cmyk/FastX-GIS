@@ -31,9 +31,13 @@ import type {
 import {
   bearingDegreesNorthClockwise,
   cartesianToLngLat,
+  draftCylinderRadiiFromPoints,
+  draftEllipsoidRadiiFromPoints,
   midpoint,
+  radialDraftPoints,
   rectangleFromCorners,
   rectangleToBounds,
+  snapRadialDraftCursor,
   snapSectorDraftCursor,
   toPolylineTuples,
 } from '../Utils/geoDraw'
@@ -190,15 +194,17 @@ export function buildShapeDrawOptions(
     }
     case 'circle': {
       if (anchors.length < 1) return null
-      const center = cartesianToLngLat(pts[0]!)
+      const circlePts = radialDraftPoints(anchors, cursor)
+      const center = cartesianToLngLat(circlePts[0]!)
       const radius =
-        pts.length >= 2 ? Cesium.Cartesian3.distance(pts[0]!, pts[1]!) : 0
+        circlePts.length >= 2 ? Cesium.Cartesian3.distance(circlePts[0]!, circlePts[1]!) : 0
       return {
         ...base,
         areaDraft,
         center,
         radius,
-        draftVertices: pts.map(cartesianToLngLat),
+        draftVertices: circlePts.map(cartesianToLngLat),
+        draftCartesians: circlePts.map((p) => Cesium.Cartesian3.clone(p)),
       }
     }
     case 'runway': {
@@ -210,20 +216,34 @@ export function buildShapeDrawOptions(
       return { ...base, areaDraft, positions }
     }
     case 'ellipsoid': {
-      if (pts.length < 1) return null
-      const radii = pts.length >= 2 ? Cesium.Cartesian3.distance(pts[0]!, pts[1]!) : 1
-      return { ...base, areaDraft, position: cartesianToLngLat(pts[0]!), radii }
-    }
-    case 'cylinder': {
-      if (pts.length < 1) return null
-      const groundRadius = pts.length >= 2 ? Cesium.Cartesian3.distance(pts[0]!, pts[1]!) : 1
+      if (anchors.length < 1) return null
+      const ellipsoidPts = radialDraftPoints(anchors, cursor)
+      const { x, y, z } = draftEllipsoidRadiiFromPoints(ellipsoidPts)
       return {
         ...base,
         areaDraft,
-        center: cartesianToLngLat(pts[0]!),
-        length: (params.length as number | undefined) ?? groundRadius,
-        topRadius: (params.topRadius as number | undefined) ?? groundRadius,
-        bottomRadius: (params.bottomRadius as number | undefined) ?? groundRadius,
+        position: cartesianToLngLat(ellipsoidPts[0]!),
+        radii: new Cesium.Cartesian3(Math.max(x, 1), Math.max(y, 1), Math.max(z, 1)),
+        draftCartesians: ellipsoidPts.map((p) => Cesium.Cartesian3.clone(p)),
+      }
+    }
+    case 'cylinder': {
+      if (anchors.length < 1) return null
+      const cylinderPts = radialDraftPoints(anchors, cursor)
+      const { bottom: bottomRadius, top: topRadius } = draftCylinderRadiiFromPoints(cylinderPts)
+      const lenParam = params.length as number | undefined
+      const length =
+        typeof lenParam === 'number' && Number.isFinite(lenParam) && lenParam > 0
+          ? lenParam
+          : Math.max(bottomRadius, topRadius, 1)
+      return {
+        ...base,
+        areaDraft,
+        center: cartesianToLngLat(cylinderPts[0]!),
+        length,
+        topRadius,
+        bottomRadius,
+        draftCartesians: cylinderPts.map((p) => Cesium.Cartesian3.clone(p)),
       }
     }
     case 'box': {

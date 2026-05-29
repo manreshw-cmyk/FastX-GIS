@@ -12,15 +12,16 @@ import type {
 } from '../../Types'
 import {
   clearAreaDraftTargetData,
+  cloneDraftPoints,
   commitEntityPosition,
-  createDraftRadiusProperty,
-  draftRadiusFromPoints,
   getDraftPoints,
   isAreaDraftTargetData,
   markAreaDraftTargetData,
   setDraftPoints,
   type AreaDraftPointsHolder,
+  type DraftCartesiansOption,
 } from '../../Utils/areaDraft'
+import { draftCylinderRadiiFromPoints } from '../../Utils/geoDraw'
 export type {
   AddCylinderOptions,
   CylinderCenterInput,
@@ -37,6 +38,10 @@ interface CylinderRecord extends AreaDraftPointsHolder {
 }
 
 function resolveCylinderDraftCenter(options: AddCylinderOptions | UpdateCylinderProperties): Cesium.Cartesian3 | undefined {
+  const draftCarts = (options as AddCylinderOptions & DraftCartesiansOption).draftCartesians
+  if (options.areaDraft && draftCarts?.length) {
+    return Cesium.Cartesian3.clone(draftCarts[0]!)
+  }
   const explicitCount = [options.position, options.center, options.positions].filter((x) => x !== undefined).length
   if (explicitCount > 1) return undefined
   if (explicitCount === 1) {
@@ -60,6 +65,32 @@ function createDraftCylinderCenterProperty(getPoints: () => Cesium.Cartesian3[])
     const pts = getPoints()
     return pts.length ? Cesium.Cartesian3.clone(pts[0]!) : Cesium.Cartesian3.ZERO
   }, false)
+}
+
+function draftBottomRadiusFromPoints(points: Cesium.Cartesian3[]): number {
+  return draftCylinderRadiiFromPoints(points).bottom
+}
+
+function draftTopRadiusFromPoints(points: Cesium.Cartesian3[]): number {
+  return draftCylinderRadiiFromPoints(points).top
+}
+
+function createDraftCylinderBottomRadiusProperty(getPoints: () => Cesium.Cartesian3[]): Property {
+  return new Cesium.CallbackProperty(() => draftBottomRadiusFromPoints(getPoints()), false)
+}
+
+function createDraftCylinderTopRadiusProperty(getPoints: () => Cesium.Cartesian3[]): Property {
+  return new Cesium.CallbackProperty(() => draftTopRadiusFromPoints(getPoints()), false)
+}
+
+function rimFromCenterAndRadius(center: Cesium.Cartesian3, radiusM: number, ellipsoid: Cesium.Ellipsoid): Cesium.Cartesian3 {
+  const carto = Cesium.Cartographic.fromCartesian(center, ellipsoid)
+  return Cesium.Cartesian3.fromRadians(
+    carto.longitude + radiusM / ellipsoid.maximumRadius,
+    carto.latitude,
+    carto.height,
+    ellipsoid,
+  )
 }
 
 function resolveCylinderStyleFromTargetData(td: Record<string, unknown>): {
@@ -89,17 +120,23 @@ function resolveCylinderStyleFromTargetData(td: Record<string, unknown>): {
 }
 
 function applyAreaDraftGraphics(rec: CylinderRecord, ellipsoid: Cesium.Ellipsoid): void {
-  const st = resolveCylinderStyleFromTargetData(rec.targetData)
+  const td = rec.targetData
+  const st = resolveCylinderStyleFromTargetData(td)
   const getPts = (): Cesium.Cartesian3[] => getDraftPoints(rec)
-  const radiusProp = createDraftRadiusProperty(getPts)
 
   rec.entity.position = createDraftCylinderCenterProperty(getPts)
 
   const cg = new Cesium.CylinderGraphics()
   cg.heightReference = new Cesium.ConstantProperty(Cesium.HeightReference.NONE)
-  cg.length = new Cesium.ConstantProperty(st.length)
-  cg.topRadius = radiusProp
-  cg.bottomRadius = radiusProp
+  cg.length = new Cesium.CallbackProperty(() => {
+    const pts = getPts()
+    const br = draftBottomRadiusFromPoints(pts)
+    const tr = draftTopRadiusFromPoints(pts)
+    const lenHint = typeof td.length === 'number' && td.length > 0 ? td.length : 0
+    return lenHint > 0 ? lenHint : Math.max(br, tr, 1)
+  }, false)
+  cg.topRadius = createDraftCylinderTopRadiusProperty(getPts)
+  cg.bottomRadius = createDraftCylinderBottomRadiusProperty(getPts)
   cg.fill = new Cesium.ConstantProperty(st.showFill)
   cg.material = new Cesium.ColorMaterialProperty(st.fillColor)
   cg.outline = new Cesium.ConstantProperty(st.outline)
@@ -115,9 +152,9 @@ function applyAreaDraftGraphics(rec: CylinderRecord, ellipsoid: Cesium.Ellipsoid
 
   const center = getPts()[0]
   if (center) {
-    const hd = typeof rec.targetData.headingDegrees === 'number' ? rec.targetData.headingDegrees : 0
-    const pd = typeof rec.targetData.pitchDegrees === 'number' ? rec.targetData.pitchDegrees : 0
-    const rd = typeof rec.targetData.rollDegrees === 'number' ? rec.targetData.rollDegrees : 0
+    const hd = typeof td.headingDegrees === 'number' ? td.headingDegrees : 0
+    const pd = typeof td.pitchDegrees === 'number' ? td.pitchDegrees : 0
+    const rd = typeof td.rollDegrees === 'number' ? td.rollDegrees : 0
     rec.entity.orientation = new Cesium.ConstantProperty(orientationFromHprDegrees(center, hd, pd, rd, ellipsoid))
   }
 
@@ -147,14 +184,15 @@ function commitAreaDraftRecord(rec: CylinderRecord): boolean {
   const pts = getDraftPoints(rec)
   if (!pts.length) return false
   const center = pts[0]!
-  const groundR = draftRadiusFromPoints(pts)
-  if (!Number.isFinite(groundR) || groundR <= 0) return false
+  const bottomR = draftBottomRadiusFromPoints(pts)
+  const topR = draftTopRadiusFromPoints(pts)
+  if (!validRadii(topR, bottomR)) return false
 
   const td = rec.targetData
-  const len = typeof td.length === 'number' && td.length > 0 ? td.length : groundR
+  const len = typeof td.length === 'number' && td.length > 0 ? td.length : Math.max(bottomR, topR, 1)
   td.length = len
-  td.topRadius = groundR
-  td.bottomRadius = groundR
+  td.topRadius = topR
+  td.bottomRadius = bottomR
   clearAreaDraftTargetData(td)
   rec.draftPoints = undefined
 
@@ -176,8 +214,8 @@ function commitAreaDraftRecord(rec: CylinderRecord): boolean {
     cg,
     {
       length: len,
-      topRadius: groundR,
-      bottomRadius: groundR,
+      topRadius: topR,
+      bottomRadius: bottomR,
       fillColor: st.fillColor,
       showFill: st.showFill,
       outline: st.outline,
@@ -486,7 +524,13 @@ export default class Cylinder {
     }
 
     const rec: CylinderRecord = { viewer, entity, targetData: td }
-    setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+    const draftCarts = (options as AddCylinderOptions & DraftCartesiansOption).draftCartesians
+    if (draftCarts?.length) {
+      setDraftPoints(rec, cloneDraftPoints(draftCarts))
+      if (draftCarts[0]) storeCylinderCenterInTargetData(td, draftCarts[0], ellipsoid)
+    } else {
+      setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+    }
     applyAreaDraftGraphics(rec, ellipsoid)
     viewer.entities.add(entity)
     this.data.set(id, rec)
@@ -640,36 +684,54 @@ export default class Cylinder {
     markAreaDraftTargetData(td)
     this.applyStylePatchToTargetData(rec, p)
 
-    const center = resolveCylinderDraftCenter(p) ?? getDraftPoints(rec)[0]
-    if (center) {
-      storeCylinderCenterInTargetData(td, center, ellipsoid)
+    const draftCarts = (p as UpdateCylinderProperties & DraftCartesiansOption).draftCartesians
+    if (draftCarts?.length) {
+      setDraftPoints(rec, cloneDraftPoints(draftCarts))
       const pts = getDraftPoints(rec)
-      const groundR =
-        p.topRadius !== undefined && p.topRadius > 0
-          ? p.topRadius
-          : p.bottomRadius !== undefined && p.bottomRadius > 0
-            ? p.bottomRadius
-            : undefined
-      if (pts.length >= 2) {
-        pts[0] = Cesium.Cartesian3.clone(center)
-        setDraftPoints(rec, pts)
-      } else if (groundR !== undefined) {
-        const carto = Cesium.Cartographic.fromCartesian(center, ellipsoid)
-        const rim = Cesium.Cartesian3.fromRadians(
-          carto.longitude + groundR / ellipsoid.maximumRadius,
-          carto.latitude,
-          carto.height,
-          ellipsoid,
-        )
-        setDraftPoints(rec, [Cesium.Cartesian3.clone(center), rim])
-        td.topRadius = groundR
-        td.bottomRadius = groundR
-      } else {
-        setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+      if (pts.length >= 1) storeCylinderCenterInTargetData(td, pts[0]!, ellipsoid)
+      const br =
+        typeof p.bottomRadius === 'number' && Number.isFinite(p.bottomRadius)
+          ? Math.max(0, p.bottomRadius)
+          : draftBottomRadiusFromPoints(pts)
+      const tr =
+        typeof p.topRadius === 'number' && Number.isFinite(p.topRadius)
+          ? Math.max(0, p.topRadius)
+          : draftTopRadiusFromPoints(pts)
+      td.bottomRadius = br
+      td.topRadius = tr
+      if (typeof p.length === 'number' && Number.isFinite(p.length) && p.length > 0) {
+        td.length = p.length
+      }
+    } else {
+      const center = resolveCylinderDraftCenter(p) ?? getDraftPoints(rec)[0]
+      if (center) {
+        storeCylinderCenterInTargetData(td, center, ellipsoid)
+        const pts = getDraftPoints(rec)
+        if (typeof p.bottomRadius === 'number' && p.bottomRadius >= 0) {
+          td.bottomRadius = p.bottomRadius
+        }
+        if (typeof p.topRadius === 'number' && p.topRadius >= 0) {
+          td.topRadius = p.topRadius
+        }
+        const br = typeof td.bottomRadius === 'number' ? td.bottomRadius : 0
+        const tr = typeof td.topRadius === 'number' ? td.topRadius : br
+        if (pts.length >= 2) {
+          pts[0] = Cesium.Cartesian3.clone(center)
+          setDraftPoints(rec, pts)
+        } else if (br > 0 || tr > 0) {
+          const rimB = br > 0 ? rimFromCenterAndRadius(center, br, ellipsoid) : undefined
+          const rimT = tr > 0 ? rimFromCenterAndRadius(center, tr, ellipsoid) : undefined
+          if (rimB && rimT) setDraftPoints(rec, [center, rimB, rimT])
+          else if (rimB) setDraftPoints(rec, [center, rimB])
+          else if (rimT) setDraftPoints(rec, [center, rimT])
+          else setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+        } else {
+          setDraftPoints(rec, [Cesium.Cartesian3.clone(center)])
+        }
       }
     }
 
-    refreshAreaDraftStyle(rec)
+    applyAreaDraftGraphics(rec, ellipsoid)
     if (p.show !== undefined) rec.entity.show = p.show
     if (p.description !== undefined) {
       rec.entity.description = new Cesium.ConstantProperty(p.description)

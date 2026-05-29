@@ -8,8 +8,7 @@ import * as Cesium from 'cesium'
 import type { Cartesian3, Entity, Viewer } from 'cesium'
 import {
   createRandomXgxId,
-  lngLatHeightToWorldCartesian3,
-  screenDrawingBufferToLngLatHeight,
+  screenDrawingBufferToWorldCartesian3,
 } from '../Coordinates'
 import Point from '../Draw/Point'
 import Label from '../Draw/Label'
@@ -95,7 +94,10 @@ import {
   positionsTupleToArray,
   rectangleFromCorners,
   rectangleToBounds,
+  snapRadialDraftCursor,
   snapSectorDraftCursor,
+  draftCylinderRadiiFromPoints,
+  draftEllipsoidRadiiFromPoints,
   toPolylineTuples,
 } from '../Utils/geoDraw'
 
@@ -114,10 +116,10 @@ const SHAPE_RULES: Record<AreaDrawShapeType, AreaShapeInteractionRule> = {
   rectangle: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
   circle: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
   runway: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
-  ellipsoid: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
+  ellipsoid: { mode: 'fourClick', minPoints: 4, interactive: true, supportsPrimitive: true },
   box: { mode: 'single', minPoints: 1, interactive: true, supportsPrimitive: true },
   plane: { mode: 'single', minPoints: 1, interactive: true, supportsPrimitive: true },
-  cylinder: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
+  cylinder: { mode: 'threeClick', minPoints: 3, interactive: true, supportsPrimitive: true },
   sector: { mode: 'threeClick', minPoints: 3, interactive: true, supportsPrimitive: true },
   path: { mode: 'single', minPoints: 0, interactive: false, supportsPrimitive: false },
 }
@@ -128,7 +130,7 @@ function getShapeRule(shapeType: AreaDrawShapeType): AreaShapeInteractionRule {
 
 function usesMultiClickAutoFinish(shapeType: AreaDrawShapeType): boolean {
   const m = SHAPE_RULES[shapeType].mode
-  return m === 'twoClick' || m === 'threeClick'
+  return m === 'twoClick' || m === 'threeClick' || m === 'fourClick'
 }
 
 const DRAFT_ENTITY_CURSOR_SHAPES = new Set<AreaDrawShapeType>([
@@ -340,6 +342,19 @@ function previewDistance(getPositions: () => Cartesian3[]): number {
   return Cesium.Cartesian3.distance(p[0]!, p[1]!)
 }
 
+function previewCylinderBottomRadius(getPositions: () => Cartesian3[]): number {
+  return draftCylinderRadiiFromPoints(getPositions()).bottom
+}
+
+function previewCylinderTopRadius(getPositions: () => Cartesian3[]): number {
+  return draftCylinderRadiiFromPoints(getPositions()).top
+}
+
+function previewEllipsoidRadii(getPositions: () => Cartesian3[]): Cesium.Cartesian3 {
+  const { x, y, z } = draftEllipsoidRadiiFromPoints(getPositions())
+  return new Cesium.Cartesian3(Math.max(x, 1), Math.max(y, 1), Math.max(z, 1))
+}
+
 function previewPositionAt0(getPositions: () => Cartesian3[]): Cesium.CallbackPositionProperty {
   return new Cesium.CallbackPositionProperty(() => getPositions()[0] ?? Cesium.Cartesian3.ZERO, false)
 }
@@ -436,10 +451,7 @@ function createStablePreviewEntity(
         },
       })
     case 'ellipsoid': {
-      const rCb = new Cesium.CallbackProperty(() => {
-        const r = previewDistance(getPositions)
-        return new Cesium.Cartesian3(r, r, r)
-      }, false)
+      const rCb = new Cesium.CallbackProperty(() => previewEllipsoidRadii(getPositions), false)
       return viewer.entities.add({
         id,
         position: previewPositionAt0(getPositions),
@@ -452,18 +464,27 @@ function createStablePreviewEntity(
       })
     }
     case 'cylinder': {
-      const rCb = new Cesium.CallbackProperty(() => previewDistance(getPositions), false)
-      const lenCb = new Cesium.CallbackProperty(
-        () => (params.length as number | undefined) ?? previewDistance(getPositions),
+      const bottomCb = new Cesium.CallbackProperty(
+        () => previewCylinderBottomRadius(getPositions),
         false,
       )
+      const topCb = new Cesium.CallbackProperty(() => previewCylinderTopRadius(getPositions), false)
+      const lenRaw = params.length as number | undefined
+      const lenCb = new Cesium.CallbackProperty(() => {
+        if (typeof lenRaw === 'number' && Number.isFinite(lenRaw) && lenRaw > 0) return lenRaw
+        return Math.max(
+          previewCylinderBottomRadius(getPositions),
+          previewCylinderTopRadius(getPositions),
+          1,
+        )
+      }, false)
       return viewer.entities.add({
         id,
         position: previewPositionAt0(getPositions),
         cylinder: {
           length: lenCb,
-          topRadius: rCb,
-          bottomRadius: rCb,
+          topRadius: topCb,
+          bottomRadius: bottomCb,
           material: colorFromCss(fillColor, fillAlpha),
           outline: true,
           outlineColor,
@@ -688,22 +709,29 @@ function buildDrawParamsFromMousePoints(
         positions: [cartesianToLngLat(points[0]!), cartesianToLngLat(points[1]!)],
       }
     case 'ellipsoid': {
-      if (points.length < 2) return null
+      if (points.length < 4) return null
+      const { x, y, z } = draftEllipsoidRadiiFromPoints(points)
       return {
         ...base,
         position: cartesianToLngLat(points[0]!),
-        radii: Cesium.Cartesian3.distance(points[0]!, points[1]!),
+        radii: new Cesium.Cartesian3(x, y, z),
       }
     }
     case 'cylinder': {
-      if (points.length < 2) return null
-      const groundRadius = Cesium.Cartesian3.distance(points[0]!, points[1]!)
+      if (points.length < 3) return null
+      const bottomRadius = Cesium.Cartesian3.distance(points[0]!, points[1]!)
+      const topRadius = Cesium.Cartesian3.distance(points[0]!, points[2]!)
+      const lenParam = startParams.length as number | undefined
+      const length =
+        typeof lenParam === 'number' && Number.isFinite(lenParam) && lenParam > 0
+          ? lenParam
+          : Math.max(bottomRadius, topRadius, 1)
       return {
         ...base,
         center: cartesianToLngLat(points[0]!),
-        length: (startParams.length as number | undefined) ?? groundRadius,
-        topRadius: (startParams.topRadius as number | undefined) ?? groundRadius,
-        bottomRadius: (startParams.bottomRadius as number | undefined) ?? groundRadius,
+        length,
+        topRadius,
+        bottomRadius,
       }
     }
     case 'box': {
@@ -918,9 +946,8 @@ function resolveDrawRenderMode(params: AreaDrawDirectParams): AreaDrawRenderMode
 }
 
 function pickCartesianAt(viewer: Viewer, db: Cesium.Cartesian2): Cartesian3 | null {
-  const llh = screenDrawingBufferToLngLatHeight(viewer, { x: db.x, y: db.y })
-  if (!llh) return null
-  return lngLatHeightToWorldCartesian3(llh.longitude, llh.latitude, llh.height ?? 0)
+  const hit = screenDrawingBufferToWorldCartesian3(viewer, db)
+  return hit ? Cesium.Cartesian3.clone(hit) : null
 }
 
 /** 绘制期禁用拖拽类相机操作，保留滚轮/双指缩放 */
@@ -936,9 +963,10 @@ function suspendCameraDragInputs(
   }
   controller.zoomEventTypes = [Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH]
   controller.rotateEventTypes = undefined
-  controller.tiltEventTypes = undefined
   controller.translateEventTypes = undefined
   controller.lookEventTypes = undefined
+  // 绘制期保留中键拖拽（倾斜），仅关闭左键旋转与右键拖拽缩放
+  controller.tiltEventTypes = Cesium.CameraEventType.MIDDLE_DRAG
   return () => {
     controller.zoomEventTypes = snap.zoomEventTypes
     controller.rotateEventTypes = snap.rotateEventTypes
@@ -1110,15 +1138,22 @@ export default class AreaManager {
   private resolveDrawCursor(cartesian: Cartesian3): Cartesian3 {
     if (!this.currentParams) return cartesian
     const shape = this.currentParams.shapeType
-    if (shape === 'sector' && this.collectedPoints.length >= 2) {
-      return snapSectorDraftCursor(this.collectedPoints, cartesian)
+    const anchors = this.collectedPoints
+    if (shape === 'sector' && anchors.length >= 2) {
+      return snapSectorDraftCursor(anchors, cartesian)
+    }
+    if (
+      (shape === 'circle' || shape === 'cylinder' || shape === 'ellipsoid') &&
+      anchors.length >= 1
+    ) {
+      return snapRadialDraftCursor(anchors, cartesian)
     }
     const polyFamily =
       shape === 'polyline' ||
       shape === 'corridor' ||
       shape === 'wall' ||
       shape === 'polylineVolume'
-    if (polyFamily && this.collectedPoints.length >= 1) {
+    if (polyFamily && anchors.length >= 1) {
       return Cesium.Cartesian3.clone(cartesian)
     }
     return cartesian
@@ -1132,6 +1167,11 @@ export default class AreaManager {
 
     if (shapeType === 'sector' && this.collectedPoints.length === 2) {
       cartesian = snapSectorDraftCursor(this.collectedPoints, cartesian)
+    } else if (
+      (shapeType === 'circle' || shapeType === 'cylinder' || shapeType === 'ellipsoid') &&
+      this.collectedPoints.length >= 1
+    ) {
+      cartesian = snapRadialDraftCursor(this.collectedPoints, cartesian)
     }
 
     if (rule.mode === 'single') {
@@ -1151,12 +1191,8 @@ export default class AreaManager {
     this.updatePreview(cartesian)
 
     const autoSecond = this.currentParams.autoFinishOnSecondClick !== false
-    if (autoSecond && usesMultiClickAutoFinish(shapeType)) {
-      if (rule.mode === 'twoClick' && this.collectedPoints.length >= 2) {
-        this.finishDraw()
-      } else if (rule.mode === 'threeClick' && this.collectedPoints.length >= 3) {
-        this.finishDraw()
-      }
+    if (autoSecond && usesMultiClickAutoFinish(shapeType) && this.collectedPoints.length >= rule.minPoints) {
+      this.finishDraw()
     }
   }
 
@@ -1244,7 +1280,7 @@ export default class AreaManager {
 
     if (supportsClassDraft(shape)) {
       this.syncShapeDraft(drawCursor)
-      if (shape === 'circle' || shape === 'sector') {
+      if (shape === 'circle' || shape === 'sector' || shape === 'cylinder' || shape === 'ellipsoid') {
         this.notifyAnchorChange(drawCursor)
       }
       return

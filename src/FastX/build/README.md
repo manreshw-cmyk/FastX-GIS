@@ -44,11 +44,11 @@ npm install fastx-sdk
 
 ```bash
 # 方式 A：npm 本地安装
-npm install ./fastx-sdk-1.0.0.tgz
+npm install ./fastx-sdk-1.0.1.tgz
 
 # 方式 B：手动解压到 node_modules
 mkdir -p node_modules/fastx-sdk
-tar -xzf fastx-sdk-1.0.0.tgz -C node_modules/fastx-sdk --strip-components=1
+tar -xzf fastx-sdk-1.0.1.tgz -C node_modules/fastx-sdk --strip-components=1
 # Windows 可用解压工具，保证目录名为 node_modules/fastx-sdk 且含 package.json / dist / lib
 ```
 

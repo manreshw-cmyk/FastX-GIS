@@ -1,123 +1,141 @@
 <script setup lang="ts">
-import { message } from 'ant-design-vue'
-import { computed, ref, watch } from 'vue'
-import { Coordinates } from '../Coordinates'
-import { useMapLayerStore } from '../../stores/modules/mapLayer'
+import { message } from "ant-design-vue";
+import { computed, ref, watch } from "vue";
+import { Coordinates } from "../Coordinates";
+import { useMapLayerStore } from "../../stores/modules/mapLayer";
 
-defineOptions({ name: 'XMapLocatePanel' })
+defineOptions({ name: "XMapLocatePanel" });
 
-const visible = defineModel<boolean>('visible', { default: false })
+const visible = defineModel<boolean>("visible", { default: false });
 
-const map = useMapLayerStore()
-const coordMode = ref<'decimal' | 'dms'>('decimal')
-const lonDecimal = ref<number | null>(null)
-const latDecimal = ref<number | null>(null)
-const lonDmsText = ref('')
-const latDmsText = ref('')
-const locating = ref(false)
+const map = useMapLayerStore();
+const coordMode = ref<"decimal" | "dms">("decimal");
+const lonDecimal = ref<number | null>(null);
+const latDecimal = ref<number | null>(null);
+const lonDmsText = ref("");
+const latDmsText = ref("");
+const locating = ref(false);
 
-const isDecimal = computed(() => coordMode.value === 'decimal')
-const modeToggleLabel = computed(() => (isDecimal.value ? 'DMS' : '°'))
-const modeToggleTitle = computed(() => (isDecimal.value ? '切换为度分秒' : '切换为十进制度'))
+const isDecimal = computed(() => coordMode.value === "decimal");
+const modeToggleLabel = computed(() => (isDecimal.value ? "DMS" : "°"));
+const modeToggleTitle = computed(() =>
+  isDecimal.value ? "切换为度分秒" : "切换为十进制度"
+);
 
-const DMS_PATTERN = /^(-)?(\d+)\s*°\s*(\d+(?:\.\d+)?)\s*['′]\s*(\d+(?:\.\d+)?)\s*[″"]?$/
+const DMS_PATTERN =
+  /^(-)?(\d+)\s*°\s*(\d+(?:\.\d+)?)\s*['′]\s*(\d+(?:\.\d+)?)\s*[″"]?$/;
 
 const fillFromCamera = (): void => {
-  const layer = map.getLayer()
-  if (!layer) return
-  const c = layer.getCameraCenterLngLatHeight()
-  lonDecimal.value = Number(c.longitude.toFixed(6))
-  latDecimal.value = Number(c.latitude.toFixed(6))
-  lonDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(c.longitude)
-  latDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(c.latitude)
-}
+  const layer = map.getLayer();
+  if (!layer) return;
+  const c = layer.getCameraCenterLngLatHeight();
+  lonDecimal.value = Number(c.longitude.toFixed(6));
+  latDecimal.value = Number(c.latitude.toFixed(6));
+  lonDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(c.longitude);
+  latDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(c.latitude);
+};
 
 const parseSymbolicDms = (raw: string): number | null => {
-  const m = raw.trim().match(DMS_PATTERN)
-  if (!m) return null
-  const mag = Number(m[2]) + Number(m[3]) / 60 + Number(m[4]) / 3600
-  const v = m[1] === '-' ? -mag : mag
-  return Number.isFinite(v) ? v : null
-}
+  const m = raw.trim().match(DMS_PATTERN);
+  if (!m) return null;
+  const mag = Number(m[2]) + Number(m[3]) / 60 + Number(m[4]) / 3600;
+  const v = m[1] === "-" ? -mag : mag;
+  return Number.isFinite(v) ? v : null;
+};
 
 const isValidRange = (longitude: number, latitude: number): boolean =>
-  longitude >= -180 && longitude <= 180 && latitude >= -90 && latitude <= 90
+  longitude >= -180 && longitude <= 180 && latitude >= -90 && latitude <= 90;
 
-const resolveDecimalCoords = (): { longitude: number; latitude: number } | null => {
+const resolveDecimalCoords = (): {
+  longitude: number;
+  latitude: number;
+} | null => {
   if (isDecimal.value) {
     if (lonDecimal.value == null || latDecimal.value == null) {
-      message.warning('请填写经度、纬度')
-      return null
+      message.warning("请填写经度、纬度");
+      return null;
     }
-    if (!Number.isFinite(lonDecimal.value) || !Number.isFinite(latDecimal.value)) {
-      message.warning('经纬度格式无效')
-      return null
+    if (
+      !Number.isFinite(lonDecimal.value) ||
+      !Number.isFinite(latDecimal.value)
+    ) {
+      message.warning("经纬度格式无效");
+      return null;
     }
     if (!isValidRange(lonDecimal.value, latDecimal.value)) {
-      message.warning('经纬度超出有效范围')
-      return null
+      message.warning("经纬度超出有效范围");
+      return null;
     }
-    return { longitude: lonDecimal.value, latitude: latDecimal.value }
+    return { longitude: lonDecimal.value, latitude: latDecimal.value };
   }
 
-  const longitude = parseSymbolicDms(lonDmsText.value)
-  const latitude = parseSymbolicDms(latDmsText.value)
+  const longitude = parseSymbolicDms(lonDmsText.value);
+  const latitude = parseSymbolicDms(latDmsText.value);
   if (longitude == null || latitude == null) {
-    message.warning('请按 127°1.00′17.04″ 格式填写度分秒')
-    return null
+    message.warning("请按 127°1.00′17.04″ 格式填写度分秒");
+    return null;
   }
   if (!isValidRange(longitude, latitude)) {
-    message.warning('经纬度超出有效范围')
-    return null
+    message.warning("经纬度超出有效范围");
+    return null;
   }
-  return { longitude, latitude }
-}
+  return { longitude, latitude };
+};
 
 const toggleCoordMode = (): void => {
   if (isDecimal.value) {
     if (lonDecimal.value != null && latDecimal.value != null) {
-      lonDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(lonDecimal.value)
-      latDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(latDecimal.value)
+      lonDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(
+        lonDecimal.value
+      );
+      latDmsText.value = Coordinates.decimalDegreesToDmsSymbolicString(
+        latDecimal.value
+      );
     }
-    coordMode.value = 'dms'
-    return
+    coordMode.value = "dms";
+    return;
   }
-  const lon = parseSymbolicDms(lonDmsText.value)
-  const lat = parseSymbolicDms(latDmsText.value)
-  if (lon != null) lonDecimal.value = Number(lon.toFixed(6))
-  if (lat != null) latDecimal.value = Number(lat.toFixed(6))
-  coordMode.value = 'decimal'
-}
+  const lon = parseSymbolicDms(lonDmsText.value);
+  const lat = parseSymbolicDms(latDmsText.value);
+  if (lon != null) lonDecimal.value = Number(lon.toFixed(6));
+  if (lat != null) latDecimal.value = Number(lat.toFixed(6));
+  coordMode.value = "decimal";
+};
 
 const applyLocate = async (): Promise<void> => {
-  const layer = map.getLayer()
+  const layer = map.getLayer();
   if (!layer) {
-    message.warning('地图尚未就绪')
-    return
+    message.warning("地图尚未就绪");
+    return;
   }
-  const coords = resolveDecimalCoords()
-  if (!coords) return
+  const coords = resolveDecimalCoords();
+  if (!coords) return;
 
-  locating.value = true
+  locating.value = true;
   try {
-    const height = layer.getCameraCenterLngLatHeight().height
+    const height = layer.getCameraCenterLngLatHeight().height;
     await layer.setMapCenter(
       { longitude: coords.longitude, latitude: coords.latitude, height },
-      { useAnimation: true, duration: 1.2 },
-    )
-    message.success('已定位到目标坐标')
+      { useAnimation: true, duration: 1.2 }
+    );
+    message.success("已定位到目标坐标");
   } finally {
-    locating.value = false
+    locating.value = false;
   }
-}
+};
 
 watch(visible, (open) => {
-  if (open) fillFromCamera()
-})
+  if (open) fillFromCamera();
+});
 </script>
 
 <template>
-  <div v-show="visible" class="x-map-locate-panel" role="dialog" aria-label="坐标定位">
+  <div
+    v-show="visible"
+    class="x-map-locate-panel"
+    role="dialog"
+    aria-label="坐标定位"
+  >
     <div class="x-map-locate-field">
       <span class="x-map-locate-label">经度</span>
       <a-input-number
@@ -156,7 +174,12 @@ watch(visible, (open) => {
       />
     </div>
 
-    <button type="button" class="x-map-locate-action x-map-locate-action--mode" :title="modeToggleTitle" @click="toggleCoordMode">
+    <button
+      type="button"
+      class="x-map-locate-action x-map-locate-action--mode"
+      :title="modeToggleTitle"
+      @click="toggleCoordMode"
+    >
       <span class="x-map-locate-action-icon" aria-hidden="true">↻</span>
       <span>{{ modeToggleLabel }}</span>
     </button>
@@ -170,9 +193,28 @@ watch(visible, (open) => {
       @click="applyLocate"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6" />
-        <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6" />
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        <circle
+          cx="12"
+          cy="12"
+          r="3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="7.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <path
+          d="M12 3v3M12 18v3M3 12h3M18 12h3"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
       </svg>
     </button>
   </div>
@@ -222,7 +264,14 @@ $input-focus: rgba(64, 150, 255, 0.85);
   width: 112px !important;
 
   &--wide {
-    width: 140px !important;
+    width: 100px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 30px;
+    color: #e9f6ff !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: none !important;
   }
 
   :deep(.ant-input-number),
@@ -231,9 +280,7 @@ $input-focus: rgba(64, 150, 255, 0.85);
     border-radius: 6px;
     background: $input-bg;
     border: 1px solid $input-border;
-    transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease,
+    transition: border-color 0.15s ease, box-shadow 0.15s ease,
       background 0.15s ease;
   }
 
@@ -245,7 +292,7 @@ $input-focus: rgba(64, 150, 255, 0.85);
     line-height: 30px;
     color: $text !important;
     background: transparent !important;
-    border: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: none !important;
   }
 
@@ -282,10 +329,7 @@ $input-focus: rgba(64, 150, 255, 0.85);
   background: $input-bg;
   color: $text;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.16);

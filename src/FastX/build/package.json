@@ -1,6 +1,6 @@
 {
   "name": "fastx-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "基于 Cesium 二次封装的三维 GIS SDK：Layer / Draw / Coordinates / Trajectory 等能力；内置完整 Cesium 运行时（lib/Cesium JS + Workers/Assets/Widgets），内网/离线解压即用，无需单独安装 cesium，installFastXToWindow 自动配置 CESIUM_BASE_URL，框架无关，TypeScript 类型完整。",
   "type": "module",
   "license": "MIT",

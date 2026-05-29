@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
-import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import * as Cesium from 'cesium'
@@ -28,9 +28,9 @@ const form = reactive({
   longitude: null as number | null,
   latitude: null as number | null,
   height: 0,
-  radiusX: 25_000,
-  radiusY: 18_000,
-  radiusZ: 12_000,
+  radiusX: null as number | null,
+  radiusY: null as number | null,
+  radiusZ: null as number | null,
   showFill: true,
   color: DEFAULT_FILL_COLOR,
   alpha: 0.65,
@@ -64,25 +64,43 @@ function haversineDistanceM(a: LngLatHeight, b: LngLatHeight): number {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
-function syncEllipsoidFromAnchors(points: LngLatHeight[]): void {
-  if (points.length >= 1) {
+function syncEllipsoidFromAnchors(points: LngLatHeight[], anchorCount = points.length): void {
+  if (anchorCount >= 1 && points.length >= 1) {
     form.longitude = points[0]!.longitude
     form.latitude = points[0]!.latitude
     form.height = points[0]!.height ?? 0
+  } else {
+    form.longitude = null
+    form.latitude = null
   }
-  if (points.length >= 2) {
-    const r = haversineDistanceM(points[0]!, points[1]!)
-    form.radiusX = r
-    form.radiusY = r
-    form.radiusZ = r
+  if (anchorCount >= 1 && points.length >= 2) {
+    form.radiusX = haversineDistanceM(points[0]!, points[1]!)
+  } else {
+    form.radiusX = null
+  }
+  if (anchorCount >= 2 && points.length >= 3) {
+    form.radiusY = haversineDistanceM(points[0]!, points[2]!)
+  } else if (anchorCount >= 2 && points.length >= 2) {
+    form.radiusY = haversineDistanceM(points[0]!, points[1]!)
+  } else {
+    form.radiusY = null
+  }
+  if (anchorCount >= 3 && points.length >= 4) {
+    form.radiusZ = haversineDistanceM(points[0]!, points[3]!)
+  } else if (anchorCount >= 3 && points.length >= 3) {
+    form.radiusZ = haversineDistanceM(points[0]!, points[2]!)
+  } else {
+    form.radiusZ = null
   }
 }
 
 function buildEllipsoidStartParams(): AreaDrawStartParams {
+  const hasRadii =
+    form.radiusX != null && form.radiusY != null && form.radiusZ != null
   return {
     shapeType: 'ellipsoid',
     id: form.id.trim() || undefined,
-    radii: radiiFromForm(),
+    ...(hasRadii ? { radii: radiiFromForm() } : {}),
     color: form.color,
     alpha: fillAlphaForApi(),
     outline: form.outline,
@@ -108,8 +126,8 @@ function buildEllipsoidStartParams(): AreaDrawStartParams {
       outlineColor: form.outlineColor,
       outlineWidth: form.outlineWidth,
     },
-    onAnchorChange: (points) => {
-      syncEllipsoidFromAnchors(points)
+    onAnchorChange: (points, anchorCount) => {
+      syncEllipsoidFromAnchors(points, anchorCount ?? points.length)
       if (points.length === 0) isAreaDrawing.value = false
     },
   }
@@ -199,9 +217,9 @@ function resetFormToInitial(): void {
   form.longitude = null
   form.latitude = null
   form.height = 0
-  form.radiusX = 25_000
-  form.radiusY = 18_000
-  form.radiusZ = 12_000
+  form.radiusX = null
+  form.radiusY = null
+  form.radiusZ = null
   form.showFill = true
   form.color = DEFAULT_FILL_COLOR
   form.alpha = 0.65
@@ -251,17 +269,22 @@ function onDeleteRow(id: string, e: Event): void {
   message.success('已删除')
 }
 
-const primaryButtonText = computed(() =>
-  selectedId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
-)
-
-const pickCoordButtonType = computed(() => (coordPickArmed.value ? ('primary' as const) : ('default' as const)))
+const primaryButtonText = computed(() => (selectedId.value ? '确定' : '标绘'))
 
 function radiiFromForm(): Cesium.Cartesian3 {
-  const x = Math.max(1, form.radiusX)
-  const y = Math.max(1, form.radiusY)
-  const z = Math.max(1, form.radiusZ)
+  const x = Math.max(1, form.radiusX ?? 1)
+  const y = Math.max(1, form.radiusY ?? 1)
+  const z = Math.max(1, form.radiusZ ?? 1)
   return new Cesium.Cartesian3(x, y, z)
+}
+
+function centerReady(): boolean {
+  return (
+    form.longitude != null &&
+    form.latitude != null &&
+    Number.isFinite(form.longitude) &&
+    Number.isFinite(form.latitude)
+  )
 }
 
 function applyUpdateToSelected(): void {
@@ -371,8 +394,8 @@ function onPrimaryClick(): void {
 
   // --- 空域管理：鼠标绘制 start / end ---
   if (isAreaDrawing.value) {
-    if (am.pointCount < 2) {
-      message.warning('至少需要 2 个点（中心 + 边缘）')
+    if (am.pointCount < 4) {
+      message.warning('球 / 椭球至少需要 4 个点（圆心、半径 X、Y、Z）')
       return
     }
     am.end()
@@ -385,15 +408,14 @@ function onPrimaryClick(): void {
     message.error('地图未就绪')
     return
   }
-  form.longitude = null
-  form.latitude = null
+  resetFormToInitial()
   const ok = am.start(v, buildEllipsoidStartParams())
   if (!ok) {
     message.error('无法开始椭球绘制')
     return
   }
   isAreaDrawing.value = true
-  message.info('鼠标左键点击绘制，右键结束')
+  message.info('左键：圆心 → 半径 X → 半径 Y → 半径 Z（第 4 点后自动完成）；右键可提前结束')
 
   // --- Ellipsoid 单类 add（不用空域管理时注释上一段，改用下方）---
   // addEllipsoidFromForm()
@@ -538,7 +560,7 @@ onBeforeUnmount(() => {
     window.FastX?.Ellipsoid?.clear(v)
   }
 })
-keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
+keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse, onToggleCoordPick)
 </script>
 
 <template>
@@ -561,6 +583,7 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       size="small"
                       allow-clear
                       placeholder="可选，留空自动生成"
+                      :disabled="!!selectedId"
                     />
                   </div>
                 </div>
@@ -573,7 +596,8 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="标绘后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -586,7 +610,8 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       size="small"
                       :step="0.0001"
                       :controls="true"
-                      placeholder="可拾取或手输"
+                      :disabled="!selectedId"
+                      placeholder="标绘后或选中行可编辑"
                     />
                   </div>
                 </div>
@@ -608,6 +633,8 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       :max="2000000"
                       :step="1000"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -622,6 +649,8 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       :max="2000000"
                       :step="1000"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -636,6 +665,8 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                       :max="2000000"
                       :step="1000"
                       :controls="true"
+                      :disabled="!selectedId"
+                      placeholder="选中表格行后可编辑"
                     />
                   </div>
                 </div>
@@ -710,20 +741,14 @@ keepAlternateDemoEntry(addEllipsoidFromForm, bindMouse)
                   </div>
                 </div>
 
+                <p class="hzd-muted">
+                  标绘：左键依次确定圆心、半径 X、半径 Y、半径 Z（第 4 点后自动完成）。三轴半径不等时为椭球，相等时为球体。
+                </p>
+
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
-                    <div class="hzd-actions-primary-row">
-                      <a-tooltip :title="coordPickArmed ? '取消拾取' : '地图拾取经纬度'">
-                        <a-button
-                          :type="pickCoordButtonType"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="地图拾取经纬度"
-                          @click="onToggleCoordPick"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
-                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onPrimaryClick">
+                    <div class="hzd-actions-primary-row hzd-actions-primary-row--solo">
+                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall" @click="onPrimaryClick">
                         {{ primaryButtonText }}
                       </a-button>
                     </div>

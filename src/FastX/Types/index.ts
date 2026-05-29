@@ -2916,7 +2916,7 @@ export type AreaDrawShapeType =
   | 'plane'
   | 'path'
 
-export type AreaDrawInteractionMode = 'single' | 'twoClick' | 'threeClick' | 'polyline'
+export type AreaDrawInteractionMode = 'single' | 'twoClick' | 'threeClick' | 'fourClick' | 'polyline'
 
 /**
  * `draw()` 回显时的落库方式（仅 `draw` 使用，`start` 鼠标绘制固定为 Entity）：

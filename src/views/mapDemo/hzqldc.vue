@@ -729,7 +729,7 @@ keepAlternateDemoEntry(addWallFromForm)
 
 <template>
   <div class="map-tool-float map-tool-float--hzd-point">
-    <XDialog :width="620" height="88vh">
+    <XDialog :width="560" height="88vh">
       <div class="hzd-dialog-body">
         <div class="map-tool-head hzd-page-title">{{ title }}</div>
 

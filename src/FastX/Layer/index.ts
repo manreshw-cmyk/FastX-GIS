@@ -209,6 +209,10 @@ export class Layer {
 
     this.viewer = viewer;
 
+    // Cesium Viewer 默认 LEFT_DOUBLE_CLICK → pickAndTrackObject（双击实体 zoomTo / trackedEntity），此处关闭。
+    // viewer.screenSpaceEventHandler.setInputAction(pickAndTrackObject, LEFT_DOUBLE_CLICK)
+    viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
     //设置相机最小、最大距离
     var camController = viewer.scene.screenSpaceCameraController;
     camController.minimumZoomDistance = 3.0;

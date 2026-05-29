@@ -342,7 +342,7 @@ installFastXToWindow() // 可不带 cesiumBaseUrl，SDK 会自动推断包内 li
 npm install          # 仅维护者构建时需要 cesium
 npm run build:sdk
 cd src/FastX/build
-npm pack             # → fastx-sdk-1.0.0.tgz
+npm pack             # → fastx-sdk-1.0.1.tgz
 ```
 
 将 `.tgz` 拷入内网（U 盘、内网文件服务器等）。
@@ -352,14 +352,14 @@ npm pack             # → fastx-sdk-1.0.0.tgz
 **方式 A：npm 本地安装（推荐）**
 
 ```bash
-npm install ./fastx-sdk-1.0.0.tgz
+npm install ./fastx-sdk-1.0.1.tgz
 ```
 
 **方式 B：手动解压**
 
 ```bash
 mkdir -p node_modules/fastx-sdk
-tar -xzf fastx-sdk-1.0.0.tgz -C node_modules/fastx-sdk --strip-components=1
+tar -xzf fastx-sdk-1.0.1.tgz -C node_modules/fastx-sdk --strip-components=1
 ```
 
 Windows 可用 7-Zip 等解压，保证最终目录为 `node_modules/fastx-sdk/`，且包含 `package.json`、`dist/`、`lib/`。
@@ -392,7 +392,7 @@ FastX.Layer.initMap({ /* ... */ })
 
 1. **Vite / Webpack 项目**：见 [第四节](#四vite--webpack-集成指南公网--内网均必读)；`npm run build` 成功后仍需确认 `dist/Cesium/` 与 Network 200。
 2. **纯 ESM / 无打包工具**：`installFastXToWindow()` 可自动推断包内路径；须 HTTP 访问，且保留完整 `dist/` + `lib/` 目录结构。
-3. **包体积**：含完整 Cesium，`fastx-sdk-1.0.0.tgz` 约 **15～25 MB**，属正常现象。
+3. **包体积**：含完整 Cesium，`fastx-sdk-1.0.1.tgz` 约 **15～25 MB**，属正常现象。
 
 ---
 
@@ -471,10 +471,10 @@ npm pack
 
 ```bash
 # 查看包内文件列表
-tar -tzf fastx-sdk-1.0.0.tgz
+tar -tzf fastx-sdk-1.0.1.tgz
 
 # 在其它项目中试装
-npm install /path/to/fastx-sdk-1.0.0.tgz
+npm install /path/to/fastx-sdk-1.0.1.tgz
 ```
 
 ### 3. 发布到 npm
@@ -496,7 +496,7 @@ npm publish --access public  # 公开包；scoped 包按账号策略加 --access
 npm install fastx-sdk
 
 # 内网
-npm install ./fastx-sdk-1.0.0.tgz
+npm install ./fastx-sdk-1.0.1.tgz
 ```
 
 ```typescript
@@ -576,7 +576,7 @@ A：见 [第四节 Webpack 方案](#44-webpack-方案)：`copy-webpack-plugin` +
 **Q：内网解压 `.tgz` 后地图白屏？**  
 A：若用 Vite/Webpack，与公网相同，必须按第四节配置；若无打包工具，检查是否调用 `installFastXToWindow()`、是否 HTTP 访问、Network 里 Workers 是否 404。
 
-**Q：`fastx-sdk-1.0.0.tgz` 要提交 Git 吗？**  
+**Q：`fastx-sdk-1.0.1.tgz` 要提交 Git 吗？**  
 A：不要。仅分发/测试用，已加入 `build/.gitignore` 的 `*.tgz`。
 
 **Q：改了 `src/FastX` 但 npm 用户没变化？**  

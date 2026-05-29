@@ -32,6 +32,71 @@ export function snapSectorDraftCursor(anchors: Cartesian3[], cursor: Cartesian3)
   return pointOnCircleAtAzimuth(center, radius, az)
 }
 
+/** 中心到控制点的 3D 距离（米，≥0） */
+export function axisDistanceFromCenter(center: Cartesian3, point: Cartesian3): number {
+  return Math.max(0, Cesium.Cartesian3.distance(center, point))
+}
+
+/** 圆柱草稿：底/顶半径；`cursor` 参与时按已定点数推算预览半径 */
+export function draftCylinderRadiiFromPoints(
+  points: Cartesian3[],
+  cursor?: Cartesian3 | null,
+): { bottom: number; top: number } {
+  const center = points[0]
+  if (!center) return { bottom: 0, top: 0 }
+  const bottom = points.length >= 2 ? axisDistanceFromCenter(center, points[1]!) : 0
+  const top =
+    points.length >= 3
+      ? axisDistanceFromCenter(center, points[2]!)
+      : cursor
+        ? axisDistanceFromCenter(center, cursor)
+        : bottom
+  return { bottom, top }
+}
+
+/** 椭球草稿：X/Y/Z 半径；`cursor` 参与时按已定点数推算预览半径 */
+export function draftEllipsoidRadiiFromPoints(
+  points: Cartesian3[],
+  cursor?: Cartesian3 | null,
+): { x: number; y: number; z: number } {
+  const center = points[0]
+  if (!center) return { x: 0, y: 0, z: 0 }
+  const dist = (p: Cartesian3) => axisDistanceFromCenter(center, p)
+  const rx =
+    points.length >= 2 ? dist(points[1]!) : cursor ? dist(cursor) : 0
+  const ry =
+    points.length >= 3
+      ? dist(points[2]!)
+      : points.length >= 2 && cursor
+        ? dist(cursor)
+        : rx
+  const rz =
+    points.length >= 4
+      ? dist(points[3]!)
+      : points.length >= 3 && cursor
+        ? dist(cursor)
+        : ry
+  return { x: rx, y: ry, z: rz }
+}
+
+/** 径向标绘：吸附光标后得到「锚点 + 跟随点」顶点序列 */
+export function radialDraftPoints(anchors: Cartesian3[], cursor: Cartesian3 | null): Cartesian3[] {
+  if (!cursor || anchors.length < 1) return [...anchors]
+  return [...anchors, snapRadialDraftCursor(anchors, cursor)]
+}
+
+/**
+ * 圆 / 圆柱 / 椭球定半径阶段：将光标投影到 ENU 切圆外缘（半径取圆心到光标的 3D 距离）。
+ */
+export function snapRadialDraftCursor(anchors: Cartesian3[], cursor: Cartesian3): Cartesian3 {
+  if (anchors.length < 1) return cursor
+  const center = anchors[0]!
+  const radius = Cesium.Cartesian3.distance(center, cursor)
+  if (radius <= 0) return cursor
+  const az = bearingDegreesNorthClockwise(center, cursor)
+  return pointOnCircleAtAzimuth(center, radius, az)
+}
+
 /** 自北顺时针方位角（度） */
 export function bearingDegreesNorthClockwise(from: Cartesian3, to: Cartesian3): number {
   const c1 = Cesium.Cartographic.fromCartesian(from)

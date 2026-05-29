@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
-import { DeleteOutlined, DownOutlined, EnvironmentOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
@@ -31,9 +31,10 @@ const formEntity = reactive({
   longitude: null as number | null,
   latitude: null as number | null,
   height: 0,
-  length: 80_000,
-  topRadius: 15_000,
-  bottomRadius: 15_000,
+  /** 轴向长度（m）；圆锥体常用，标绘时默认 0，选中行后可编辑 */
+  length: 0,
+  topRadius: null as number | null,
+  bottomRadius: null as number | null,
   headingDegrees: 0,
   pitchDegrees: 0,
   rollDegrees: 0,
@@ -67,29 +68,39 @@ function haversineDistanceM(a: LngLatHeight, b: LngLatHeight): number {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
-function syncCylinderFromAnchors(points: LngLatHeight[]): void {
-  if (points.length >= 1) {
+function syncCylinderFromAnchors(points: LngLatHeight[], anchorCount = points.length): void {
+  if (anchorCount >= 1 && points.length >= 1) {
     formEntity.longitude = points[0]!.longitude
     formEntity.latitude = points[0]!.latitude
     formEntity.height = points[0]!.height ?? 0
+  } else {
+    formEntity.longitude = null
+    formEntity.latitude = null
   }
-  if (points.length >= 2) {
-    const r = haversineDistanceM(points[0]!, points[1]!)
-    formEntity.topRadius = r
-    formEntity.bottomRadius = r
+  if (anchorCount >= 1 && points.length >= 2) {
+    formEntity.bottomRadius = haversineDistanceM(points[0]!, points[1]!)
+  } else {
+    formEntity.bottomRadius = null
+  }
+  if (anchorCount >= 2 && points.length >= 3) {
+    formEntity.topRadius = haversineDistanceM(points[0]!, points[2]!)
+  } else if (anchorCount >= 2 && points.length >= 2) {
+    formEntity.topRadius = haversineDistanceM(points[0]!, points[1]!)
+  } else {
+    formEntity.topRadius = null
   }
 }
 
 function buildCylinderStartParams(): AreaDrawStartParams {
+  const length =
+    typeof formEntity.length === 'number' && formEntity.length > 0 ? formEntity.length : undefined
   return {
     shapeType: 'cylinder',
     id: formEntity.id.trim() || undefined,
-    length: positiveLengthM(formEntity.length, 80_000),
-    topRadius: nonNegativeRadiusM(formEntity.topRadius, 15_000),
-    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 15_000),
-    headingDegrees: formEntity.headingDegrees,
-    pitchDegrees: formEntity.pitchDegrees,
-    rollDegrees: formEntity.rollDegrees,
+    length,
+    headingDegrees: 0,
+    pitchDegrees: 0,
+    rollDegrees: 0,
     color: formEntity.color,
     alpha: fillAlphaForEntity(),
     showFill: formEntity.showFill,
@@ -107,8 +118,8 @@ function buildCylinderStartParams(): AreaDrawStartParams {
       fillColor: formEntity.color,
       fillAlpha: formEntity.alpha,
     },
-    onAnchorChange: (points) => {
-      syncCylinderFromAnchors(points)
+    onAnchorChange: (points, anchorCount) => {
+      syncCylinderFromAnchors(points, anchorCount ?? points.length)
       if (points.length === 0) isAreaDrawing.value = false
     },
   }
@@ -247,9 +258,9 @@ function resetFormEntity(): void {
   formEntity.longitude = null
   formEntity.latitude = null
   formEntity.height = 0
-  formEntity.length = 80_000
-  formEntity.topRadius = 15_000
-  formEntity.bottomRadius = 15_000
+  formEntity.length = 0
+  formEntity.topRadius = null
+  formEntity.bottomRadius = null
   formEntity.headingDegrees = 0
   formEntity.pitchDegrees = 0
   formEntity.rollDegrees = 0
@@ -278,14 +289,18 @@ function positiveLengthM(n: unknown, fallback: number): number {
   return fallback
 }
 
-function nonNegativeRadiusM(n: unknown, fallback: number): number {
+function nonNegativeRadiusM(n: unknown, fallback = 0): number {
   if (typeof n === 'number' && Number.isFinite(n) && n >= 0) return n
   return fallback
 }
 
-const primaryEntityText = computed(() =>
-  selectedEntityId.value ? '确定' : isAreaDrawing.value ? '完成标绘' : '绘制',
-)
+function resolveLengthForSave(): number {
+  const bottom = nonNegativeRadiusM(formEntity.bottomRadius, 0)
+  const top = nonNegativeRadiusM(formEntity.topRadius, 0)
+  return positiveLengthM(formEntity.length, Math.max(bottom, top, 1))
+}
+
+const primaryEntityText = computed(() => (selectedEntityId.value ? '确定' : '标绘'))
 
 function applyEntityUpdate(): void {
   const id = selectedEntityId.value
@@ -300,9 +315,9 @@ function applyEntityUpdate(): void {
     longitude: formEntity.longitude!,
     latitude: formEntity.latitude!,
     height: formEntity.height,
-    length: positiveLengthM(formEntity.length, 80_000),
-    topRadius: nonNegativeRadiusM(formEntity.topRadius, 15_000),
-    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 15_000),
+    length: resolveLengthForSave(),
+    topRadius: nonNegativeRadiusM(formEntity.topRadius, 0),
+    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 0),
     headingDegrees: formEntity.headingDegrees,
     pitchDegrees: formEntity.pitchDegrees,
     rollDegrees: formEntity.rollDegrees,
@@ -340,9 +355,9 @@ function addEntityFromForm(): void {
     longitude: formEntity.longitude!,
     latitude: formEntity.latitude!,
     height: formEntity.height,
-    length: positiveLengthM(formEntity.length, 80_000),
-    topRadius: nonNegativeRadiusM(formEntity.topRadius, 15_000),
-    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 15_000),
+    length: resolveLengthForSave(),
+    topRadius: nonNegativeRadiusM(formEntity.topRadius, 0),
+    bottomRadius: nonNegativeRadiusM(formEntity.bottomRadius, 0),
     headingDegrees: formEntity.headingDegrees,
     pitchDegrees: formEntity.pitchDegrees,
     rollDegrees: formEntity.rollDegrees,
@@ -379,8 +394,8 @@ function onEntityPrimary(): void {
 
   // --- 空域管理：鼠标绘制 start / end ---
   if (isAreaDrawing.value) {
-    if (am.pointCount < 2) {
-      message.warning('至少需要 2 个点（轴心 + 边缘）')
+    if (am.pointCount < 3) {
+      message.warning('圆柱 / 圆锥至少需要 3 个点（轴心、底半径、顶半径）')
       return
     }
     am.end()
@@ -393,15 +408,14 @@ function onEntityPrimary(): void {
     message.error('地图未就绪')
     return
   }
-  formEntity.longitude = null
-  formEntity.latitude = null
+  resetFormEntity()
   const ok = am.start(v, buildCylinderStartParams())
   if (!ok) {
     message.error('无法开始圆柱 / 圆锥绘制')
     return
   }
   isAreaDrawing.value = true
-  message.info('鼠标左键点击绘制，右键结束')
+  message.info('左键：轴心 → 底半径 → 顶半径（第 3 点后自动完成）；右键可提前结束')
 
   // --- Cylinder 单类 add（不用空域管理时注释上一段，改用下方）---
   // addEntityFromForm()
@@ -415,6 +429,10 @@ function onCancelEntitySelect(): void {
 }
 
 function togglePickCenter(): void {
+  if (!selectedEntityId.value) {
+    message.info('请先选中表格中的一条圆柱 / 圆锥')
+    return
+  }
   coordPickArmed.value = !coordPickArmed.value
   message.info(coordPickArmed.value ? '左键点击地图：写入轴心经纬度（及高度）' : '已取消拾取')
 }
@@ -528,7 +546,7 @@ onBeforeUnmount(() => {
     window.FastX?.Cylinder?.clear(v)
   }
 })
-keepAlternateDemoEntry(addEntityFromForm, bindMouse)
+keepAlternateDemoEntry(addEntityFromForm, bindMouse, togglePickCenter)
 </script>
 
 <template>
@@ -558,13 +576,29 @@ keepAlternateDemoEntry(addEntityFromForm, bindMouse)
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">经度（°）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.longitude" class="hzd-control-fill" size="small" :step="0.0001" :controls="true" />
+                    <a-input-number
+                      v-model:value="formEntity.longitude"
+                      class="hzd-control-fill"
+                      size="small"
+                      :step="0.0001"
+                      :controls="true"
+                      :disabled="!selectedEntityId"
+                      placeholder="标绘后或选中行可编辑"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">纬度（°）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.latitude" class="hzd-control-fill" size="small" :step="0.0001" :controls="true" />
+                    <a-input-number
+                      v-model:value="formEntity.latitude"
+                      class="hzd-control-fill"
+                      size="small"
+                      :step="0.0001"
+                      :controls="true"
+                      :disabled="!selectedEntityId"
+                      placeholder="标绘后或选中行可编辑"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
@@ -574,39 +608,84 @@ keepAlternateDemoEntry(addEntityFromForm, bindMouse)
                   </div>
                 </div>
                 <div class="hzd-field-row">
-                  <span class="hzd-field-label">轴向长度（m）</span>
-                  <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.length" class="hzd-control-fill" size="small" :min="1" :step="1000" />
-                  </div>
-                </div>
-                <div class="hzd-field-row">
                   <span class="hzd-field-label">顶半径（m）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.topRadius" class="hzd-control-fill" size="small" :min="0" :step="500" />
+                    <a-input-number
+                      v-model:value="formEntity.topRadius"
+                      class="hzd-control-fill"
+                      size="small"
+                      :min="0"
+                      :step="500"
+                      :controls="true"
+                      :disabled="!selectedEntityId"
+                      placeholder="选中表格行后可编辑"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">底半径（m）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.bottomRadius" class="hzd-control-fill" size="small" :min="0" :step="500" />
+                    <a-input-number
+                      v-model:value="formEntity.bottomRadius"
+                      class="hzd-control-fill"
+                      size="small"
+                      :min="0"
+                      :step="500"
+                      :controls="true"
+                      :disabled="!selectedEntityId"
+                      placeholder="选中表格行后可编辑"
+                    />
+                  </div>
+                </div>
+                <div class="hzd-field-row">
+                  <span class="hzd-field-label">轴向长度（m）</span>
+                  <div class="hzd-field-control">
+                    <a-input-number
+                      v-model:value="formEntity.length"
+                      class="hzd-control-fill"
+                      size="small"
+                      :min="0"
+                      :step="1000"
+                      :controls="true"
+                      :disabled="!selectedEntityId"
+                      placeholder="圆锥体轴向高度，选中行后可编辑"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">航向角（°）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.headingDegrees" class="hzd-control-fill" size="small" :step="5" />
+                    <a-input-number
+                      v-model:value="formEntity.headingDegrees"
+                      class="hzd-control-fill"
+                      size="small"
+                      :step="5"
+                      :disabled="!selectedEntityId"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">俯仰角（°）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.pitchDegrees" class="hzd-control-fill" size="small" :step="5" />
+                    <a-input-number
+                      v-model:value="formEntity.pitchDegrees"
+                      class="hzd-control-fill"
+                      size="small"
+                      :step="5"
+                      :disabled="!selectedEntityId"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
                   <span class="hzd-field-label">横滚角（°）</span>
                   <div class="hzd-field-control">
-                    <a-input-number v-model:value="formEntity.rollDegrees" class="hzd-control-fill" size="small" :step="5" />
+                    <a-input-number
+                      v-model:value="formEntity.rollDegrees"
+                      class="hzd-control-fill"
+                      size="small"
+                      :step="5"
+                      :disabled="!selectedEntityId"
+                    />
                   </div>
                 </div>
                 <div class="hzd-field-row">
@@ -687,23 +766,13 @@ keepAlternateDemoEntry(addEntityFromForm, bindMouse)
                 </div>
 
                 <p class="hzd-muted">
-                  轴心高度为椭球高（米）；圆柱相对椭球定位（heightReference 为 none）。顶或底半径一侧为 0 时为圆锥；轴向姿态相对当地 ENU。
+                  标绘：左键依次确定轴心、底半径、顶半径（第 3 点后自动完成）。顶或底半径为 0 时为圆锥；轴向长度用于锥体高度，标绘后可在选中行编辑。航向/俯仰/横滚默认 0。
                 </p>
 
                 <div class="hzd-field-row hzd-field-row--actions">
                   <div class="hzd-actions-col">
-                    <div class="hzd-actions-primary-row">
-                      <a-tooltip title="拾取轴心（经纬度、高度）">
-                        <a-button
-                          :type="coordPickArmed ? 'primary' : 'default'"
-                          class="hzd-pick-coord-btn hzd-primary-tall"
-                          aria-label="拾取轴心"
-                          @click="togglePickCenter"
-                        >
-                          <template #icon><EnvironmentOutlined /></template>
-                        </a-button>
-                      </a-tooltip>
-                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall hzd-primary-flex" @click="onEntityPrimary">
+                    <div class="hzd-actions-primary-row hzd-actions-primary-row--solo">
+                      <a-button type="primary" class="map-tool-primary-btn hzd-primary-tall" @click="onEntityPrimary">
                         {{ primaryEntityText }}
                       </a-button>
                     </div>
