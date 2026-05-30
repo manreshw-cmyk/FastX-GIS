@@ -14,7 +14,7 @@ export class GroundDistanceMeasure extends MeasureBase {
   setPositions(positions: LngLatHeightTuple[]): void {
     this.positions = [...positions]
     this.syncKeyPoints(positions)
-    this.setDynamicLinePositions(positions, true)
+    this.setDynamicLinePositions(positions, { clamp: true })
     if (positions.length >= 2) {
       void computeGroundLength(this.viewer, positions).then((d) => {
         this.updateMeasureLabel(
@@ -32,7 +32,7 @@ export class GroundDistanceMeasure extends MeasureBase {
   update(cursor: LngLatHeightTuple): void {
     if (this.positions.length < 1) return
     const preview = [...this.positions, cursor]
-    this.setDynamicLinePositions(preview, true)
+    this.setDynamicLinePositions(preview, { clamp: true })
     if (preview.length >= 2) {
       const d = computeProjectionLength(preview)
       this.updateMeasureLabel(cursor, createMeasureLabelText('地表距离', d))
@@ -41,7 +41,7 @@ export class GroundDistanceMeasure extends MeasureBase {
 
   /** 右键/双击结束时按最终顶点重算地表距离 */
   complete(): void {
-    this.setDynamicLinePositions(this.positions, true)
+    this.setDynamicLinePositions(this.positions, { clamp: true })
     if (this.positions.length >= 2) {
       void computeGroundLength(this.viewer, this.positions).then((d) => {
         this.updateMeasureLabel(

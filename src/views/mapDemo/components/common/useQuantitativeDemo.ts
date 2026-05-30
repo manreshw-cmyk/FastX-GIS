@@ -1,5 +1,4 @@
 import { message } from 'ant-design-vue'
-import type { Viewer } from 'cesium'
 import { onBeforeUnmount, ref } from 'vue'
 import type { MeasureStyle, MeasureTypeKey } from '../../../../FastX'
 import { DEFAULT_MEASURE_STYLE } from '../../../../FastX/Quantitative/measureStyleDefaults'

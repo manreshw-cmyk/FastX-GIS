@@ -37,7 +37,6 @@ import {
   radialDraftPoints,
   rectangleFromCorners,
   rectangleToBounds,
-  snapRadialDraftCursor,
   snapSectorDraftCursor,
   toPolylineTuples,
 } from '../Utils/geoDraw'

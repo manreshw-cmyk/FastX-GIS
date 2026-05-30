@@ -14,7 +14,7 @@ export class LineDistanceMeasure extends MeasureBase {
   setPositions(positions: LngLatHeightTuple[]): void {
     this.positions = [...positions]
     this.syncKeyPoints(positions)
-    this.setDynamicLinePositions(positions, false)
+    this.setDynamicLinePositions(positions, { clamp: false })
     if (positions.length >= 2) {
       const d = computeLineLength(positions)
       this.updateMeasureLabel(
@@ -31,7 +31,7 @@ export class LineDistanceMeasure extends MeasureBase {
   update(cursor: LngLatHeightTuple): void {
     if (this.positions.length < 1) return
     const preview = [...this.positions, cursor]
-    this.setDynamicLinePositions(preview, false)
+    this.setDynamicLinePositions(preview, { clamp: false })
     if (preview.length >= 2) {
       const d = computeLineLength(preview)
       this.updateMeasureLabel(cursor, createMeasureLabelText('空间距离', d))
@@ -40,7 +40,7 @@ export class LineDistanceMeasure extends MeasureBase {
 
   /** 右键结束时将折线固定为最终锚点 */
   complete(): void {
-    this.setDynamicLinePositions(this.positions, false)
+    this.setDynamicLinePositions(this.positions, { clamp: false })
     if (this.positions.length >= 2) {
       const d = computeLineLength(this.positions)
       this.updateMeasureLabel(

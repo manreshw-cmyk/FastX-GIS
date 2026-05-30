@@ -161,18 +161,6 @@ function applyAreaDraftGraphics(rec: CylinderRecord, ellipsoid: Cesium.Ellipsoid
   rec.entity.cylinder = cg
 }
 
-function refreshAreaDraftStyle(rec: CylinderRecord): void {
-  const st = resolveCylinderStyleFromTargetData(rec.targetData)
-  const cg = rec.entity.cylinder
-  if (!cg) return
-  cg.length = new Cesium.ConstantProperty(st.length)
-  cg.fill = new Cesium.ConstantProperty(st.showFill)
-  cg.material = new Cesium.ColorMaterialProperty(st.fillColor)
-  cg.outline = new Cesium.ConstantProperty(st.outline)
-  cg.outlineColor = new Cesium.ConstantProperty(st.outlineColor)
-  cg.outlineWidth = new Cesium.ConstantProperty(st.outlineWidth)
-}
-
 function storeCylinderCenterInTargetData(td: Record<string, unknown>, center: Cesium.Cartesian3, ellipsoid: Cesium.Ellipsoid): void {
   const carto = Cesium.Cartographic.fromCartesian(center, ellipsoid)
   td.longitude = Cesium.Math.toDegrees(carto.longitude)

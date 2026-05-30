@@ -48,7 +48,7 @@ export class ProjectionAreaMeasure extends MeasureBase {
       return
     }
     if (positions.length === 2) {
-      this.setDynamicLinePositions(positions, true)
+      this.setDynamicLinePositions(positions, { clamp: true })
       this.clearMeasureLabel()
       return
     }

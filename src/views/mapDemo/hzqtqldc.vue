@@ -278,15 +278,6 @@ function radiiFromForm(): Cesium.Cartesian3 {
   return new Cesium.Cartesian3(x, y, z)
 }
 
-function centerReady(): boolean {
-  return (
-    form.longitude != null &&
-    form.latitude != null &&
-    Number.isFinite(form.longitude) &&
-    Number.isFinite(form.latitude)
-  )
-}
-
 function applyUpdateToSelected(): void {
   const id = selectedId.value
   const E = window.FastX?.Ellipsoid

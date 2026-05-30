@@ -14,7 +14,7 @@ export class ProjectionDistanceMeasure extends MeasureBase {
   setPositions(positions: LngLatHeightTuple[]): void {
     this.positions = [...positions]
     this.syncKeyPoints(positions)
-    this.setDynamicLinePositions(positions, true)
+    this.setDynamicLinePositions(positions, { clamp: true })
     if (positions.length >= 2) {
       const d = computeProjectionLength(positions)
       this.updateMeasureLabel(
@@ -31,7 +31,7 @@ export class ProjectionDistanceMeasure extends MeasureBase {
   update(cursor: LngLatHeightTuple): void {
     if (this.positions.length < 1) return
     const preview = [...this.positions, cursor]
-    this.setDynamicLinePositions(preview, true)
+    this.setDynamicLinePositions(preview, { clamp: true })
     if (preview.length >= 2) {
       const d = computeProjectionLength(preview)
       this.updateMeasureLabel(cursor, createMeasureLabelText('投影距离', d))
@@ -40,7 +40,7 @@ export class ProjectionDistanceMeasure extends MeasureBase {
 
   /** 右键结束时固定最终折线与标注 */
   complete(): void {
-    this.setDynamicLinePositions(this.positions, true)
+    this.setDynamicLinePositions(this.positions, { clamp: true })
     if (this.positions.length >= 2) {
       const d = computeProjectionLength(this.positions)
       this.updateMeasureLabel(

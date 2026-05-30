@@ -6,7 +6,6 @@ import { MeasureBase } from './MeasureBase'
 export class ContourAnalyze extends MeasureBase {
   private interval = 100
   private gridSize = 50
-  private contourBuilt = false
 
   /**
    * @param options 创建选项
@@ -24,7 +23,6 @@ export class ContourAnalyze extends MeasureBase {
   setPositions(positions: LngLatHeightTuple[]): void {
     this.positions = positions.slice(0, 2)
     this.syncKeyPoints(this.positions)
-    this.contourBuilt = false
     this.clearSegmentEntities()
     if (this.positions.length < 2) {
       this.clearDynamicLine()
@@ -63,7 +61,7 @@ export class ContourAnalyze extends MeasureBase {
     const [a, b] = this.positions
     if (!a || !b) return
     this.clearSegmentEntities()
-    const { segments, labelLevels } = await buildContourSegments(
+    const { segments } = await buildContourSegments(
       this.viewer,
       [a, b],
       this.interval,
@@ -76,6 +74,5 @@ export class ContourAnalyze extends MeasureBase {
       const mid = this.midpoint(seg.a, seg.b)
       this.drawLabel(mid, `${Math.round(seg.level)}m`, [0, -12])
     }
-    this.contourBuilt = true
   }
 }

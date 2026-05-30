@@ -72,11 +72,6 @@ export async function buildContourSegments(
   const [p0, p1] = corners
   if (!p0 || !p1) return { segments: [], labelLevels: [] }
 
-  let west = Math.min(p0[0], p1[0])
-  let east = Math.max(p0[0], p1[0])
-  const south = Math.min(p0[1], p1[1])
-  const north = Math.max(p0[1], p1[1])
-
   let differLon = p1[0] - p0[0]
   if (Math.abs(differLon) > 180) {
     differLon = differLon > 0 ? differLon - 360 : differLon + 360

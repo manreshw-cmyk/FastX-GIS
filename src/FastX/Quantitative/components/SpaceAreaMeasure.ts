@@ -48,7 +48,7 @@ export class SpaceAreaMeasure extends MeasureBase {
       return
     }
     if (positions.length === 2) {
-      this.setDynamicLinePositions(positions, false)
+      this.setDynamicLinePositions(positions, { clamp: false })
       this.clearMeasureLabel()
       return
     }
