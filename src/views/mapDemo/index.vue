@@ -98,6 +98,7 @@ onBeforeUnmount(() => {
 watch(activeMenuKey, () => {
   mapLayerStore.clearAllMapEntities()
   mapLayerStore.resetSharedMapDemoUiState()
+  window.FastX?.Quantitative?.removeAll()
   const v = mapLayerStore.getViewer()
   if (v && !v.isDestroyed()) {
     window.FastX?.Point?.clear(v)
@@ -375,6 +376,410 @@ function onMapReady() {
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.52);
   margin-bottom: 12px;
+}
+
+/* 量算分析浮窗 */
+.map-demo-panel .map-tool-float--quantitative .x-dialog-panel {
+  max-height: min(calc(100vh - 100px), 520px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-demo-panel .map-tool-float--quantitative .x-dialog-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  max-height: inherit;
+  padding: 0;
+  overflow: hidden;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-dialog-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 18px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(64, 150, 255, 0.55) rgba(255, 255, 255, 0.06);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-dialog-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-dialog-scroll::-webkit-scrollbar-track {
+  margin: 4px 0;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 4px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-dialog-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(64, 150, 255, 0.7) 0%, rgba(48, 118, 220, 0.55) 100%);
+  border-radius: 4px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-dialog-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(88, 168, 255, 0.85) 0%, rgba(58, 132, 235, 0.7) 100%);
+}
+
+.map-demo-panel .map-tool-float--quantitative .x-dialog-panel {
+  border-color: rgba(64, 150, 255, 0.18);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(64, 150, 255, 0.08) inset;
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-head {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 10px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-section {
+  margin-bottom: 10px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-status-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(89, 255, 155, 0.08);
+  border: 1px solid rgba(89, 255, 155, 0.22);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-status-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #59ff9b;
+  box-shadow: 0 0 8px rgba(89, 255, 155, 0.65);
+  animation: qty-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes qty-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.88);
+  }
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-status-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(89, 255, 155, 0.92);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-wrapper {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.18);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-wrapper:hover:not(.ant-radio-wrapper-disabled) {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-wrapper-checked {
+  border-color: rgba(64, 150, 255, 0.65);
+  background: rgba(64, 150, 255, 0.08);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-wrapper .ant-radio {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-inner {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-checked .ant-radio-inner {
+  border-color: rgba(64, 150, 255, 0.65);
+  background: transparent;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-cards .ant-radio-checked .ant-radio-inner::after {
+  background-color: rgba(64, 150, 255, 0.65);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-type-card__desc {
+  font-size: 11px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-hint-box {
+  padding: 8px 11px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.58);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-top: 0;
+  padding: 12px 18px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.26) 100%);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn {
+  min-height: 34px;
+  height: auto;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+  background: linear-gradient(180deg, rgba(64, 150, 255, 0.88) 0%, rgba(48, 118, 220, 0.82) 100%);
+  border-color: rgba(64, 150, 255, 0.65);
+  color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 10px rgba(64, 150, 255, 0.22);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-primary:not(:disabled):not(.ant-btn-disabled):hover {
+  background: linear-gradient(180deg, rgba(88, 168, 255, 0.94) 0%, rgba(58, 132, 235, 0.9) 100%);
+  border-color: rgba(64, 150, 255, 0.85);
+  color: #fff;
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-default:not(:disabled):not(.ant-btn-disabled) {
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-default:not(:disabled):not(.ant-btn-disabled):hover {
+  color: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-primary:disabled,
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-primary.ant-btn-disabled {
+  color: rgba(255, 255, 255, 0.38) !important;
+  background: rgba(64, 150, 255, 0.1) !important;
+  border-color: rgba(64, 150, 255, 0.16) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  min-height: 32px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-form-row .map-tool-row-label {
+  flex-shrink: 0;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-form-row .ant-input-number {
+  flex: 1;
+  min-width: 108px;
+  max-width: 140px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .ant-input-number,
+.map-demo-panel .map-tool-float--quantitative .ant-input-number-input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.map-demo-panel .map-tool-float--quantitative .ant-input-number-handler-wrap {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.map-demo-panel .map-tool-float--quantitative .ant-input-number-handler {
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.map-demo-panel .map-tool-float--quantitative .ant-input-number-handler:hover {
+  color: rgba(64, 150, 255, 0.95);
+}
+
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-default:disabled,
+.map-demo-panel .map-tool-float--quantitative .map-tool-actions .ant-btn-default.ant-btn-disabled {
+  color: rgba(255, 255, 255, 0.28) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel {
+  margin-top: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: rgba(64, 150, 255, 0.08);
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__head:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__toggle {
+  font-size: 11px;
+  color: rgba(64, 150, 255, 0.85);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__body {
+  padding: 10px 12px 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(64, 150, 255, 0.45) rgba(255, 255, 255, 0.05);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 3px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-panel__body::-webkit-scrollbar-thumb {
+  background: rgba(64, 150, 255, 0.5);
+  border-radius: 3px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-section + .qty-style-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-section__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field input[type='color'] {
+  width: 100%;
+  height: 28px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field input[type='color']:hover:not(:disabled) {
+  border-color: rgba(64, 150, 255, 0.45);
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field--check {
+  grid-column: 1 / -1;
+}
+
+.map-demo-panel .map-tool-float--quantitative .qty-style-field--check .ant-checkbox-wrapper {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
 }
 
 .map-demo-panel .map-tool-row {

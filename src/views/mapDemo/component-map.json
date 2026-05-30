@@ -316,25 +316,19 @@
   },
   {
     "key": "draw-18",
-    "title": "绘制（Tileset）3D Tiles类（底层entity）",
-    "fileName": "hzldc",
-    "componentPath": "./hzldc.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "draw-19",
     "title": "绘制（Path）路径类（底层entity）",
     "fileName": "hzljldc",
     "componentPath": "./hzljldc.vue",
     "imageUrl": "../../assets/images/绘制（Path）路径类（底层entity）.png"
   },
   {
-    "key": "draw-20",
-    "title": "等高线",
-    "fileName": "dgx",
-    "componentPath": "./dgx.vue",
+    "key": "draw-19",
+    "title": "绘制（Tileset）3D Tiles类（底层entity）",
+    "fileName": "hzldc",
+    "componentPath": "./hzldc.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
+
   {
     "key": "draw-21",
     "title": "2/3维热力图",
@@ -414,44 +408,51 @@
   },
   {
     "key": "quantitative-1",
-    "title": "贴地、空间距离测量",
+    "title": "距离测量（空间/地表/投影）",
     "fileName": "tdkjjlcl",
     "componentPath": "./tdkjjlcl.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/距离测量（空间、地表、投影）.png"
   },
   {
     "key": "quantitative-2",
-    "title": "空间面积测量",
+    "title": "面积测量（空间/投影）",
     "fileName": "kjmjcl",
     "componentPath": "./kjmjcl.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/面积测量（空间、投影）.png"
   },
   {
     "key": "quantitative-3",
-    "title": "角度测量",
+    "title": "三角测量",
     "fileName": "jdcl",
     "componentPath": "./jdcl.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/三角测量.png"
   },
   {
     "key": "quantitative-4",
-    "title": "坡度角测量",
-    "fileName": "pdjcl",
-    "componentPath": "./pdjcl.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "方位角测量",
+    "fileName": "fwjcl",
+    "componentPath": "./fwjcl.vue",
+    "imageUrl": "../../assets/images/方位角测量.png"
   },
   {
     "key": "quantitative-5",
-    "title": "计算点是否包含在面中",
-    "fileName": "jsdsfbhzmz",
-    "componentPath": "./jsdsfbhzmz.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "通视与视域分析",
+    "fileName": "tsfyfx",
+    "componentPath": "./tsfyfx.vue",
+    "imageUrl": "../../assets/images/通视与视域分析.png"
   },
   {
     "key": "quantitative-6",
-    "title": "计算点与点的距离",
-    "fileName": "jsdyddjl",
-    "componentPath": "./jsdyddjl.vue",
+    "title": "等高线分析",
+    "fileName": "lsdgxfx",
+    "componentPath": "./lsdgxfx.vue",
+    "imageUrl": "../../assets/images/等高线分析.png"
+  },
+  {
+    "key": "quantitative-7",
+    "title": "缓冲区分析",
+    "fileName": "hcqfx",
+    "componentPath": "./hcqfx.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {

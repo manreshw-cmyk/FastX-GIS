@@ -86,19 +86,12 @@ import type {
   LngLatHeight,
 } from '../Types'
 import {
-  bearingDegreesNorthClockwise,
   cartesianToLngLat,
   colorFromCss,
-  midpoint,
   positionInputToTuple,
   positionsTupleToArray,
-  rectangleFromCorners,
-  rectangleToBounds,
   snapRadialDraftCursor,
   snapSectorDraftCursor,
-  draftCylinderRadiiFromPoints,
-  draftEllipsoidRadiiFromPoints,
-  toPolylineTuples,
 } from '../Utils/geoDraw'
 
 // --- shape interaction rules ---
@@ -154,10 +147,8 @@ function usesSingleClickPlace(shapeType: AreaDrawShapeType): boolean {
   return SINGLE_CLICK_PLACE_SHAPES.has(shapeType)
 }
 
-// --- draw preview overlay ---
-// 预览层（小绿点、锚点、预览线/面）均为临时 Entity（id 前缀 fastx-area-draw-temp-），
-// 在 end / cancel / finishDraw 完成后的 resetSession 中 remove，不会保留在地图上。
-// 最终成果物仅由 finishDraw 调用 Draw/*.add 生成，与预览 Entity 无关。
+// --- draw overlay ---
+// 空域管理仅维护锚点/跟随小圆点（id 前缀 fastx-area-draw-temp-）；几何草稿由各 Draw 类 areaDraft 负责。
 
 const TEMP_PREFIX = 'fastx-area-draw-temp-'
 
@@ -184,21 +175,6 @@ function requestSceneRender(viewer: Viewer): void {
   viewer.scene.requestRender()
 }
 
-/** 预览折线：描边材质，边缘更清晰 */
-function previewPolylineMaterial(css: string): Cesium.MaterialProperty {
-  return new Cesium.PolylineOutlineMaterialProperty({
-    color: colorFromCss(css),
-    outlineWidth: 2,
-    outlineColor: Cesium.Color.WHITE.withAlpha(0.9),
-  })
-}
-
-function readExtrudedHeight(params: AreaDrawStartParams): number | undefined {
-  const h = params.extrudedHeight
-  if (typeof h === 'number' && Number.isFinite(h) && h !== 0) return h
-  return undefined
-}
-
 function previewPointOptions(
   color: string,
   pixelSize: number,
@@ -218,16 +194,7 @@ function previewPointOptions(
 type MergedPreviewStyle = Required<
   Pick<
     AreaDrawPreviewStyle,
-    | 'anchorPointColor'
-    | 'anchorPointPixelSize'
-    | 'cursorPointColor'
-    | 'cursorPointPixelSize'
-    | 'lineColor'
-    | 'lineWidth'
-    | 'fillColor'
-    | 'fillAlpha'
-    | 'outlineColor'
-    | 'outlineWidth'
+    'anchorPointColor' | 'anchorPointPixelSize' | 'cursorPointColor' | 'cursorPointPixelSize'
   >
 >
 
@@ -236,12 +203,6 @@ const DEFAULT_PREVIEW_STYLE: MergedPreviewStyle = {
   anchorPointPixelSize: 8,
   cursorPointColor: '#22cc44',
   cursorPointPixelSize: 10,
-  lineColor: '#22cc44',
-  lineWidth: 2,
-  fillColor: '#3388ff',
-  fillAlpha: 0.25,
-  outlineColor: '#ffffff',
-  outlineWidth: 2,
 }
 
 function mergePreviewStyle(preview?: AreaDrawPreviewStyle): MergedPreviewStyle {
@@ -288,246 +249,6 @@ function addOrMoveCursorMarker(
       preview?.cursorPointOutlineWidth ?? 2,
     ),
   })
-}
-
-type PreviewTopology =
-  | 'none'
-  | 'polyline'
-  | 'polygon-line'
-  | 'polygon-fill'
-  | 'rectangle'
-  | 'circle'
-  | 'runway'
-  | 'ellipsoid'
-  | 'cylinder'
-  | 'box'
-  | 'plane'
-  | 'sector-disc'
-  | 'sector-polyline'
-
-function resolvePreviewTopology(shapeType: AreaDrawShapeType, anchorCount: number): PreviewTopology {
-  if (anchorCount === 0) return 'none'
-  switch (shapeType) {
-    case 'polyline':
-    case 'corridor':
-    case 'wall':
-    case 'polylineVolume':
-      return 'polyline'
-    case 'polygon':
-      return anchorCount >= 2 ? 'polygon-fill' : 'polygon-line'
-    case 'rectangle':
-      return 'rectangle'
-    case 'circle':
-      return 'circle'
-    case 'runway':
-      return 'runway'
-    case 'ellipsoid':
-      return 'ellipsoid'
-    case 'cylinder':
-      return 'cylinder'
-    case 'box':
-      return 'box'
-    case 'plane':
-      return 'plane'
-    case 'sector':
-      return anchorCount >= 2 ? 'sector-polyline' : 'sector-disc'
-    default:
-      return 'none'
-  }
-}
-
-function previewDistance(getPositions: () => Cartesian3[]): number {
-  const p = getPositions()
-  if (p.length < 2) return 0
-  return Cesium.Cartesian3.distance(p[0]!, p[1]!)
-}
-
-function previewCylinderBottomRadius(getPositions: () => Cartesian3[]): number {
-  return draftCylinderRadiiFromPoints(getPositions()).bottom
-}
-
-function previewCylinderTopRadius(getPositions: () => Cartesian3[]): number {
-  return draftCylinderRadiiFromPoints(getPositions()).top
-}
-
-function previewEllipsoidRadii(getPositions: () => Cartesian3[]): Cesium.Cartesian3 {
-  const { x, y, z } = draftEllipsoidRadiiFromPoints(getPositions())
-  return new Cesium.Cartesian3(Math.max(x, 1), Math.max(y, 1), Math.max(z, 1))
-}
-
-function previewPositionAt0(getPositions: () => Cartesian3[]): Cesium.CallbackPositionProperty {
-  return new Cesium.CallbackPositionProperty(() => getPositions()[0] ?? Cesium.Cartesian3.ZERO, false)
-}
-
-function previewPositionMidpoint(getPositions: () => Cartesian3[]): Cesium.CallbackPositionProperty {
-  return new Cesium.CallbackPositionProperty(() => {
-    const p = getPositions()
-    if (p.length < 2) return p[0] ?? Cesium.Cartesian3.ZERO
-    return Cesium.Cartesian3.midpoint(p[0]!, p[1]!, new Cesium.Cartesian3())
-  }, false)
-}
-
-/** 固定 id + CallbackProperty 更新几何，避免 mousemove 反复 remove/add 导致闪烁 */
-function createStablePreviewEntity(
-  viewer: Viewer,
-  topology: PreviewTopology,
-  getPositions: () => Cartesian3[],
-  params: AreaDrawStartParams,
-  ps: MergedPreviewStyle,
-): Entity | null {
-  const id = `${TEMP_PREFIX}preview`
-  const lineColor = params.color ?? ps.lineColor
-  const fillColor = params.color ?? ps.fillColor
-  const fillAlpha = params.alpha ?? ps.fillAlpha
-  const outlineColor = colorFromCss(params.outlineColor ?? ps.outlineColor)
-  const outlineWidth = params.outlineWidth ?? ps.outlineWidth
-
-  switch (topology) {
-    case 'polyline':
-    case 'polygon-line':
-    case 'sector-polyline':
-      return viewer.entities.add({
-        id,
-        polyline: {
-          positions: new Cesium.CallbackProperty(() => getPositions(), false),
-          width: Math.max(params.width ?? ps.lineWidth, 2),
-          material: previewPolylineMaterial(lineColor),
-        },
-      })
-    case 'polygon-fill': {
-      const extruded = readExtrudedHeight(params)
-      return viewer.entities.add({
-        id,
-        polygon: {
-          hierarchy: new Cesium.CallbackProperty(
-            () => new Cesium.PolygonHierarchy(getPositions()),
-            false,
-          ),
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: params.outline !== false,
-          outlineColor,
-          outlineWidth,
-          perPositionHeight: true,
-          ...(extruded !== undefined ? { extrudedHeight: extruded } : {}),
-        },
-      })
-    }
-    case 'rectangle':
-      return viewer.entities.add({
-        id,
-        rectangle: {
-          coordinates: new Cesium.CallbackProperty(() => {
-            const p = getPositions()
-            if (p.length < 2) return Cesium.Rectangle.fromDegrees(0, 0, 0, 0)
-            return rectangleFromCorners(p[0]!, p[1]!)
-          }, false),
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: true,
-          outlineColor,
-          outlineWidth,
-        },
-      })
-    case 'circle':
-    case 'sector-disc':
-      return viewer.entities.add({
-        id,
-        position: previewPositionAt0(getPositions),
-        ellipse: {
-          semiMajorAxis: new Cesium.CallbackProperty(() => previewDistance(getPositions), false),
-          semiMinorAxis: new Cesium.CallbackProperty(() => previewDistance(getPositions), false),
-          material: colorFromCss(fillColor, topology === 'sector-disc' ? fillAlpha * 0.5 : fillAlpha),
-          outline: true,
-          outlineColor,
-          outlineWidth,
-        },
-      })
-    case 'runway':
-      return viewer.entities.add({
-        id,
-        corridor: {
-          positions: new Cesium.CallbackProperty(() => getPositions(), false),
-          width: (params.width as number | undefined) ?? 60,
-          material: colorFromCss(fillColor, fillAlpha),
-        },
-      })
-    case 'ellipsoid': {
-      const rCb = new Cesium.CallbackProperty(() => previewEllipsoidRadii(getPositions), false)
-      return viewer.entities.add({
-        id,
-        position: previewPositionAt0(getPositions),
-        ellipsoid: {
-          radii: rCb,
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: true,
-          outlineColor,
-        },
-      })
-    }
-    case 'cylinder': {
-      const bottomCb = new Cesium.CallbackProperty(
-        () => previewCylinderBottomRadius(getPositions),
-        false,
-      )
-      const topCb = new Cesium.CallbackProperty(() => previewCylinderTopRadius(getPositions), false)
-      const lenRaw = params.length as number | undefined
-      const lenCb = new Cesium.CallbackProperty(() => {
-        if (typeof lenRaw === 'number' && Number.isFinite(lenRaw) && lenRaw > 0) return lenRaw
-        return Math.max(
-          previewCylinderBottomRadius(getPositions),
-          previewCylinderTopRadius(getPositions),
-          1,
-        )
-      }, false)
-      return viewer.entities.add({
-        id,
-        position: previewPositionAt0(getPositions),
-        cylinder: {
-          length: lenCb,
-          topRadius: topCb,
-          bottomRadius: bottomCb,
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: true,
-          outlineColor,
-        },
-      })
-    }
-    case 'box': {
-      const dimCb = new Cesium.CallbackProperty(() => {
-        const dist = previewDistance(getPositions)
-        const dim = (params.dimensions as number[] | undefined)?.[0] ?? dist
-        return new Cesium.Cartesian3(dim, dim, dim * 0.5)
-      }, false)
-      return viewer.entities.add({
-        id,
-        position: previewPositionMidpoint(getPositions),
-        box: {
-          dimensions: dimCb,
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: true,
-          outlineColor,
-        },
-      })
-    }
-    case 'plane': {
-      const spanCb = new Cesium.CallbackProperty(() => {
-        const span = previewDistance(getPositions)
-        return new Cesium.Cartesian2(span, span)
-      }, false)
-      return viewer.entities.add({
-        id,
-        position: previewPositionAt0(getPositions),
-        plane: {
-          plane: new Cesium.Plane(Cesium.Cartesian3.UNIT_Z, 0),
-          dimensions: spanCb,
-          material: colorFromCss(fillColor, fillAlpha),
-          outline: true,
-          outlineColor,
-        },
-      })
-    }
-    default:
-      return null
-  }
 }
 
 function removePreviewEntity(viewer: Viewer, entity: Entity | null): void {
@@ -656,127 +377,6 @@ function toCollectionItem(shapeType: AreaDrawShapeType, params: AreaDrawDirectPa
       const positions = positionInputToTuple(rest.position as Parameters<typeof positionInputToTuple>[0])
       if (!positions) return null
       return { ...rest, positions, opacity: rest.alpha }
-    }
-    default:
-      return null
-  }
-}
-
-// --- mouse points → draw params ---
-
-function buildDrawParamsFromMousePoints(
-  shapeType: AreaDrawShapeType,
-  points: Cartesian3[],
-  startParams: AreaDrawStartParams,
-): AreaDrawDirectParams | null {
-  const { renderMode: _ignored, ...startOnly } = startParams as AreaDrawStartParams & {
-    renderMode?: unknown
-  }
-  const base = { ...startOnly, shapeType }
-
-  switch (shapeType) {
-    case 'point':
-    case 'label':
-    case 'billboard':
-    case 'model':
-      if (points.length < 1) return null
-      return { ...base, position: cartesianToLngLat(points[0]!) }
-    case 'polyline':
-      if (points.length < 2) return null
-      return { ...base, positions: toPolylineTuples(points) }
-    case 'polygon':
-    case 'corridor':
-    case 'wall':
-    case 'polylineVolume':
-      if (points.length < 2) return null
-      return { ...base, positions: points.map(cartesianToLngLat) }
-    case 'rectangle': {
-      if (points.length < 2) return null
-      return { ...base, ...rectangleToBounds(rectangleFromCorners(points[0]!, points[1]!)) }
-    }
-    case 'circle': {
-      if (points.length < 2) return null
-      return {
-        ...base,
-        center: cartesianToLngLat(points[0]!),
-        radius: Cesium.Cartesian3.distance(points[0]!, points[1]!),
-      }
-    }
-    case 'runway':
-      if (points.length < 2) return null
-      return {
-        ...base,
-        positions: [cartesianToLngLat(points[0]!), cartesianToLngLat(points[1]!)],
-      }
-    case 'ellipsoid': {
-      if (points.length < 4) return null
-      const { x, y, z } = draftEllipsoidRadiiFromPoints(points)
-      return {
-        ...base,
-        position: cartesianToLngLat(points[0]!),
-        radii: new Cesium.Cartesian3(x, y, z),
-      }
-    }
-    case 'cylinder': {
-      if (points.length < 3) return null
-      const bottomRadius = Cesium.Cartesian3.distance(points[0]!, points[1]!)
-      const topRadius = Cesium.Cartesian3.distance(points[0]!, points[2]!)
-      const lenParam = startParams.length as number | undefined
-      const length =
-        typeof lenParam === 'number' && Number.isFinite(lenParam) && lenParam > 0
-          ? lenParam
-          : Math.max(bottomRadius, topRadius, 1)
-      return {
-        ...base,
-        center: cartesianToLngLat(points[0]!),
-        length,
-        topRadius,
-        bottomRadius,
-      }
-    }
-    case 'box': {
-      if (points.length < 1) return null
-      const dims = startParams.dimensions as [number, number, number] | undefined
-      if (points.length >= 2) {
-        const dist = Cesium.Cartesian3.distance(points[0]!, points[1]!)
-        return {
-          ...base,
-          position: cartesianToLngLat(midpoint(points[0]!, points[1]!)),
-          dimensions: dims ?? [dist, dist, dist * 0.5],
-        }
-      }
-      return {
-        ...base,
-        position: cartesianToLngLat(points[0]!),
-        dimensions: dims,
-      }
-    }
-    case 'plane': {
-      if (points.length < 1) return null
-      const dims = startParams.dimensions as { width: number; height: number } | undefined
-      if (points.length >= 2) {
-        const span = Cesium.Cartesian3.distance(points[0]!, points[1]!)
-        return {
-          ...base,
-          position: cartesianToLngLat(points[0]!),
-          dimensions: dims ?? { width: span, height: span },
-        }
-      }
-      return {
-        ...base,
-        position: cartesianToLngLat(points[0]!),
-        dimensions: dims,
-      }
-    }
-    case 'sector': {
-      if (points.length < 3) return null
-      return {
-        ...base,
-        center: cartesianToLngLat(points[0]!),
-        radius: Cesium.Cartesian3.distance(points[0]!, points[1]!),
-        startAzimuthDegrees: bearingDegreesNorthClockwise(points[0]!, points[1]!),
-        endAzimuthDegrees: bearingDegreesNorthClockwise(points[0]!, points[2]!),
-      }
     }
     default:
       return null
@@ -986,14 +586,10 @@ export default class AreaManager {
   private publishCallback: AreaDrawPublishCallback | null = null
 
   private collectedPoints: Cartesian3[] = []
-  private tempPreviewEntity: Entity | null = null
   private tempAnchorEntities: Entity[] = []
   private tempCursorEntity: Entity | null = null
   /** start 时保存的场景抗锯齿状态，resetSession 时恢复 */
   private previewAaSnapshot: SceneAaSnapshot | null = null
-  /** 预览环（锚点 + 鼠标），由 CallbackProperty 读取，不在 mousemove 时重建 Entity */
-  private previewPositions: Cartesian3[] = []
-  private previewTopology: PreviewTopology = 'none'
 
   /** 空域草稿：各 Draw 单类 `add(areaDraft)`，finish 提交 / cancel remove */
   private draftId: string | null = null
@@ -1283,38 +879,6 @@ export default class AreaManager {
       if (shape === 'circle' || shape === 'sector' || shape === 'cylinder' || shape === 'ellipsoid') {
         this.notifyAnchorChange(drawCursor)
       }
-      return
-    }
-
-    this.previewPositions = [...this.collectedPoints, drawCursor]
-    const topology = resolvePreviewTopology(shape, this.collectedPoints.length)
-    const skipStablePreview =
-      supportsClassDraft(shape) &&
-      (shape === 'polyline' ||
-        shape === 'corridor' ||
-        shape === 'wall' ||
-        shape === 'polylineVolume' ||
-        shape === 'polygon')
-
-    if (skipStablePreview) {
-      if (this.tempPreviewEntity) {
-        removePreviewEntity(this.viewer, this.tempPreviewEntity)
-        this.tempPreviewEntity = null
-        this.previewTopology = 'none'
-      }
-    } else if (topology !== this.previewTopology) {
-      removePreviewEntity(this.viewer, this.tempPreviewEntity)
-      this.tempPreviewEntity = null
-      this.previewTopology = topology
-      if (topology !== 'none') {
-        this.tempPreviewEntity = createStablePreviewEntity(
-          this.viewer,
-          topology,
-          () => this.previewPositions,
-          this.currentParams,
-          this.previewStyle,
-        )
-      }
     }
 
     if (this.viewer.scene.requestRenderMode) {
@@ -1346,75 +910,59 @@ export default class AreaManager {
     }
 
     const shape = this.currentParams.shapeType
-    if (this.draftId && supportsClassDraft(shape)) {
-      const ops = resolveDraftOps(shape, this.apis)
-      if (!ops) {
-        this.cancel()
-        return
-      }
-
-      let commitOpts = buildCommitOptions(shape, this.collectedPoints, this.currentParams)
-      if (!commitOpts) {
-        this.cancel()
-        return
-      }
-      commitOpts = { ...commitOpts, id: this.draftId, areaDraft: false }
-
-      if (!this.draftEntityCreated) {
-        const bootstrap = buildShapeDrawOptions(
-          shape,
-          this.collectedPoints,
-          null,
-          this.currentParams,
-          true,
-        )
-        if (!bootstrap) {
-          this.cancel()
-          return
-        }
-        bootstrap.id = this.draftId
-        const created = ops.add(this.viewer, bootstrap)
-        if (!created) {
-          this.cancel()
-          return
-        }
-        this.draftEntityCreated = true
-      }
-
-      const ok = ops.update(this.draftId, commitOpts)
-      if (!ok) {
-        this.cancel()
-        return
-      }
-      const entity = ops.getEntity(this.draftId)
-      if (!entity) {
-        this.cancel()
-        return
-      }
-      const committedId = this.draftId
-      this.draftId = null
-      this.draftEntityCreated = false
-      this.emitResult({ id: committedId, renderMode: 'entity', entity })
-      this.resetSession()
-      return
-    }
-
-    const drawParams = buildDrawParamsFromMousePoints(
-      this.currentParams.shapeType,
-      this.collectedPoints,
-      this.currentParams,
-    )
-    if (!drawParams) {
+    if (!this.draftId || !supportsClassDraft(shape)) {
       this.cancel()
       return
     }
 
-    const entity = drawWithEntity(this.viewer, this.apis, drawParams)
+    const ops = resolveDraftOps(shape, this.apis)
+    if (!ops) {
+      this.cancel()
+      return
+    }
+
+    let commitOpts = buildCommitOptions(shape, this.collectedPoints, this.currentParams)
+    if (!commitOpts) {
+      this.cancel()
+      return
+    }
+    commitOpts = { ...commitOpts, id: this.draftId, areaDraft: false }
+
+    if (!this.draftEntityCreated) {
+      const bootstrap = buildShapeDrawOptions(
+        shape,
+        this.collectedPoints,
+        null,
+        this.currentParams,
+        true,
+      )
+      if (!bootstrap) {
+        this.cancel()
+        return
+      }
+      bootstrap.id = this.draftId
+      const created = ops.add(this.viewer, bootstrap)
+      if (!created) {
+        this.cancel()
+        return
+      }
+      this.draftEntityCreated = true
+    }
+
+    const ok = ops.update(this.draftId, commitOpts)
+    if (!ok) {
+      this.cancel()
+      return
+    }
+    const entity = ops.getEntity(this.draftId)
     if (!entity) {
       this.cancel()
       return
     }
-    this.emitResult({ id: entity.id, renderMode: 'entity', entity })
+    const committedId = this.draftId
+    this.draftId = null
+    this.draftEntityCreated = false
+    this.emitResult({ id: committedId, renderMode: 'entity', entity })
     this.resetSession()
   }
 
@@ -1447,10 +995,6 @@ export default class AreaManager {
 
   private clearPreviewOverlay(): void {
     if (!this.viewer) return
-    removePreviewEntity(this.viewer, this.tempPreviewEntity)
-    this.tempPreviewEntity = null
-    this.previewTopology = 'none'
-    this.previewPositions = []
     removeAllOverlayEntities(this.viewer, this.tempAnchorEntities)
     this.tempAnchorEntities = []
     removePreviewEntity(this.viewer, this.tempCursorEntity)

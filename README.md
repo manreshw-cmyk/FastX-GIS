@@ -8,7 +8,7 @@
 快览天地万象，速筑数字空间。  
 高性能三维引擎，毫秒响应，实景漫游无卡顿。
 
-FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `FastX`（`window.FastX`），提供图层、坐标、鼠标事件、Entity / Primitive 标绘等 API，并在 `/mapDemo` 中逐项演示。
+FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `FastX`（`window.FastX`），提供图层、坐标、鼠标事件、Entity / Primitive 标绘、量算分析等 API，并在 `/mapDemo` 中逐项演示。
 
 **在线演示**：[https://manreshw-cmyk.github.io/FastX-GIS/](https://manreshw-cmyk.github.io/FastX-GIS/)
 
@@ -44,7 +44,11 @@ npm run preview   # 预览构建结果
 
 ## 功能清单
 
-图例：**✅** 演示已接入，可操作 · **❌** 菜单已有，演示占位或未实现
+图例：
+
+- **✅** 演示页已接入，可在 `/mapDemo` 中操作（或对应 **API** 已在 `FastX` 中实现且演示可用）
+- **❌** 菜单已有，页面仍为占位（「功能内容开发中」）或未实现
+- **API** 表示库能力已导出，演示页尚未单独做卡片
 
 ### 平台
 
@@ -53,7 +57,10 @@ npm run preview   # 预览构建结果
 | 登录与地图演示框架（`/mapDemo`） | ✅ |
 | FastX 全局 API（`window.FastX`） | ✅ |
 | Layer 图层引擎 API（地形 / 影像 / 矢量等，见 `src/FastX/Layer`） | ✅ |
-| Draw Primitive 批量（`*Collection` 高性能路径） | ✅ |
+| Draw · Entity 交互标绘 + 列表管理 | ✅ |
+| Draw · Primitive 批量 | ✅ |
+| Quantitative 量算分析（`window.FastX.Quantitative`） | ✅ |
+| AreaManager 区域绘制管理 | ✅ |
 
 ### 坐标（Coordinates）8
 
@@ -98,58 +105,79 @@ npm run preview   # 预览构建结果
 | 中键抬起 MiddleEventUp | ✅ |
 | 滚轮 WheelEvent | ✅ |
 
-### 绘制（Draw）22
+### 绘制（Draw）
 
-| 功能 | 状态 |
-|------|------|
-| Point 点（Entity） | ✅ |
-| Label 文字（Entity） | ✅ |
-| PolyLine 线（Entity，含虚线 / 发光 / 箭头 / 贴地 / 流动 / 渐变等） | ✅ |
-| Circle 圆（Entity） | ✅ |
-| Polygon 多边形（Entity） | ✅ |
-| Sector 扇形（Entity） | ✅ |
-| Rectangle 矩形（Entity） | ✅ |
-| Cylinder 圆锥 / 圆柱（Entity） | ✅ |
-| Runway 跑道（Entity，两点廊道） | ✅ |
-| Corridor 廊道（Entity） | ✅ |
-| Ellipsoid 球 / 椭球（Entity） | ✅ |
-| Wall 墙（Entity） | ✅ |
-| PolylineVolume 折线体 / 立体管道（Entity） | ✅ |
-| Plane 平面（Entity，颜色 / 图片 / 视频） | ✅ |
-| Billboard 广告牌（Entity） | ✅ |
-| Model 模型（Entity） | ✅ |
-| Box 盒子 / 立方体（Entity） | ✅ |
-| Tileset 3D Tiles（Entity） | ❌ |
-| Path 路径（Entity） | ✅ |
-| 等高线 | ❌ |
-| 二维热力图 | ❌ |
-| 三维热力图 | ❌ |
+演示页以 **Entity** 交互标绘为主（表格增删改、样式配置）；多数几何类型同时支持 **Primitive 批量** 绘制，`/mapDemo` 切换卡片时会统一清理批量实例。
+
+| 功能 | Entity 演示 | Primitive 批量 |
+|------|-------------|----------------|
+| Point 点 | ✅ | ✅ |
+| Label 文字 | ✅ | ✅ |
+| PolyLine 线（虚线 / 发光 / 箭头 / 贴地 / 流动 / 渐变等） | ✅ | ✅ |
+| Circle 圆 | ✅ | ✅ |
+| Polygon 多边形 | ✅ | ✅ |
+| Sector 扇形 | ✅ | ✅ |
+| Rectangle 矩形 | ✅ | ✅ |
+| Cylinder 圆锥 / 圆柱 | ✅ | ✅ |
+| Runway 跑道（两点廊道） | ✅ | ✅ |
+| Corridor 廊道 | ✅ | ✅ |
+| Ellipsoid 球 / 椭球 | ✅ | ✅ |
+| Wall 墙 | ✅ | ❌ |
+| PolylineVolume 折线体 / 立体管道 | ✅ | ✅ |
+| Plane 平面（颜色 / 图片 / 视频） | ✅ | ✅ |
+| Billboard 广告牌 | ✅ | ✅ |
+| Model 模型 | ✅ | ✅ |
+| Box 盒子 / 立方体 | ✅ | ✅ |
+| Path 路径 | ✅ | ❌ |
+| Tileset 3D Tiles | ❌ | ❌ |
+| 二维热力图 | ❌ | ❌ |
+| 三维热力图 | ❌ | ❌ |
 
 ### 图层（Layer）10
 
+| 功能 | 演示页 | Layer API |
+|------|--------|-----------|
+| 初始化地图 | ❌ | ✅ |
+| CesiumTerrainProvider 地形 | ❌ | ✅ |
+| WMTS 图层 | ❌ | ✅ |
+| WMS 图层 | ❌ | ✅ |
+| TMS 图层 | ❌ | ✅ |
+| UrlTemplate（天地图 / 高德 / 腾讯 / 百度等） | ❌ | ✅ |
+| Grid 网格图 | ❌ | ✅ |
+| GeoJSON / TopoJSON | ❌ | ✅ |
+| KML / KMZ | ❌ | ✅ |
+| CZML | ❌ | ✅ |
+
+### 量算分析（Quantitative）
+
+模块路径：`src/FastX/Quantitative`；演示页 7 张卡片，下列能力均已接入（左键绘制、右键结束、样式面板等）。
+
 | 功能 | 状态 |
 |------|------|
-| 初始化地图 | ❌ |
-| CesiumTerrainProvider 地形 | ❌ |
-| WMTS 图层 | ❌ |
-| WMS 图层 | ❌ |
-| TMS 图层 | ❌ |
-| UrlTemplate（天地图 / 高德 / 腾讯 / 百度等） | ❌ |
-| Grid 网格图 | ❌ |
-| GeoJSON / TopoJSON | ❌ |
-| KML / KMZ | ❌ |
-| CZML | ❌ |
+| 空间距离测量 | ✅ |
+| 地表距离测量 | ✅ |
+| 投影距离测量 | ✅ |
+| 空间面积测量 | ✅ |
+| 投影面积测量 | ✅ |
+| 三角测量（空间 / 水平 / 垂直距离） | ✅ |
+| 方位角测量（各段方位角） | ✅ |
+| 直线通视分析 | ✅ |
+| 圆形通视分析 | ✅ |
+| 多点通视分析 | ✅ |
+| 视域分析 | ✅ |
+| 等高线分析（矢量） | ✅ |
+| 等高线分析（Globe Shader） | ✅ |
+| 点缓冲区分析 | ✅ |
+| 线缓冲区分析 | ✅ |
+| 面缓冲区分析 | ✅ |
 
-### 量算分析（Quantitative）6
+以下为菜单占位，**尚未**接入 `Quantitative`：
 
 | 功能 | 状态 |
 |------|------|
-| 贴地 / 空间距离测量 | ❌ |
-| 空间面积测量 | ❌ |
-| 角度测量 | ❌ |
 | 坡度角测量 | ❌ |
 | 点是否在面内 | ❌ |
-| 点与点距离 | ❌ |
+| 点与点距离（独立卡片） | ❌ |
 
 ### 特效（SpecialEffects）10
 
@@ -191,14 +219,24 @@ npm run preview   # 预览构建结果
 | 自定义数量绘制军标 | ❌ |
 | 自定义数量绘制模型 | ❌ |
 
-**合计**：86 项菜单能力 · **49** ✅ · **37** ❌
+### 统计
+
+| 维度 | 数量 |
+|------|------|
+| 左侧菜单卡片 | **85** |
+| 演示页可操作（✅） | **53** |
+| 演示占位或未实现（❌） | **32** |
+| 量算分析子能力（细项） | **16** ✅ |
+| 绘制 Entity 演示 | **18** ✅ |
+| 绘制 Primitive 批量 | **16** ✅ · **5** ❌ |
 
 ---
 
 ## 说明
 
-1. **✅ / ❌ 判定**：以 `src/views/mapDemo` 演示页为准；页面仍为「功能内容开发中」记为 ❌。
-2. **图层类**：上表图层演示为 ❌，但 `Layer` 类 API 已在 `FastX` 中实现（二三维、鹰眼、大气光照、地形与 WMTS/WMS/TMS/UrlTemplate/GeoJSON/KML/CZML 等接口），待演示页对接。
-3. **Primitive 批量**：Point / Line / 面 / 体等 `*Collection` 已导出，无单独菜单卡片，与 Entity 演示配合使用。
-4. **配置**：地图服务地址见 `src/config/map-runtime`；能力卡片注册见 `src/views/mapDemo/component-map.json`。
-5. **版本**：产品发布 **V1.1.2**；
+1. **✅ / ❌ 判定**：以 `src/views/mapDemo` 中对应 `.vue` 是否仍为「功能内容开发中」为准；量算、坐标、工具、鼠标、绘制（Entity）等已接 FastX 的记为 ✅。
+2. **Primitive 批量**：库内已支持大批量同类型几何；演示页主流程为 Entity + 表格管理，切换菜单时由 `mapDemo/index.vue` 统一清理批量实例。
+3. **图层类**：`Layer` API 已实现，演示卡片待对接，上表区分「演示页」与「API」。
+4. **量算分析**：入口为 `FastX.Quantitative` + `MeasureTool` 交互；配置见各演示页「显示样式」面板与 `measureStyleDefaults.ts`。
+5. **配置**：地图服务地址见 `src/config/map-runtime`；卡片注册见 `src/views/mapDemo/component-map.json`、菜单见 `src/common/home-content.js`。
+6. **版本**：产品发布 **V1.1.2**。

@@ -6,10 +6,10 @@ import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
 
 const TYPE_OPTIONS = [
   {
-    value: MeasureType.ALTITUDE_INTERCEPT,
-    label: '三角测量（高差）',
-    hint: '左键选择两点，自动计算空间/水平/垂直距离',
-    desc: '两点构成直角三角形',
+    value: MeasureType.AZIMUTH,
+    label: '方位角',
+    hint: '左键加点，右键结束绘制；显示各段自北顺时针方位角',
+    desc: '折线各段方位角（度）',
   },
 ] as const
 
@@ -20,8 +20,8 @@ const hint = computed(() => TYPE_OPTIONS[0]!.hint)
 <template>
   <QuantitativeDemoPanel
     v-model:measure-style="measureStyle"
-    title="三角测量"
-    desc="在场景中选择两点，自动计算空间距离、水平距离与垂直高差。"
+    title="方位角测量"
+    desc="沿折线测量各段自北顺时针的方位角，适用于导航与朝向分析。"
     :measuring="measuring"
     :current-hint="currentHint()"
     @start="startMeasure"

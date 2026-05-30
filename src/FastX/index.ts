@@ -38,6 +38,7 @@ import Plane from "./Draw/Plane";
 import PlaneCollection from "./Draw/Plane/PlaneCollection";
 import Path from "./Draw/Path";
 import AreaManager from "./areaManager";
+import { Quantitative } from "./Quantitative";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
 import Utils from "./Utils";
@@ -87,6 +88,18 @@ export { default as Plane } from "./Draw/Plane";
 export { default as PlaneCollection } from "./Draw/Plane/PlaneCollection";
 export { default as Path } from "./Draw/Path";
 export { default as AreaManager } from "./areaManager";
+export {
+  Quantitative,
+  MeasureType,
+  MEASURE_POINT_RANGE,
+} from "./Quantitative";
+export type {
+  MeasureTypeKey,
+  MeasureCreateOptions,
+  MeasureStyle,
+  IMeasure,
+  LngLatHeightTuple,
+} from "./Quantitative";
 export type {
   AreaDrawShapeType,
   AreaDrawInteractionMode,
@@ -412,6 +425,7 @@ const polylineVolumeCollectionApi = new PolylineVolumeCollection();
 const planeApi = new Plane();
 const planeCollectionApi = new PlaneCollection();
 const pathApi = new Path();
+const quantitativeApi = new Quantitative({ removeOnTypeChange: false });
 const areaManagerApi = new AreaManager({
   point: pointApi,
   pointCollection: pointCollectionApi,
@@ -503,6 +517,7 @@ export const FastX = {
   Plane: planeApi,
   PlaneCollection: planeCollectionApi,
   Path: pathApi,
+  Quantitative: quantitativeApi,
   AreaManager: areaManagerApi,
   registerCesiumXVueComponents,
   /** 获取已按 `mapName` 注册的 `Layer`；未传名且仅有一个注册实例时返回该实例 */
