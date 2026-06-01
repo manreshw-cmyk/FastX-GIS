@@ -409,81 +409,196 @@ export async function computeVisualDistance(
 }
 
 /**
- * 线缓冲区：每段两侧偏移（简化：圆角折线外包）。
- * @param positions 折线顶点
- * @param widthMeters 缓冲宽度（米）
+ * 视域扇区角度采样列表（度，相对中心角，含两侧边界）。
+ * @param spanDeg 张角跨度
+ * @param stepDeg 步长（度），最小 1.5
  */
-export function computeLineBufferPolygon(
-  positions: LngLatHeightTuple[],
-  widthMeters: number,
-): LngLatHeightTuple[] {
-  if (positions.length < 2) return []
-  const left: LngLatHeightTuple[] = []
-  const right: LngLatHeightTuple[] = []
-
-  for (let i = 0; i < positions.length; i++) {
-    const p = positions[i]!
-    const prev = positions[Math.max(0, i - 1)]!
-    const next = positions[Math.min(positions.length - 1, i + 1)]!
-    const c = toCartesian(p)
-    const dir = new Cesium.Cartesian3()
-    Cesium.Cartesian3.subtract(toCartesian(next), toCartesian(prev), dir)
-    if (Cesium.Cartesian3.magnitude(dir) < 1e-6) continue
-    Cesium.Cartesian3.normalize(dir, dir)
-    const lateral = new Cesium.Cartesian3()
-    Cesium.Cartesian3.cross(dir, Cesium.Cartesian3.UNIT_Z, lateral)
-    if (Cesium.Cartesian3.magnitude(lateral) < 1e-6) {
-      const enu = Cesium.Transforms.eastNorthUpToFixedFrame(c)
-      const east = Cesium.Matrix4.getColumn(enu, 0, new Cesium.Cartesian4())
-      Cesium.Cartesian3.multiplyByScalar(
-        new Cesium.Cartesian3(east.x, east.y, east.z),
-        widthMeters,
-        lateral,
-      )
-    } else {
-      Cesium.Cartesian3.normalize(lateral, lateral)
-      Cesium.Cartesian3.multiplyByScalar(lateral, widthMeters, lateral)
-    }
-    const l = new Cesium.Cartesian3()
-    const r = new Cesium.Cartesian3()
-    Cesium.Cartesian3.add(c, lateral, l)
-    Cesium.Cartesian3.subtract(c, lateral, r)
-    left.push(toLngLat(l))
-    right.push(toLngLat(r))
+export function getViewShedAngleOffsets(spanDeg: number, stepDeg: number): number[] {
+  const half = spanDeg / 2
+  const step = Math.max(1.5, Math.min(stepDeg, 60))
+  const offsets: number[] = []
+  for (let deg = -half; deg <= half + 1e-6; deg += step) {
+    offsets.push(deg)
   }
+  const last = offsets[offsets.length - 1]
+  if (last === undefined || last < half - 1e-6) {
+    offsets.push(half)
+  }
+  return offsets
+}
 
-  return [...left, ...right.reverse()]
+/** 视域扇形内贴地填充单元 */
+export interface ViewShedFillCell {
+  corners: [LngLatHeightTuple, LngLatHeightTuple, LngLatHeightTuple, LngLatHeightTuple]
+  center: LngLatHeightTuple
+}
+
+/** 归一化角度到 (-180, 180]（度） */
+function normalizeAngleDeg(deg: number): number {
+  let a = deg % 360
+  if (a > 180) a -= 360
+  if (a <= -180) a += 360
+  return a
+}
+
+/** 点是否在视域扇形椭球内（与示意椭球同张角、视距） */
+function isViewShedPointInSector(
+  eye: LngLatHeightTuple,
+  point: LngLatHeightTuple,
+  headingDeg: number,
+  pitchDeg: number,
+  horizontalAngleDeg: number,
+  verticalAngleDeg: number,
+  maxDistanceMeters: number,
+): boolean {
+  const eyeC = toCartesian(eye)
+  const pointC = toCartesian(point)
+  const m = Cesium.Transforms.eastNorthUpToFixedFrame(eyeC, undefined, new Cesium.Matrix4())
+  Cesium.Matrix4.inverse(m, m)
+  const local = new Cesium.Cartesian3()
+  Cesium.Matrix4.multiplyByPoint(m, pointC, local)
+  const dist = Cesium.Cartesian3.magnitude(local)
+  if (dist > maxDistanceMeters + 0.5) return false
+  if (dist < 1e-3) return true
+
+  const az = Cesium.Math.toDegrees(Math.atan2(local.x, local.y))
+  const el = Cesium.Math.toDegrees(Math.asin(Cesium.Math.clamp(local.z / dist, -1, 1)))
+  const halfH = horizontalAngleDeg / 2
+  const halfV = verticalAngleDeg / 2
+  return (
+    Math.abs(normalizeAngleDeg(az - headingDeg)) <= halfH + 0.02 &&
+    Math.abs(el - pitchDeg) <= halfV + 0.02
+  )
+}
+
+/** 单元格中心与四角均在扇形内 */
+function isViewShedCellInSector(
+  eye: LngLatHeightTuple,
+  cell: ViewShedFillCell,
+  headingDeg: number,
+  pitchDeg: number,
+  horizontalAngleDeg: number,
+  verticalAngleDeg: number,
+  maxDistanceMeters: number,
+): boolean {
+  const pts: LngLatHeightTuple[] = [cell.center, ...cell.corners]
+  return pts.every((p) =>
+    isViewShedPointInSector(
+      eye,
+      p,
+      headingDeg,
+      pitchDeg,
+      horizontalAngleDeg,
+      verticalAngleDeg,
+      maxDistanceMeters,
+    ),
+  )
 }
 
 /**
- * 面缓冲区：顶点外扩（简化）。
- * @param positions 多边形顶点
- * @param widthMeters 缓冲宽度（米）
+ * 生成视域扇形内楔形网格单元（水平×垂直×径向共边；越界单元剔除）。
+ * @param radialRingCount 径向环数
  */
-export function computePolygonBuffer(
-  positions: LngLatHeightTuple[],
-  widthMeters: number,
-): LngLatHeightTuple[] {
-  if (positions.length < 3) return []
-  const center = positions.reduce(
-    (acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + (p[2] ?? 0)],
-    [0, 0, 0],
-  )
-  center[0] /= positions.length
-  center[1] /= positions.length
-  center[2] /= positions.length
+export function getViewShedFillCells(
+  horizontalAngleDeg: number,
+  verticalAngleDeg: number,
+  hStepDeg: number,
+  vStepDeg: number,
+  eye: LngLatHeightTuple,
+  distanceMeters: number,
+  headingDeg: number,
+  pitchDeg: number,
+  radialRingCount: number,
+): ViewShedFillCell[] {
+  const h = getViewShedAngleOffsets(horizontalAngleDeg, hStepDeg)
+  const v = getViewShedAngleOffsets(verticalAngleDeg, vStepDeg)
+  const rings = Math.max(2, Math.min(radialRingCount, 32))
+  const near = Math.max(distanceMeters * 0.02, 1.5)
+  const span = distanceMeters - near
+  const cells: ViewShedFillCell[] = []
 
-  return positions.map((p) => {
-    const c = toCartesian(p)
-    const o = toCartesian(center as LngLatHeightTuple)
-    const dir = new Cesium.Cartesian3()
-    Cesium.Cartesian3.subtract(c, o, dir)
-    const len = Cesium.Cartesian3.magnitude(dir)
-    if (len < 1e-6) return p
-    Cesium.Cartesian3.multiplyByScalar(dir, (len + widthMeters) / len, dir)
-    Cesium.Cartesian3.add(o, dir, dir)
-    return toLngLat(dir)
-  })
+  for (let ri = 0; ri < rings; ri++) {
+    const rInner = near + (span * ri) / rings
+    if (rInner >= distanceMeters - 0.05) break
+    const rOuter = Math.min(near + (span * (ri + 1)) / rings, distanceMeters)
+    const rMid = (rInner + rOuter) / 2
+
+    for (let vi = 0; vi < v.length - 1; vi++) {
+      const p0 = v[vi]!
+      const p1 = v[vi + 1]!
+      const pitchMid = (p0 + p1) / 2
+      for (let hi = 0; hi < h.length - 1; hi++) {
+        const az0 = h[hi]!
+        const az1 = h[hi + 1]!
+        const corners: ViewShedFillCell['corners'] = [
+          viewShedRayTarget(eye, rInner, headingDeg, pitchDeg, az0, p0),
+          viewShedRayTarget(eye, rInner, headingDeg, pitchDeg, az1, p0),
+          viewShedRayTarget(eye, rOuter, headingDeg, pitchDeg, az1, p1),
+          viewShedRayTarget(eye, rOuter, headingDeg, pitchDeg, az0, p1),
+        ]
+        const center = viewShedRayTarget(
+          eye,
+          rMid,
+          headingDeg,
+          pitchDeg,
+          (az0 + az1) / 2,
+          pitchMid,
+        )
+        const cell = { corners, center }
+        if (
+          isViewShedCellInSector(
+            eye,
+            cell,
+            headingDeg,
+            pitchDeg,
+            horizontalAngleDeg,
+            verticalAngleDeg,
+            distanceMeters,
+          )
+        ) {
+          cells.push(cell)
+        }
+      }
+    }
+  }
+  return cells
+}
+
+/** 判断单元格中心是否对观测点通视（直线通视采样） */
+export async function isViewShedCellVisible(
+  viewer: Viewer,
+  eye: LngLatHeightTuple,
+  center: LngLatHeightTuple,
+  sampleCount = 40,
+): Promise<boolean> {
+  const obj = await computeVisualDistance(viewer, [eye, center], { sampleCount })
+  if (obj.invisibleDistance <= 0) return true
+  if (obj.visibleDistance <= 0) return false
+  return obj.visibleDistance >= obj.invisibleDistance
+}
+
+/**
+ * 视域单条射线终点（按航向、俯仰与水平/垂直偏移推算）。
+ * @param eye 观测点
+ * @param distanceMeters 射线长度（米）
+ * @param headingDeg 中心航向（度）
+ * @param pitchDeg 中心俯仰（度）
+ * @param azimuthOffsetDeg 水平偏移（度）
+ * @param pitchOffsetDeg 垂直偏移（度）
+ */
+export function viewShedRayTarget(
+  eye: LngLatHeightTuple,
+  distanceMeters: number,
+  headingDeg: number,
+  pitchDeg: number,
+  azimuthOffsetDeg: number,
+  pitchOffsetDeg = 0,
+): LngLatHeightTuple {
+  const azRad = Cesium.Math.toRadians(headingDeg + azimuthOffsetDeg)
+  const pitchRad = Cesium.Math.toRadians(pitchDeg + pitchOffsetDeg)
+  const horiz = distanceMeters * Math.cos(pitchRad)
+  const end = geodesicDestination(eye, horiz, azRad)
+  return [end[0], end[1], (eye[2] ?? 0) + distanceMeters * Math.sin(pitchRad)]
 }
 
 /**

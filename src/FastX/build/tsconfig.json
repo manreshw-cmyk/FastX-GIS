@@ -23,6 +23,5 @@
   ],
   "exclude": [
     "../components/**/*.vue",
-    "../Draw/runBatchCollectionsSmoke.ts"
   ]
 }

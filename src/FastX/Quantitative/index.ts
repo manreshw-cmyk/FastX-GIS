@@ -7,11 +7,9 @@ import {
   ContourShaderAnalyze,
   GroundDistanceMeasure,
   LineAnalyze,
-  LineBufferAnalyze,
+  BufferAnalyze,
   LineDistanceMeasure,
   MultiPointAnalyze,
-  PlaneBufferAnalyze,
-  PointBufferAnalyze,
   ProjectionAreaMeasure,
   ProjectionDistanceMeasure,
   SpaceAreaMeasure,
@@ -107,6 +105,7 @@ export class Quantitative {
       contourGridSize: options.contourGridSize ?? this.contourGridSize,
       bufferWidth: options.bufferWidth ?? this.bufferWidth,
       onContourShaderChange: () => this.syncContourGlobeShader(),
+      viewShed: options.viewShed,
     }
     const type = options.type
     let measure: IMeasure | null = null
@@ -152,13 +151,9 @@ export class Quantitative {
         measure = new ContourShaderAnalyze(full)
         break
       case MeasureType.POINT_BUFFER_ANALYZE:
-        measure = new PointBufferAnalyze(full)
-        break
       case MeasureType.LINE_BUFFER_ANALYZE:
-        measure = new LineBufferAnalyze(full)
-        break
       case MeasureType.PLANE_BUFFER_ANALYZE:
-        measure = new PlaneBufferAnalyze(full)
+        measure = new BufferAnalyze(full)
         break
       default:
         return null
@@ -262,7 +257,14 @@ export class Quantitative {
 }
 
 export { MeasureType, MEASURE_POINT_RANGE } from './types'
-export type { MeasureTypeKey, MeasureCreateOptions, MeasureStyle, IMeasure, LngLatHeightTuple } from './types'
+export type {
+  MeasureTypeKey,
+  MeasureCreateOptions,
+  MeasureStyle,
+  BufferAnalyzeOptions,
+  IMeasure,
+  LngLatHeightTuple,
+} from './types'
 export { MeasureTool } from './MeasureTool'
 export * from './measureMath'
 export * from './components'

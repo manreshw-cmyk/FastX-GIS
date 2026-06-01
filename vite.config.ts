@@ -5,6 +5,7 @@ import vue from "@vitejs/plugin-vue";
 import cesium from "vite-plugin-cesium";
 import progress from "vite-plugin-progress";
 import { compression } from "vite-plugin-compression2";
+import importvueDevTools from 'vite-plugin-vue-devtools'
 import colors from "picocolors";
 
 const OUT_DIR = "FastXDist";
@@ -122,6 +123,7 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     vue(),
     cesium(),
+    importvueDevTools(),
     ...(command === "build"
       ? [disableCesiumNestedCopy(), copyCesiumToDistRoot(), ...buildOnlyPlugins()]
       : []),

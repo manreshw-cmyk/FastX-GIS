@@ -6,10 +6,20 @@ import QuantitativeTypeCards from './components/common/QuantitativeTypeCards.vue
 import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
 
 const TYPE_OPTIONS = [
-  { value: MeasureType.LINE_ANALYZE, label: '直线通视', hint: '左键选择观测点与目标点', desc: '两点间通视判断' },
-  { value: MeasureType.AREA_ANALYZE, label: '圆形通视', hint: '左键选择圆心与半径点', desc: '圆形范围通视分析' },
-  { value: MeasureType.MULTI_POINT_ANALYZE, label: '多点通视', hint: '第一点为观测点，后续为目标点；右键结束', desc: '一对多通视分析' },
-  { value: MeasureType.VIEWSHED_ANALYZE, label: '视域分析', hint: '左键选择观测点与目标方向点', desc: '视域范围示意' },
+  { value: MeasureType.LINE_ANALYZE, label: '直线通视', hint: '左键：观测点 → 目标点', desc: '两点通视' },
+  { value: MeasureType.AREA_ANALYZE, label: '圆形通视', hint: '左键：圆心 → 半径点', desc: '圆形范围通视' },
+  {
+    value: MeasureType.MULTI_POINT_ANALYZE,
+    label: '多点通视',
+    hint: '左键：观测点，再点目标；右键结束',
+    desc: '一对多通视',
+  },
+  {
+    value: MeasureType.VIEWSHED_ANALYZE,
+    label: '视域分析',
+    hint: '左键：观测点 → 目标方向点',
+    desc: '扇形可视域填充',
+  },
 ] as const
 
 const { activeType, measuring, measureStyle, switchType, startMeasure, clearResults, currentHint } =
@@ -22,7 +32,7 @@ const activeOption = computed(() => TYPE_OPTIONS.find((o) => o.value === activeT
   <QuantitativeDemoPanel
     v-model:measure-style="measureStyle"
     title="通视与视域分析"
-    desc="直线、圆形、多点通视与视域分析，用于观测点与目标点之间的可见性判断。"
+    desc="直线、圆形、多点通视与视域分析。"
     primary-label="开始分析"
     :measuring="measuring"
     :current-hint="currentHint()"

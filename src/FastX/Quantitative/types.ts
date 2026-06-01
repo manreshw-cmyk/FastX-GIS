@@ -80,6 +80,64 @@ export interface IMeasureStyleOptions {
   setStyle(style: Partial<MeasureStyle>): void
 }
 
+/** 视域分析参数（扇形网格多边形填充 + 视锥/椭球示意） */
+export interface ViewShedOptions {
+  /** 水平可视夹角（度），默认 90 */
+  horizontalViewAngle?: number
+  /** 垂直可视夹角（度），默认 60 */
+  verticalViewAngle?: number
+  /** 无目标点时的默认观测距离（米），默认 100 */
+  defaultViewDistance?: number
+  /** 完成绘制后水平网格步长（度），默认 5 */
+  rayStepDegrees?: number
+  /** 绘制预览时水平网格步长（度），默认 8 */
+  previewRayStepDegrees?: number
+  /** 完成绘制后垂直网格步长（度），默认 6 */
+  verticalRayStepDegrees?: number
+  /** 绘制预览时垂直网格步长（度），默认 9 */
+  previewVerticalRayStepDegrees?: number
+  /** 单元格通视采样数，默认 28 */
+  sampleCount?: number
+  /** 预览时单元格通视采样数，默认 16 */
+  previewSampleCount?: number
+  /** 完成绘制后径向分层数，默认 8 */
+  radialRingCount?: number
+  /** 预览时径向分层数，默认 5 */
+  previewRadialRingCount?: number
+  /** 可视/不可视填充透明度 0~1，默认 0.88 */
+  fillAlpha?: number
+  /** 视锥线框颜色（CSS），默认 #9acd32 */
+  frustumOutlineColor?: string
+  /** 视域扇形网格线颜色（CSS），默认 #00e5ff */
+  sketchOutlineColor?: string
+  /** 是否显示扇形椭球最外层轮廓线，默认 true */
+  showSketchOutline?: boolean
+  /** 是否显示视锥金字塔线框，默认 true */
+  showFrustumOutline?: boolean
+}
+
+/** 点 / 线 / 面缓冲分析样式（{@link BufferAnalyze}） */
+export interface BufferAnalyzeOptions {
+  /** 缓冲填充色，默认 #e53935 */
+  bufferFillColor?: string
+  /** 缓冲填充透明度 0~1，默认 0.45 */
+  bufferFillAlpha?: number
+  /** 缓冲外轮廓色，默认 #c62828 */
+  bufferOutlineColor?: string
+  /** 缓冲外轮廓线宽（像素），默认 2 */
+  bufferOutlineWidth?: number
+  /** 是否绘制缓冲外轮廓，默认 true */
+  showBufferOutline?: boolean
+  /** 源折线颜色（线/面绘制中），默认 #ffeb3b */
+  sourceLineColor?: string
+  /** 源折线宽度，默认 3 */
+  sourceLineWidth?: number
+  /** 源面填充色（面缓冲），默认 #ff9800 */
+  sourceFillColor?: string
+  /** 源面填充透明度，默认 0.45 */
+  sourceFillAlpha?: number
+}
+
 /** 创建量算实例的选项 */
 export interface MeasureCreateOptions {
   viewer: Viewer
@@ -91,12 +149,16 @@ export interface MeasureCreateOptions {
   style?: MeasureStyle
   /** 缓冲区半径（米） */
   bufferWidth?: number
+  /** 缓冲分析专用样式（填充色、源要素色等） */
+  buffer?: BufferAnalyzeOptions
   /** 等高线间隔（米） */
   contourInterval?: number
   /** 等高线网格行列 */
   contourGridSize?: number
   /** 等高线 Shader 变更时回调 */
   onContourShaderChange?: () => void
+  /** 视域分析参数 */
+  viewShed?: ViewShedOptions
 }
 
 /** 量算实例公共接口 */
