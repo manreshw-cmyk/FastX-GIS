@@ -1,0 +1,36 @@
+{
+  "description": "FastX SDK 第三方插件清单（vendor 为源码，build 时拷贝至 lib/）",
+  "plugins": [
+    {
+      "id": "heatmap",
+      "name": "heatmap.js",
+      "version": "2.0.5",
+      "license": "MIT / Beerware",
+      "global": "h337",
+      "entry": "heatmap.min.js",
+      "enabled": true,
+      "usedBy": ["Draw/Heatmap"]
+    },
+    {
+      "id": "turf",
+      "name": "@turf/turf",
+      "version": "7.3.5",
+      "license": "MIT",
+      "global": "turf",
+      "entry": "turf.min.js",
+      "enabled": true,
+      "usedBy": ["Quantitative/BufferAnalyze"]
+    },
+    {
+      "id": "cesium-navigation",
+      "name": "cesium-navigation-es6",
+      "version": "3.0.9",
+      "license": "Apache-2.0",
+      "global": "CesiumNavigation",
+      "entry": "CesiumNavigation.umd.js",
+      "styles": ["styles/cesium-navigation.css"],
+      "enabled": true,
+      "usedBy": ["Layer/navigationControl"]
+    }
+  ]
+}
