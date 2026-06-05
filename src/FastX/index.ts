@@ -37,10 +37,13 @@ import PolylineVolumeCollection from "./Draw/PolylineVolume/PolylineVolumeCollec
 import Plane from "./Draw/Plane";
 import PlaneCollection from "./Draw/Plane/PlaneCollection";
 import Path from "./Draw/Path";
+import Heatmap from "./Draw/Heatmap";
+import PointAggregation from "./Draw/PointAggregation";
 import AreaManager from "./areaManager";
 import { Quantitative } from "./Quantitative";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
+import { ensureVendorPlugins } from "./plugins";
 import Utils from "./Utils";
 import Types from "./Types";
 
@@ -87,6 +90,52 @@ export {
 export { default as Plane } from "./Draw/Plane";
 export { default as PlaneCollection } from "./Draw/Plane/PlaneCollection";
 export { default as Path } from "./Draw/Path";
+export { default as Heatmap } from "./Draw/Heatmap";
+export type {
+  HeatmapBounds,
+  HeatmapCell,
+  HeatmapColorStop,
+  HeatmapCreateOptions,
+  HeatmapDimension,
+  HeatmapGrid,
+  HeatmapKind,
+  HeatmapRenderType,
+  HeatmapSnapshot,
+  HeatmapStyle,
+  HeatmapUpdateOptions,
+} from "./Draw/Heatmap";
+export { DEFAULT_HEATMAP_GRADIENT, DEFAULT_HEATMAP_STYLE } from "./Draw/Heatmap";
+export {
+  ensureHeatmapJs,
+  ensureTurf,
+  ensureCesiumNavigation,
+  ensureVendorPlugins,
+  h337,
+  turf,
+  getTurf,
+  getH337,
+  getCesiumNavigation,
+  VENDOR_MANIFEST,
+} from "./plugins";
+export type {
+  TurfStatic,
+  H337Factory,
+  VendorPluginEntry,
+  CesiumNavigationInstance,
+  CesiumNavigationOptions,
+} from "./plugins";
+export * as Cesium from "cesium";
+export { default as PointAggregation } from "./Draw/PointAggregation";
+export type {
+  PointAggregationClusterStyle,
+  PointAggregationGeoJsonOptions,
+  PointAggregationLoadOptions,
+  PointAggregationPointStyle,
+  PointAggregationSnapshot,
+  PointAggregationStyle,
+  PointAggregationUpdateOptions,
+} from "./Draw/PointAggregation";
+export { DEFAULT_POINT_AGGREGATION_STYLE } from "./Draw/PointAggregation";
 export { default as AreaManager } from "./areaManager";
 export {
   Quantitative,
@@ -425,6 +474,8 @@ const polylineVolumeCollectionApi = new PolylineVolumeCollection();
 const planeApi = new Plane();
 const planeCollectionApi = new PlaneCollection();
 const pathApi = new Path();
+const heatmapApi = new Heatmap();
+const pointAggregationApi = new PointAggregation();
 const quantitativeApi = new Quantitative({ removeOnTypeChange: false });
 const areaManagerApi = new AreaManager({
   point: pointApi,
@@ -517,6 +568,8 @@ export const FastX = {
   Plane: planeApi,
   PlaneCollection: planeCollectionApi,
   Path: pathApi,
+  Heatmap: heatmapApi,
+  PointAggregation: pointAggregationApi,
   Quantitative: quantitativeApi,
   AreaManager: areaManagerApi,
   registerCesiumXVueComponents,
@@ -540,4 +593,5 @@ export type FastXGlobal = typeof FastX;
 export function installFastXToWindow(): void {
   if (typeof window === "undefined") return;
   (window as Window & { FastX: FastXGlobal }).FastX = FastX;
+  void ensureVendorPlugins().catch((err) => console.warn("[FastX] 插件预加载失败", err));
 }

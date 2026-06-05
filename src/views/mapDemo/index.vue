@@ -134,6 +134,8 @@ watch(activeMenuKey, () => {
     window.FastX?.PolylineVolumeCollection?.clear(v)
     window.FastX?.Plane?.clear(v)
     window.FastX?.PlaneCollection?.clear(v)
+    window.FastX?.Heatmap?.clear(v)
+    window.FastX?.PointAggregation?.clear(v)
   }
   window.FastX?.Point?.pruneInvalid()
   window.FastX?.PointCollection?.pruneInvalid()
@@ -168,6 +170,8 @@ watch(activeMenuKey, () => {
   window.FastX?.PolylineVolumeCollection?.pruneInvalid()
   window.FastX?.Plane?.pruneInvalid()
   window.FastX?.PlaneCollection?.pruneInvalid()
+  window.FastX?.Heatmap?.pruneInvalid()
+  window.FastX?.PointAggregation?.pruneInvalid()
 })
 
 const handleSelectMenu = (key: string) => {
@@ -342,6 +346,15 @@ function onMapReady() {
   top: 14px;
   right: 14px;
   z-index: 2;
+}
+
+/* 图层示例：清除按钮禁用时灰色背景 */
+.map-demo-panel .map-tool-float .layer-demo-btn-clear.ant-btn-disabled,
+.map-demo-panel .map-tool-float .layer-demo-btn-clear:disabled {
+  color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(120, 120, 120, 0.38) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  cursor: not-allowed;
 }
 
 /* 地图工具二级弹窗主操作（确定 / 标绘 / 转换 / 复位等）：与 hzdldcxr 主按钮同一字重 */

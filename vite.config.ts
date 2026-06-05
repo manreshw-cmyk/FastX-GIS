@@ -5,13 +5,50 @@ import vue from "@vitejs/plugin-vue";
 import cesium from "vite-plugin-cesium";
 import progress from "vite-plugin-progress";
 import { compression } from "vite-plugin-compression2";
-import importvueDevTools from 'vite-plugin-vue-devtools'
+import importvueDevTools from "vite-plugin-vue-devtools";
 import colors from "picocolors";
 
 const OUT_DIR = "FastXDist";
 const GITHUB_PAGES_BASE = "/FastX-GIS/";
-
+const VENDOR_DIR = path.resolve("src/FastX/build/vendor");
 const CESIUM_BUILD_DIR = path.resolve("node_modules/cesium/Build/Cesium");
+
+/** 开发态托管 vendor；生产构建复制到 FastXDist/vendor */
+function fastxVendorPlugin(): Plugin {
+  return {
+    name: "fastx-vendor-static",
+    configureServer(server) {
+      server.middlewares.use("/vendor", (req, res, next) => {
+        const rel = (req.url ?? "/").split("?")[0]!.replace(/^\//, "");
+        const file = path.join(VENDOR_DIR, rel);
+        if (
+          !file.startsWith(VENDOR_DIR) ||
+          !fs.existsSync(file) ||
+          fs.statSync(file).isDirectory()
+        ) {
+          next();
+          return;
+        }
+        const ext = path.extname(file).toLowerCase();
+        const type =
+          ext === ".css"
+            ? "text/css"
+            : ext === ".js"
+              ? "application/javascript"
+              : "application/octet-stream";
+        res.setHeader("Content-Type", type);
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      const dest = path.resolve(OUT_DIR, "vendor");
+      if (!fs.existsSync(VENDOR_DIR)) return;
+      if (fs.existsSync(dest))
+        fs.rmSync(dest, { recursive: true, force: true });
+      fs.cpSync(VENDOR_DIR, dest, { recursive: true });
+    },
+  };
+}
 
 /**
  * vite-plugin-cesium 会把文件复制到 outDir + base + cesium（FastXDist/FastX-GIS/cesium），
@@ -22,7 +59,9 @@ function disableCesiumNestedCopy(): Plugin {
     name: "disable-cesium-nested-copy",
     apply: "build",
     configResolved(config) {
-      const plugin = config.plugins.find((p) => p.name === "vite-plugin-cesium");
+      const plugin = config.plugins.find(
+        (p) => p.name === "vite-plugin-cesium",
+      );
       if (plugin) {
         plugin.closeBundle = async () => {};
       }
@@ -42,7 +81,12 @@ function copyCesiumToDistRoot(): Plugin {
 
       // 清理历史构建遗留的嵌套目录
       if (fs.existsSync(nestedRoot)) {
-        fs.rmSync(nestedRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+        fs.rmSync(nestedRoot, {
+          recursive: true,
+          force: true,
+          maxRetries: 5,
+          retryDelay: 200,
+        });
       }
 
       if (fs.existsSync(targetCesium)) {
@@ -124,10 +168,20 @@ export default defineConfig(({ command, isPreview }) => ({
     vue(),
     cesium(),
     importvueDevTools(),
+    fastxVendorPlugin(),
     ...(command === "build"
-      ? [disableCesiumNestedCopy(), copyCesiumToDistRoot(), ...buildOnlyPlugins()]
+      ? [
+          disableCesiumNestedCopy(),
+          copyCesiumToDistRoot(),
+          ...buildOnlyPlugins(),
+        ]
       : []),
   ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   /** build 与 preview 均使用 GitHub Pages 子路径，与产物内资源引用一致 */
   base: command === "build" || isPreview ? GITHUB_PAGES_BASE : "/",
   server: {

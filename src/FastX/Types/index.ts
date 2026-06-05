@@ -2828,6 +2828,8 @@ export interface LayerUiInitConfig {
   showTileLevelOverlay?: boolean
   /** 是否显示简易罗盘（自绘 DOM，指示相机航向）。 @default false */
   showCompassOverlay?: boolean
+  /** 是否显示 cesium-navigation 导航罗盘（左下角，位于比例尺上方）。 @default false */
+  showNavigationControl?: boolean
   /** 画布鼠标 CSS cursor，如 `grab`、`pointer`、`crosshair`。 */
   initialCursor?: string
 }

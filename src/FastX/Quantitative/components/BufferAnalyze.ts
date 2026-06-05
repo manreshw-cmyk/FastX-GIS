@@ -2,7 +2,7 @@
  * 点 / 线 / 面缓冲分析（turf.buffer + 贴地 GroundPrimitive），由 MeasureType 区分几何类型。
  */
 import * as Cesium from "cesium";
-import { buffer, lineString, point, polygon } from "@turf/turf";
+import { getTurf } from "../../plugins/turf";
 import type {
   LngLatHeightTuple,
   BufferAnalyzeOptions,
@@ -78,6 +78,7 @@ function turfBufferRing(
   const km = radiusMeters / 1000;
   if (km <= 0 || positions.length < 1) return null;
 
+  const { buffer, point, lineString, polygon } = getTurf();
   const coords = positions.map((p) => [p[0], p[1]] as [number, number]);
   const h = positions[0]?.[2] ?? 0;
 

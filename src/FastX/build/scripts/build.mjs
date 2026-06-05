@@ -37,6 +37,7 @@ function ensureReadme() {
 function prepareDefaultCss() {
   const widgetsCss = path.join(rootDir, 'node_modules/cesium/Build/Cesium/Widgets/widgets.css')
   const outCss = path.join(buildDir, 'default/index.css')
+  fs.mkdirSync(path.dirname(outCss), { recursive: true })
   if (!fs.existsSync(widgetsCss)) {
     throw new Error(`未找到 Cesium widgets.css，请先在仓库根目录执行 npm install：\n  ${widgetsCss}`)
   }
@@ -65,6 +66,25 @@ function copyCesiumTypes() {
   }
   fs.copyFileSync(src, dest)
   log('3/5', '已拷贝 lib/Cesium.d.ts（TypeScript 类型，内网无需 cesium 包）')
+}
+
+/** vendor/<id>/ → lib/<id>/（manifest 登记的插件目录） */
+function copyVendorPlugins() {
+  const manifestPath = path.join(buildDir, 'vendor/manifest.json')
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(`缺少 vendor/manifest.json：\n  ${manifestPath}`)
+  }
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  for (const plugin of manifest.plugins ?? []) {
+    const src = path.join(buildDir, 'vendor', plugin.id)
+    const dest = path.join(buildDir, 'lib', plugin.id)
+    if (!fs.existsSync(src)) {
+      throw new Error(`vendor 插件目录不存在：${src}`)
+    }
+    rimraf(dest)
+    copyDir(src, dest)
+    log('2b/5', `已拷贝 lib/${plugin.id}（${plugin.name}@${plugin.version}）`)
+  }
 }
 
 /** dist/entry.d.ts 注入包内 Cesium 类型，内网无需 node_modules/cesium */
@@ -136,6 +156,13 @@ function verifyPackIntegrity() {
       }
     }],
     ['lib/Cesium.d.ts', null],
+    ['lib/heatmap/heatmap.min.js', (p) => {
+      if (fs.statSync(p).size < 1000) throw new Error('lib/heatmap/heatmap.min.js 体积异常')
+    }],
+    ['lib/turf/turf.min.js', (p) => {
+      if (fs.statSync(p).size < 100_000) throw new Error('lib/turf/turf.min.js 体积异常')
+    }],
+    ['lib/cesium-navigation/CesiumNavigation.umd.js', null],
     ['default/index.css', null],
     ['package.json', (p) => {
       const pkg = JSON.parse(fs.readFileSync(p, 'utf8'))
@@ -152,7 +179,7 @@ function verifyPackIntegrity() {
     }
     if (validate) validate(full)
   }
-  log('verify', '打包完整性校验通过（dist / lib/Cesium / 类型 / 无外部 cesium 依赖）')
+  log('verify', '打包完整性校验通过（dist / lib/Cesium / lib/plugins / 类型 / 无外部 cesium 依赖）')
 }
 
 function removeOldTgz() {
@@ -229,6 +256,7 @@ function main() {
   fs.mkdirSync(path.join(buildDir, 'dist'), { recursive: true })
   prepareDefaultCss()
   copyCesiumAssets()
+  copyVendorPlugins()
   copyCesiumTypes()
   runRollup()
   verifyPackIntegrity()

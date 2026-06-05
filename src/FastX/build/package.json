@@ -22,6 +22,9 @@
     },
     "./default/index.css": "./default/index.css",
     "./lib/Cesium/*": "./lib/Cesium/*",
+    "./lib/heatmap/*": "./lib/heatmap/*",
+    "./lib/turf/*": "./lib/turf/*",
+    "./lib/cesium-navigation/*": "./lib/cesium-navigation/*",
     "./cesium": {
       "types": "./lib/Cesium.d.ts",
       "import": "./lib/Cesium/index.js",
@@ -33,6 +36,7 @@
   "files": [
     "dist",
     "lib",
+    "vendor",
     "default",
     "Data",
     "README.md",

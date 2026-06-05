@@ -112,6 +112,13 @@
     "imageUrl": "../../assets/images/比例尺.png"
   },
   {
+    "key": "tools-9",
+    "title": "导航罗盘",
+    "fileName": "navigation",
+    "componentPath": "./navigation.vue",
+    "imageUrl": "../../assets/images/导航罗盘.png"
+  },
+  {
     "key": "mouse-event-1",
     "title": "鼠标左键点击（LeftEventClick）事件",
     "fileName": "sbzjdjsj",
@@ -330,80 +337,66 @@
   },
 
   {
-    "key": "draw-21",
+    "key": "draw-20",
     "title": "2/3维热力图",
     "fileName": "wrlt",
     "componentPath": "./wrlt.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/2、3维热力图.png"
+  },
+  {
+    "key": "draw-21",
+    "title": "点聚合",
+    "fileName": "djjh",
+    "componentPath": "./djjh.vue",
+    "imageUrl": "../../assets/images/点聚合.png"
   },
   {
     "key": "layer-1",
-    "title": "初始化地图（图层）",
-    "fileName": "cshdttc",
-    "componentPath": "./cshdttc.vue",
+    "title": "WMTS服务",
+    "fileName": "layer-wmts",
+    "componentPath": "./layer-wmts.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-2",
-    "title": "使用CesiumTerrainProvider加载地形服务",
-    "fileName": "syjzdxfw",
-    "componentPath": "./syjzdxfw.vue",
+    "title": "WMS服务",
+    "fileName": "layer-wms",
+    "componentPath": "./layer-wms.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-3",
-    "title": "使用WMTS服务加载图层",
-    "fileName": "syfwjztc",
-    "componentPath": "./syfwjztc.vue",
+    "title": "Image服务",
+    "fileName": "layer-image",
+    "componentPath": "./layer-image.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-4",
-    "title": "使用WMS服务加载图层",
-    "fileName": "syfwjztc2",
-    "componentPath": "./syfwjztc2.vue",
+    "title": "Grid服务",
+    "fileName": "layer-grid",
+    "componentPath": "./layer-grid.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-5",
-    "title": "使用TMS服务加载图层",
-    "fileName": "syfwjztc3",
-    "componentPath": "./syfwjztc3.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "GeoJSON/TopoJSON服务",
+    "fileName": "layer-geojson",
+    "componentPath": "./layer-geojson.vue",
+    "imageUrl": "../../assets/images/GeoJSON、TopoJSON服务.png"
   },
   {
     "key": "layer-6",
-    "title": "使用UrlTemplateImageryProvider加载天地图/高德/腾讯/百度图层",
-    "fileName": "syjztdtgdtxbdtc",
-    "componentPath": "./syjztdtgdtxbdtc.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "KML/KMZ服务",
+    "fileName": "layer-kml",
+    "componentPath": "./layer-kml.vue",
+    "imageUrl": "../../assets/images/KML、KMZ服务.png"
   },
   {
     "key": "layer-7",
-    "title": "使用GridImageryProvider加载Grid网格图",
-    "fileName": "syjzwgt",
-    "componentPath": "./syjzwgt.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "layer-8",
-    "title": "使用GeoJsonDataSource加载GeoJSON/TopoJSON",
-    "fileName": "syjz",
-    "componentPath": "./syjz.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "layer-9",
-    "title": "使用KmlDataSource加载KML/KMZ",
-    "fileName": "syjz2",
-    "componentPath": "./syjz2.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "layer-10",
-    "title": "使用CzmlDataSource加载CZML（Cesium自身的JSON格式）",
-    "fileName": "syjzzsdgs",
-    "componentPath": "./syjzzsdgs.vue",
+    "title": "CZML服务",
+    "fileName": "layer-czml",
+    "componentPath": "./layer-czml.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {

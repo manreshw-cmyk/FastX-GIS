@@ -51,6 +51,21 @@ export {
   Plane,
   PlaneCollection,
   Path,
+  Heatmap,
+  DEFAULT_HEATMAP_GRADIENT,
+  DEFAULT_HEATMAP_STYLE,
+  ensureHeatmapJs,
+  ensureTurf,
+  ensureCesiumNavigation,
+  ensureVendorPlugins,
+  h337,
+  turf,
+  getTurf,
+  getH337,
+  getCesiumNavigation,
+  VENDOR_MANIFEST,
+  PointAggregation,
+  DEFAULT_POINT_AGGREGATION_STYLE,
   AreaManager,
   Quantitative,
   MeasureType,
@@ -64,6 +79,8 @@ export {
   FastX,
 } from '../index.js'
 
+export type { TurfStatic, H337Factory, VendorPluginEntry, CesiumNavigationInstance, CesiumNavigationOptions } from '../plugins/index.js'
+
 export { ensureCesiumBaseUrl } from './runtime/ensure-cesium-base-url.js'
 export type { EnsureCesiumBaseUrlOptions } from './runtime/ensure-cesium-base-url.js'
 
@@ -75,7 +92,7 @@ export interface FastXInstallOptions {
 /** 包内已含 Cesium 运行时（`lib/Cesium`），无需单独安装 `cesium` npm 包 */
 export * as Cesium from 'cesium'
 
-/** 挂载 `window.FastX`，并配置包内 `lib/Cesium` 路径 */
+/** 挂载 `window.FastX`，并配置包内 `lib/Cesium` 路径与 vendor 插件预加载 */
 export function installFastXToWindow(options?: FastXInstallOptions): void {
   ensureCesiumBaseUrl(options?.cesiumBaseUrl ? { baseUrl: options.cesiumBaseUrl } : undefined)
   installCore()

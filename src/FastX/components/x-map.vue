@@ -111,7 +111,7 @@ async function mountMap() {
   } else {
     layer.setOverviewMapVisible(false)
   }
-  layer.setSkyAtmosphereVisible(false)
+  layer.setSkyAtmosphereVisible(true)
   layer.setGlobeLightingEnabled(false)
   const v = layer.getViewer()
   if (v && !v.isDestroyed()) {

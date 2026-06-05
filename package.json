@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
-    "@turf/turf": "^7.3.5",
     "ant-design-vue": "^4.2.6",
     "cesium": "^1.140.0",
     "pinia": "^2.2.4",

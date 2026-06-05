@@ -31,6 +31,12 @@ import {
   mergeGridImageryOptions,
   type LayerGridStyleOptions,
 } from "./gridImagery";
+import {
+  ensureCesiumNavigation,
+  getCesiumNavigation,
+  type CesiumNavigationInstance,
+} from "../plugins/cesium-navigation";
+import type { BaseImageryPresetKind } from "./layer-panel-presets";
 
 export type {
   CzmlDataSource,
@@ -77,6 +83,11 @@ export type { LayerGridStyleOptions } from "./gridImagery";
 const SCALE_BAR_LINE_PX = 80;
 const SCALE_BAR_BOTTOM_PX = 12;
 const SCALE_BAR_LEFT_PX = 12;
+/** 比例尺整块近似高度（用于导航控件堆叠定位） */
+const SCALE_BAR_BLOCK_HEIGHT_PX = 46;
+const NAVIGATION_ABOVE_SCALE_GAP_PX = 8;
+const NAVIGATION_LEFT_PX = 12;
+const NAV_LAYOUT_STYLE_ID = "fx-cesium-navigation-layout";
 
 /** 比例尺文字：与鼠标经纬度类似，连续小数变化 */
 function formatScaleBarLabel(meters: number): string {
@@ -123,6 +134,11 @@ export class Layer {
   private scaleBarLineEl: HTMLElement | null = null;
   private tileLevelEl: HTMLElement | null = null;
   private compassEl: HTMLElement | null = null;
+  private navigationControl: CesiumNavigationInstance | null = null;
+  private navigationShowPromise: Promise<void> | null = null;
+  private initImageryUrlTemplate: string | undefined;
+  private initTerrainUrl: string | undefined;
+  private baseImageryPreset: BaseImageryPresetKind = "custom";
 
   /**
    * 初始化地图（图层）。
@@ -189,6 +205,10 @@ export class Layer {
     this.applyPerformance(viewer, config.performance);
     this.hideCesiumCreditBar(viewer);
 
+    this.initImageryUrlTemplate = config.imageryUrlTemplate;
+    this.initTerrainUrl = config.terrainUrl;
+    this.baseImageryPreset = "custom";
+
     const imageryProvider = new Cesium.UrlTemplateImageryProvider({
       url: config.imageryUrlTemplate,
       ...config.imageryProviderOptions,
@@ -243,6 +263,9 @@ export class Layer {
     }
     if (config.ui?.showCompassOverlay) {
       this.setCompassOverlayVisible(true);
+    }
+    if (config.ui?.showNavigationControl) {
+      void this.setNavigationControlVisible(true);
     }
 
     return viewer;
@@ -776,18 +799,19 @@ export class Layer {
   }
 
   /**
-   * 将各功能页共用的地图 UI 恢复为与 `XMap` 初始化后一致：鹰眼/大气层/光照关，三维球面，比例尺与瓦片层级等覆写关。
+   * 将各功能页共用的地图 UI 恢复为与 `XMap` 初始化后一致：鹰眼/光照关、大气层开，三维球面，比例尺与瓦片层级等覆写关。
    * 在切换左侧菜单卡片时调用，避免上一页的开关延续到下一页。
    */
   resetSharedMapDemoUiState(): void {
     const v = this.viewer;
     if (!v || v.isDestroyed()) return;
     this.setOverviewMapVisible(false);
-    this.setSkyAtmosphereVisible(false);
+    this.setSkyAtmosphereVisible(true);
     this.setGlobeLightingEnabled(false);
     this.setScaleBarVisible(false);
     this.setTileLevelOverlayVisible(false);
     this.setCompassOverlayVisible(false);
+    void this.setNavigationControlVisible(false);
     if (
       v.scene.mode !== Cesium.SceneMode.SCENE3D &&
       v.scene.mode !== Cesium.SceneMode.MORPHING
@@ -1230,6 +1254,7 @@ export class Layer {
         this.scaleBarLineEl = null;
       }
     }
+    this.syncNavigationControlPosition();
   }
 
   /**
@@ -1275,6 +1300,93 @@ export class Layer {
   /** 自绘比例尺 DOM 是否正在显示。 */
   isScaleBarVisible(): boolean {
     return this.scaleBarEl != null && this.scaleBarEl.isConnected;
+  }
+
+  /**
+   * 显隐 cesium-navigation 导航罗盘（左下角，位于比例尺上方）。
+   * 关闭内置距离图例与缩放条，避免与 FastX 自绘比例尺 / 工具栏重复。
+   */
+  async setNavigationControlVisible(visible: boolean): Promise<void> {
+    if (!visible) {
+      this.navigationShowPromise = null;
+      if (this.navigationControl) {
+        this.navigationControl.destroy();
+        this.navigationControl = null;
+      }
+      return;
+    }
+    if (this.navigationControl) return;
+    if (this.navigationShowPromise) {
+      await this.navigationShowPromise;
+      return;
+    }
+
+    this.navigationShowPromise = this.mountNavigationControl();
+    try {
+      await this.navigationShowPromise;
+    } finally {
+      this.navigationShowPromise = null;
+    }
+  }
+
+  /** cesium-navigation 导航罗盘是否正在显示。 */
+  isNavigationControlVisible(): boolean {
+    return this.navigationControl != null;
+  }
+
+  /** 当前底图预设类型（自定义 URL / Cesium 默认 / 无底图）。 */
+  getBaseImageryPreset(): BaseImageryPresetKind {
+    return this.baseImageryPreset;
+  }
+
+  /** 初始化时配置的影像 URL 模板。 */
+  getInitImageryUrlTemplate(): string | undefined {
+    return this.initImageryUrlTemplate;
+  }
+
+  /** 是否启用了量化网格地形（相对椭球地形）。 */
+  isTerrainQuantizedEnabled(): boolean {
+    const v = this.viewer;
+    return (
+      !!v &&
+      !v.isDestroyed() &&
+      v.terrainProvider instanceof Cesium.CesiumTerrainProvider
+    );
+  }
+
+  /**
+   * 切换底图：自定义 URL 模板、Cesium 默认影像、或无底图。
+   * 不影响 Grid 网格叠加层。
+   */
+  async setBaseImageryPreset(
+    preset: BaseImageryPresetKind,
+    customUrl?: string,
+  ): Promise<void> {
+    const viewer = this.assertViewer();
+    const existing = this.findBaseImageryLayer();
+    if (existing) viewer.imageryLayers.remove(existing, true);
+
+    if (preset === "none") {
+      this.baseImageryPreset = "none";
+      return;
+    }
+
+    const provider = await this.createBaseImageryProvider(preset, customUrl);
+    viewer.imageryLayers.addImageryProvider(provider, 0);
+    this.baseImageryPreset = preset;
+  }
+
+  /** 开关量化地形；关闭时恢复为椭球地形。 */
+  async setTerrainQuantizedEnabled(enabled: boolean): Promise<void> {
+    const viewer = this.assertViewer();
+    if (!enabled) {
+      viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+      return;
+    }
+    if (!this.initTerrainUrl) {
+      throw new Error("[FastX.Layer] 未配置 terrainUrl，无法启用地形");
+    }
+    await this.setTerrainWithCesiumTerrainProvider(this.initTerrainUrl);
   }
 
   /** 自绘瓦片层级 DOM 是否正在显示。 */
@@ -1502,7 +1614,121 @@ export class Layer {
     this.scaleBarLabelEl.textContent = formatScaleBarLabel(distanceMeters);
   }
 
+  private ensureNavigationLayoutStyles(): void {
+    if (typeof document === "undefined") return;
+    if (document.getElementById(NAV_LAYOUT_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = NAV_LAYOUT_STYLE_ID;
+    style.textContent = `
+      .fx-map-navigation-host.cesium-widget-cesiumNavigationContainer {
+        position: absolute !important;
+        left: ${NAVIGATION_LEFT_PX}px;
+        top: auto !important;
+        right: auto !important;
+        width: 95px;
+        height: auto;
+        pointer-events: none;
+        z-index: 6;
+        overflow: visible;
+      }
+      .fx-map-navigation-host .compass {
+        position: relative !important;
+        right: auto !important;
+        top: auto !important;
+        left: 0 !important;
+      }
+      .fx-map-navigation-host .navigation-controls {
+        position: relative !important;
+        right: auto !important;
+        top: auto !important;
+        left: 0 !important;
+        margin-top: 8px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  private syncNavigationControlPosition(): void {
+    const container = this.navigationControl?.container;
+    if (!container) return;
+    const bottom = this.isScaleBarVisible()
+      ? SCALE_BAR_BOTTOM_PX +
+        SCALE_BAR_BLOCK_HEIGHT_PX +
+        NAVIGATION_ABOVE_SCALE_GAP_PX
+      : SCALE_BAR_BOTTOM_PX;
+    container.style.bottom = `${bottom}px`;
+  }
+
+  private async mountNavigationControl(): Promise<void> {
+    await ensureCesiumNavigation();
+    const viewer = this.assertViewer();
+    const Navigation = getCesiumNavigation();
+    this.ensureNavigationLayoutStyles();
+
+    const home = this.homeState?.center;
+    const defaultResetView = home
+      ? Cesium.Cartographic.fromDegrees(
+          home.longitude,
+          home.latitude,
+          home.height,
+        )
+      : undefined;
+
+    const nav = new Navigation(viewer, {
+      enableDistanceLegend: false,
+      enableZoomControls: false,
+      enableCompass: true,
+      defaultResetView,
+      resetTooltip: "重置视图",
+      duration: 1.2,
+    });
+
+    nav.container?.classList.add("fx-map-navigation-host");
+    this.navigationControl = nav;
+    this.syncNavigationControlPosition();
+  }
+
+  private disposeNavigationControl(): void {
+    this.navigationShowPromise = null;
+    if (this.navigationControl) {
+      this.navigationControl.destroy();
+      this.navigationControl = null;
+    }
+  }
+
+  /** 最底层非 Grid 的影像层（底图）。 */
+  private findBaseImageryLayer(): Cesium.ImageryLayer | undefined {
+    const viewer = this.viewer;
+    if (!viewer || viewer.isDestroyed()) return undefined;
+    for (let i = 0; i < viewer.imageryLayers.length; i++) {
+      const layer = viewer.imageryLayers.get(i);
+      if (layer && layer !== this.gridOverlayLayer) return layer;
+    }
+    return undefined;
+  }
+
+  private async createBaseImageryProvider(
+    preset: Exclude<BaseImageryPresetKind, "none">,
+    customUrl?: string,
+  ): Promise<Cesium.ImageryProvider> {
+    if (preset === "cesium-world") {
+      try {
+        return await Cesium.createWorldImageryAsync({
+          style: Cesium.IonWorldImageryStyle.AERIAL,
+        });
+      } catch {
+        return new Cesium.UrlTemplateImageryProvider({
+          url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        });
+      }
+    }
+    const url = customUrl ?? this.initImageryUrlTemplate;
+    if (!url) throw new Error("[FastX.Layer] 缺少影像 URL 模板");
+    return new Cesium.UrlTemplateImageryProvider({ url });
+  }
+
   private disposeInternals(destroyMainViewer: boolean): void {
+    this.disposeNavigationControl();
     this.scaleBarPostRemove?.();
     this.scaleBarPostRemove = null;
     this.tileLevelPostRemove?.();
