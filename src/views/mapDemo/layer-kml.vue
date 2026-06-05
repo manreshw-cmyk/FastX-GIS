@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import { applyRandomKmlBuildingColors, TAIPEI_BUILDINGS_KML } from './components/common/layer-kml-demo'
 import { fastxDataUrl, flyToDataSource, useLayerDemoCleanup } from './components/common/layer-demo-shared'
 
-const title = 'KML/KMZ服务'
+const title = 'KML/KMZ'
 const DATA_PATH = TAIPEI_BUILDINGS_KML
 const DATA_URL = fastxDataUrl(DATA_PATH)
 const { getLayer, map, cleanup } = useLayerDemoCleanup()

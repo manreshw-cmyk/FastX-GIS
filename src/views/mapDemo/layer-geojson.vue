@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { flyToChina, loadChinaProvinceWalls } from './components/common/layer-geojson-demo'
 import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
 
-const title = 'GeoJSON/TopoJSON服务'
+const title = 'GeoJSON/TopoJSON'
 const DATA_PATH = 'json/china_provinces.geojson'
 const { map, cleanup, trackEntities } = useLayerDemoCleanup()
 const loading = ref(false)

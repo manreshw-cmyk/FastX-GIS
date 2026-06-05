@@ -18,7 +18,7 @@ import {
   startSatelliteSimulation,
 } from './components/common/satellite-demo'
 
-const title = 'CZML服务'
+const title = 'CZML'
 const DATA_PATH = SATELLITES_CZML
 const DATA_URL = fastxDataUrl(DATA_PATH)
 const MODEL_PATH = 'model/gltf/weixin.gltf'

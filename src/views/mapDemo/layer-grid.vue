@@ -8,7 +8,7 @@ import { message } from 'ant-design-vue'
 import { ref } from 'vue'
 import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
 
-const title = 'Grid服务'
+const title = 'Grid网格图'
 const { getLayer, trackGrid, cleanup } = useLayerDemoCleanup()
 const loading = ref(false)
 const loaded = ref(false)

@@ -352,49 +352,49 @@
   },
   {
     "key": "layer-1",
-    "title": "WMTS服务",
+    "title": "WMTS图层",
     "fileName": "layer-wmts",
     "componentPath": "./layer-wmts.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-2",
-    "title": "WMS服务",
+    "title": "WMS图层",
     "fileName": "layer-wms",
     "componentPath": "./layer-wms.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-3",
-    "title": "Image服务",
+    "title": "Image影像图",
     "fileName": "layer-image",
     "componentPath": "./layer-image.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-4",
-    "title": "Grid服务",
+    "title": "Grid网格图",
     "fileName": "layer-grid",
     "componentPath": "./layer-grid.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "layer-5",
-    "title": "GeoJSON/TopoJSON服务",
+    "title": "GeoJSON/TopoJSON",
     "fileName": "layer-geojson",
     "componentPath": "./layer-geojson.vue",
-    "imageUrl": "../../assets/images/GeoJSON、TopoJSON服务.png"
+    "imageUrl": "../../assets/images/GeoJSON、TopoJSON.png"
   },
   {
     "key": "layer-6",
-    "title": "KML/KMZ服务",
+    "title": "KML/KMZ",
     "fileName": "layer-kml",
     "componentPath": "./layer-kml.vue",
-    "imageUrl": "../../assets/images/KML、KMZ服务.png"
+    "imageUrl": "../../assets/images/KML、KMZ.png"
   },
   {
     "key": "layer-7",
-    "title": "CZML服务",
+    "title": "CZML",
     "fileName": "layer-czml",
     "componentPath": "./layer-czml.vue",
     "imageUrl": "../../assets/images/login-bgc.png"

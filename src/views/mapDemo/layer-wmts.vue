@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { getConfigImageryUrl, reloadConfigImageryLayer } from './components/common/layer-imagery-demo'
 import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
 
-const title = 'WMTS服务'
+const title = 'WMTS图层'
 const configUrl = getConfigImageryUrl()
 const { getLayer, trackImagery, cleanup } = useLayerDemoCleanup()
 const loading = ref(false)
