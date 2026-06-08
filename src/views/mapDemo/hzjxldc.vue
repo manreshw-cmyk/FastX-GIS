@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { DeleteOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -7,8 +7,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type { AreaDrawStartParams, LngLatHeight, RectangleSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './common/drawFormColor'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 const title = '绘制（Rectangle）矩形类（底层entity）'
 const DEFAULT_FILL_COLOR = '#13c2c2'

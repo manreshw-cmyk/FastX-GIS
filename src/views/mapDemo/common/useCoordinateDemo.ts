@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue'
 import type { Viewer } from 'cesium'
-import type { CoordinatesApi } from '../../../../FastX'
-import { useMapLayerStore } from '../../../../stores/modules/mapLayer'
+import type { CoordinatesApi } from '../../../FastX'
+import { useMapLayerStore } from '../../../stores/modules/mapLayer'
 
 export function useXGXCoordinates(): CoordinatesApi | null {
   const c = window.FastX?.Coordinates

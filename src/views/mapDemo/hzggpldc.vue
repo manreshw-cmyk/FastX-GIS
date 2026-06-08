@@ -1,13 +1,13 @@
 ﻿<script setup lang="ts">
-import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { Viewer } from 'cesium'
 import type { AreaDrawStartParams, BillboardSnapshot, LngLatHeight } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './common/drawFormColor'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 const title = '绘制（Billboard）广告牌类（底层entity）'
 

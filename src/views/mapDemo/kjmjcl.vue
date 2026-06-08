@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MeasureType, type MeasureTypeKey } from '../../FastX'
-import QuantitativeDemoPanel from './components/common/QuantitativeDemoPanel.vue'
-import QuantitativeTypeCards from './components/common/QuantitativeTypeCards.vue'
-import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
+import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
+import QuantitativeTypeCards from './components/QuantitativeTypeCards.vue'
+import { useQuantitativeDemo } from './common/useQuantitativeDemo.ts'
 
 const TYPE_OPTIONS = [
   { value: MeasureType.SPACE_AREA, label: '空间面积', hint: '左键添加顶点，右键结束绘制', desc: '三维空间多边形面积' },

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { ClearOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -7,7 +7,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type { AreaDrawStartParams, CorridorSnapshot, LngLatHeight } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 const title = '绘制（Corridor）廊道类（底层entity渲染）'
 

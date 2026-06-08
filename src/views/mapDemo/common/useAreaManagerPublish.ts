@@ -1,4 +1,4 @@
-import type { AreaDrawOutput, AreaDrawShapeType } from '../../../../FastX'
+import type { AreaDrawOutput, AreaDrawShapeType } from '../../../FastX'
 
 /** 空域管理绘制完成回调（仅处理指定 shapeType） */
 export function bindAreaManagerPublish(

@@ -3,8 +3,8 @@
  *
  * 三个页面均读取 `window.apiConfig.imageryProvider`，先清空影像层、等待 2 秒后再按各自 API 挂载。
  */
-import type { Layer } from '../../../../FastX/Layer'
-import { resolveMapBaseUrls } from '../../../../config/map-runtime'
+import type { Layer } from '../../../FastX/Layer'
+import { resolveMapBaseUrls } from '../../../config/map-runtime'
 import { clearAllViewerImagery, delay, isXyzTemplateUrl } from './layer-demo-utils'
 
 export type ImageryDemoMode = 'wmts' | 'wms' | 'image'

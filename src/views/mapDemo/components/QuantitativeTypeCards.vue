@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** 量算/分析类型单选卡片组 */
-import type { MeasureTypeKey } from '../../../../FastX'
-import type { MeasureTypeOption } from './useQuantitativeDemo'
+import type { MeasureTypeKey } from '../../../FastX'
+import type { MeasureTypeOption } from '../common/useQuantitativeDemo'
 
 withDefaults(
   defineProps<{

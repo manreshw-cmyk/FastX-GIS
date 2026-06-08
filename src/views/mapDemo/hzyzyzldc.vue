@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -7,7 +7,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'v
 import type { Viewer } from 'cesium'
 import type { AreaDrawStartParams, CylinderSnapshot, LngLatHeight, MouseEventListenOptions, MouseEventPickPayload } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 const title = '绘制（Cylinder）圆锥/圆柱类（底层entity渲染）'
 const DEFAULT_FILL_COLOR = '#1890ff'

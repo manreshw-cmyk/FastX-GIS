@@ -29,10 +29,10 @@ const {
 } = Utils.timelineClock
 import dayjs, { type Dayjs } from 'dayjs'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './common/drawFormColor'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
-const DEMO_MODEL_REL = 'models/J15.gltf'
+const DEMO_MODEL_REL = 'models/gltf/J15.gltf'
 const DEFAULT_TRAIL_COLOR = '#ffcc00'
 const DEFAULT_TRAIL_TIME = 25
 const DEFAULT_CLOCK_MULTIPLIER = 5
@@ -593,7 +593,7 @@ async function buildTrajectoryScene(
     console.error('[hzljldc] 模型资源未就绪', err)
     PathApi.remove(pathId)
     PolyLineApi.remove(rId)
-    message.error('模型未就绪，请检查 models/J15.gltf')
+    message.error('模型未就绪，请检查 models/gltf/J15.gltf')
     return false
   }
 

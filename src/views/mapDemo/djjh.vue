@@ -2,10 +2,11 @@
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount, ref } from 'vue'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
+import { fastxDataUrl } from './common/layer-demo-shared'
 
 const title = '点聚合'
-const DATA_PATH = 'src/FastX/build/Data/json/point_aggregation.json'
-const DATA_URL = new URL('../../FastX/build/Data/json/point_aggregation.json', import.meta.url).href
+const DATA_PATH = 'json/point_aggregation.json'
+const DATA_URL = fastxDataUrl(DATA_PATH)
 
 const map = useMapLayerStore()
 const loading = ref(false)

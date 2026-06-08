@@ -24,7 +24,6 @@ src/FastX/build/
 ├── lib/Cesium/              【构建产物】完整 Cesium 运行时（index.js + Workers/Assets/Widgets）
 ├── lib/Cesium.d.ts          【构建产物】Cesium TypeScript 类型（declare module "cesium"）
 ├── default/                 【构建产物】index.css（含 Cesium Widgets 样式）
-├── Data/                    【可提交 Git】随包发布的示例数据目录
 ├── scripts/build.mjs        【源码】构建脚本
 ├── runtime/                 【源码】ensure-cesium-base-url.ts
 ├── stubs/                   【源码】Vue 组件占位（npm 包不含 Vue）
@@ -73,10 +72,6 @@ src/FastX/build/
 ```typescript
 import 'fastx-sdk/default/index.css'
 ```
-
-### `Data/` — 示例数据
-
-可选的 glb、json、czml、图片等，会随 `npm pack` 打进包内。
 
 ### 其他源码文件
 
@@ -537,23 +532,10 @@ node_modules/fastx-sdk/
 │   │   ├── Workers/
 │   │   └── Assets/
 │   └── Cesium.d.ts       ← TS 类型
-├── default/index.css
-└── Data/
+└── default/index.css
 ```
 
----
-
-## 十、Git 提交建议
-
-| 提交 | 不提交 |
-|------|--------|
-| `entry.ts`、`rollup.config.js`、`package.json`、`README.md`、`PUBLISH-GUIDE.md`、`scripts/`、`stubs/`、`runtime/`、`Data/` | `dist/`、`lib/Cesium/`、`default/`、`*.tgz` |
-
-根目录 `.gitignore` 与 `build/.gitignore` 已忽略构建产物。
-
----
-
-## 十一、版本号与发版检查清单
+## 十、版本号与发版检查清单
 
 - [ ] `src/FastX` 功能与导出已完成
 - [ ] `npm run build:sdk` 成功（含 verify 校验）
@@ -565,7 +547,7 @@ node_modules/fastx-sdk/
 
 ---
 
-## 十二、常见问题
+## 十一、常见问题
 
 **Q：外网 Vite 项目 `npm run build` 成功但地图白屏？**  
 A：build 阶段通常不报错；是运行时 Workers 404。按 [第四节 Vite 方案](#43-vite-方案推荐官方插件) 配置 `vitePluginFastxSdk` + `installFastXToWindow({ cesiumBaseUrl: '/Cesium/' })`，并检查 Network。

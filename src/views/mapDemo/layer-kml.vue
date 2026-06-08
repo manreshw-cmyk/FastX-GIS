@@ -8,8 +8,8 @@
 import * as Cesium from 'cesium'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { applyRandomKmlBuildingColors, TAIPEI_BUILDINGS_KML } from './components/common/layer-kml-demo'
-import { fastxDataUrl, flyToDataSource, useLayerDemoCleanup } from './components/common/layer-demo-shared'
+import { applyRandomKmlBuildingColors, TAIPEI_BUILDINGS_KML } from './common/layer-kml-demo'
+import { fastxDataUrl, flyToDataSource, useLayerDemoCleanup } from './common/layer-demo-shared'
 
 const title = 'KML/KMZ'
 const DATA_PATH = TAIPEI_BUILDINGS_KML

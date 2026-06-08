@@ -7,8 +7,8 @@
  */
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { flyToChina, loadChinaProvinceWalls } from './components/common/layer-geojson-demo'
-import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
+import { flyToChina, loadChinaProvinceWalls } from './common/layer-geojson-demo'
+import { useLayerDemoCleanup } from './common/layer-demo-shared'
 
 const title = 'GeoJSON/TopoJSON'
 const DATA_PATH = 'json/china_provinces.geojson'

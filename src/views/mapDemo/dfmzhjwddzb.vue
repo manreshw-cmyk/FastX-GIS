@@ -2,7 +2,7 @@
 import { CopyOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { copyResult, useXGXCoordinates } from './components/common/useCoordinateDemo'
+import { copyResult, useXGXCoordinates } from './common/useCoordinateDemo'
 
 const title = '度分秒转换经纬度（度）坐标'
 

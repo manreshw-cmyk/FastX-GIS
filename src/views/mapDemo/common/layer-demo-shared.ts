@@ -1,18 +1,31 @@
 /**
  * 图层渲染示例 — 公共工具与生命周期清理。
  *
- * - `fastxDataUrl`：解析 `src/FastX/build/Data/` 资源
+ * - `fastxDataUrl`：解析 public 下的 json / models 资源
  * - `useLayerDemoCleanup`：各 layer-*.vue 共享的加载/卸载清理（影像、网格、实体、探测圆锥）
  */
 import * as Cesium from 'cesium'
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount } from 'vue'
-import type { Layer } from '../../../../FastX/Layer'
-import { useMapLayerStore } from '../../../../stores/modules/mapLayer'
+import type { Layer } from '../../../FastX/Layer'
+import { useMapLayerStore } from '../../../stores/modules/mapLayer'
 
-/** 解析 `src/FastX/build/Data/` 下资源 URL（相对路径 → 可 fetch 的绝对 URL） */
+function normalizeFastxDataPath(path: string): string {
+  return path
+    .trim()
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '')
+    .replace(/^\.\//, '')
+    .replace(/^src\/FastX\/build\/Data\//, '')
+    .replace(/^FastX\/build\/Data\//, '')
+    .replace(/^Data\//, '')
+}
+
 export function fastxDataUrl(relativePath: string): string {
-  return new URL(`../../../../FastX/build/Data/${relativePath}`, import.meta.url).href
+  const rel = normalizeFastxDataPath(relativePath)
+  const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
+  const encodedRel = rel.split('/').map(encodeURIComponent).join('/')
+  return `${base}${encodedRel}`
 }
 
 /** 飞行至 DataSource 包围范围 */

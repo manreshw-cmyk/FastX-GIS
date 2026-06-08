@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "id": "document",
     "name": "Satellites",
@@ -13,7 +13,7 @@
   },
   {
     "id": "Satellite/0",
-    "name": "卫星-1",
+    "name": "鍗槦-1",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -508,7 +508,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -562,7 +562,7 @@
   },
   {
     "id": "Satellite/1",
-    "name": "卫星-2",
+    "name": "鍗槦-2",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -1057,7 +1057,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -1111,7 +1111,7 @@
   },
   {
     "id": "Satellite/2",
-    "name": "卫星-3",
+    "name": "鍗槦-3",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -1606,7 +1606,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -1660,7 +1660,7 @@
   },
   {
     "id": "Satellite/3",
-    "name": "卫星-4",
+    "name": "鍗槦-4",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -2155,7 +2155,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -2209,7 +2209,7 @@
   },
   {
     "id": "Satellite/4",
-    "name": "卫星-5",
+    "name": "鍗槦-5",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -2704,7 +2704,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -2758,7 +2758,7 @@
   },
   {
     "id": "Satellite/5",
-    "name": "卫星-6",
+    "name": "鍗槦-6",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -3253,7 +3253,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -3307,7 +3307,7 @@
   },
   {
     "id": "Satellite/6",
-    "name": "卫星-7",
+    "name": "鍗槦-7",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -3802,7 +3802,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -3856,7 +3856,7 @@
   },
   {
     "id": "Satellite/7",
-    "name": "卫星-8",
+    "name": "鍗槦-8",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -4351,7 +4351,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -4405,7 +4405,7 @@
   },
   {
     "id": "Satellite/8",
-    "name": "卫星-9",
+    "name": "鍗槦-9",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -4900,7 +4900,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -4954,7 +4954,7 @@
   },
   {
     "id": "Satellite/9",
-    "name": "卫星-10",
+    "name": "鍗槦-10",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -5449,7 +5449,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -5503,7 +5503,7 @@
   },
   {
     "id": "Satellite/10",
-    "name": "卫星-11",
+    "name": "鍗槦-11",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -5998,7 +5998,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -6052,7 +6052,7 @@
   },
   {
     "id": "Satellite/11",
-    "name": "卫星-12",
+    "name": "鍗槦-12",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -6547,7 +6547,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -6601,7 +6601,7 @@
   },
   {
     "id": "Satellite/12",
-    "name": "卫星-13",
+    "name": "鍗槦-13",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -7096,7 +7096,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -7150,7 +7150,7 @@
   },
   {
     "id": "Satellite/13",
-    "name": "卫星-14",
+    "name": "鍗槦-14",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -7645,7 +7645,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },
@@ -7699,7 +7699,7 @@
   },
   {
     "id": "Satellite/14",
-    "name": "卫星-15",
+    "name": "鍗槦-15",
     "availability": "2024-06-01T00:00:00Z/2024-06-01T01:30:00Z",
     "position": {
       "epoch": "2024-06-01T00:00:00Z",
@@ -8194,7 +8194,7 @@
       ]
     },
     "model": {
-      "gltf": "../model/gltf/weixin.gltf",
+      "gltf": "../models/gltf/weixin.gltf",
       "minimumPixelSize": 24,
       "scale": 4000
     },

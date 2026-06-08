@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
 import { MeasureType, type MeasureTypeKey } from '../../FastX'
-import QuantitativeDemoPanel from './components/common/QuantitativeDemoPanel.vue'
-import QuantitativeTypeCards from './components/common/QuantitativeTypeCards.vue'
-import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
+import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
+import QuantitativeTypeCards from './components/QuantitativeTypeCards.vue'
+import { useQuantitativeDemo } from './common/useQuantitativeDemo.ts'
 
 const TYPE_OPTIONS = [
   { value: MeasureType.CONTOUR_ANALYZE, label: '等高线（矢量）', hint: '左键选择矩形对角两点，生成等高线', desc: '矢量等高线' },

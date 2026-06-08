@@ -1,4 +1,4 @@
-import { getCardCoverByMapDemoKey } from "../views/mapDemo/components/common/component-map";
+import { getCardCoverByMapDemoKey } from "../views/mapDemo/common/component-map.ts";
 
 const menuDefinitions = [
   {

@@ -16,8 +16,8 @@ import type {
 } from '../../FastX'
 import { DEFAULT_HEATMAP_GRADIENT, ensureHeatmapJs } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex } from './components/common/drawFormColor'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { normalizeHex } from './common/drawFormColor'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 // ─── 常量 ───────────────────────────────────────────────
 

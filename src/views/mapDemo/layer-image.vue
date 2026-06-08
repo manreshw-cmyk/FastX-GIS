@@ -7,8 +7,8 @@
  */
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { getConfigImageryUrl, reloadConfigImageryLayer } from './components/common/layer-imagery-demo'
-import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
+import { getConfigImageryUrl, reloadConfigImageryLayer } from './common/layer-imagery-demo'
+import { useLayerDemoCleanup } from './common/layer-demo-shared'
 
 const title = 'Image影像图'
 const configUrl = getConfigImageryUrl()

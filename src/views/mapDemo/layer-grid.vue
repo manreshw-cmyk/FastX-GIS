@@ -6,7 +6,7 @@
  */
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { useLayerDemoCleanup } from './components/common/layer-demo-shared'
+import { useLayerDemoCleanup } from './common/layer-demo-shared'
 
 const title = 'Grid网格图'
 const { getLayer, trackGrid, cleanup } = useLayerDemoCleanup()

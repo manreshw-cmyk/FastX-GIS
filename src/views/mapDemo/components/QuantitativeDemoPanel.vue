@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** 量算分析示例页通用外壳：标题、滚动区、样式面板、底部操作按钮 */
 import QuantitativeStylePanel from './QuantitativeStylePanel.vue'
-import type { MeasureStyle } from '../../../../FastX'
+import type { MeasureStyle } from '../../../FastX'
 
 const props = withDefaults(
   defineProps<{

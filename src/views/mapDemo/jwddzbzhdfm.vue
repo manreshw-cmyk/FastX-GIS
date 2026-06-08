@@ -2,7 +2,7 @@
 import { CopyOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { computed, ref } from 'vue'
-import { copyResult, useXGXCoordinates } from './components/common/useCoordinateDemo'
+import { copyResult, useXGXCoordinates } from './common/useCoordinateDemo'
 
 const title = '经纬度（度）坐标转换度分秒'
 const lon = ref(127.0214)

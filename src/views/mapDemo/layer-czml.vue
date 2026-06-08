@@ -9,19 +9,19 @@
 import * as Cesium from 'cesium'
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount, ref } from 'vue'
-import { fastxDataUrl, flyToDataSource, useLayerDemoCleanup } from './components/common/layer-demo-shared'
+import { fastxDataUrl, flyToDataSource, useLayerDemoCleanup } from './common/layer-demo-shared'
 import {
   SATELLITE_CLOCK_HOURS,
   SATELLITES_CZML,
   attachSatelliteSensorCones,
   formatSatelliteClockIso,
   startSatelliteSimulation,
-} from './components/common/satellite-demo'
+} from './common/satellite-demo'
 
 const title = 'CZML'
 const DATA_PATH = SATELLITES_CZML
 const DATA_URL = fastxDataUrl(DATA_PATH)
-const MODEL_PATH = 'model/gltf/weixin.gltf'
+const MODEL_PATH = 'models/gltf/weixin.gltf'
 const { getLayer, map, cleanup, trackSensorCones } = useLayerDemoCleanup()
 const loading = ref(false)
 const loaded = ref(false)
@@ -101,10 +101,6 @@ function handleClear() {
       </p>
       <p class="map-tool-desc layer-demo-path">数据：{{ DATA_PATH }}</p>
       <p class="map-tool-desc layer-demo-path">模型：{{ MODEL_PATH }}</p>
-      <p v-if="loaded" class="map-tool-desc layer-demo-clock">
-        仿真时刻：{{ clockLabel || '—' }}
-        <span class="layer-demo-clock-state">{{ clockPlaying ? '（播放中 ×120）' : '（已暂停）' }}</span>
-      </p>
       <a-space direction="vertical" :size="10" style="width: 100%">
         <a-button type="primary" block :loading="loading" @click="handleLoad">加载 CZML 卫星</a-button>
         <a-button class="layer-demo-btn-clear" block :disabled="!loaded" @click="handleClear">清除</a-button>

@@ -10,7 +10,7 @@ import { AppstoreOutlined } from '@ant-design/icons-vue'
 import HomeHeader from '../../components/HomeHeader/index.vue'
 import HomeSidebar from '../../components/HomeSidebar/index.vue'
 import { homeMenuTree } from '../../common/home-content'
-import { mapDemoComponentMetaMap } from './components/common/component-map'
+import { mapDemoComponentMetaMap } from './common/component-map.ts'
 import { resolveMapBaseUrls } from '../../config/map-runtime'
 import type { XMapConfig } from '../../FastX/components/x-map.types'
 

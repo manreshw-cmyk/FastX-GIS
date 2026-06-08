@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { MeasureStyle } from '../../../../FastX'
-import { DEFAULT_MEASURE_STYLE } from '../../../../FastX/Quantitative/measureStyleDefaults'
+import type { MeasureStyle } from '../../../FastX'
+import { DEFAULT_MEASURE_STYLE } from '../../../FastX/Quantitative/measureStyleDefaults'
 
 const props = defineProps<{
   /** 量算样式（v-model） */

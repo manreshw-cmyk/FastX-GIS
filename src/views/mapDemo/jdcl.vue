@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MeasureType } from '../../FastX'
-import QuantitativeDemoPanel from './components/common/QuantitativeDemoPanel.vue'
-import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
+import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
+import { useQuantitativeDemo } from './common/useQuantitativeDemo.ts'
 
 const TYPE_OPTIONS = [
   {

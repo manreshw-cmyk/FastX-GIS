@@ -102,6 +102,24 @@ function copyCesiumToDistRoot(): Plugin {
   };
 }
 
+/**
+ * vite-plugin-cesium 生产模式把 `cesium` 映射为全局 Cesium，但部分异步 chunk 会残留
+ * `import "cesium";`，浏览器原生 ESM 无法解析该裸 specifier。这里在输出前移除纯副作用导入。
+ */
+function stripCesiumBareSideEffectImports(): Plugin {
+  const bareCesiumImportRE = /(?:^|;)\s*import\s*["']cesium["'];?/g;
+  return {
+    name: "strip-cesium-bare-side-effect-imports",
+    apply: "build",
+    generateBundle(_options, bundle) {
+      for (const item of Object.values(bundle)) {
+        if (item.type !== "chunk") continue;
+        item.code = item.code.replace(bareCesiumImportRE, ";");
+      }
+    },
+  };
+}
+
 /** 打包完成后输出绿色大字提示 */
 function fastxBuildSuccessBanner(): Plugin {
   return {
@@ -172,6 +190,7 @@ export default defineConfig(({ command, isPreview }) => ({
     ...(command === "build"
       ? [
           disableCesiumNestedCopy(),
+          stripCesiumBareSideEffectImports(),
           copyCesiumToDistRoot(),
           ...buildOnlyPlugins(),
         ]
@@ -185,11 +204,11 @@ export default defineConfig(({ command, isPreview }) => ({
   /** build 与 preview 均使用 GitHub Pages 子路径，与产物内资源引用一致 */
   base: command === "build" || isPreview ? GITHUB_PAGES_BASE : "/",
   server: {
-    port: 5173,
+    port: 5678,
     strictPort: true,
   },
   preview: {
-    port: 5173,
+    port: 5678,
     strictPort: true,
   },
   build: {

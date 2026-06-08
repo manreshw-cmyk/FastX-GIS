@@ -1,7 +1,7 @@
 import { message } from 'ant-design-vue'
 import { onBeforeUnmount, ref } from 'vue'
-import type { MeasureStyle, MeasureTypeKey } from '../../../../FastX'
-import { DEFAULT_MEASURE_STYLE } from '../../../../FastX/Quantitative/measureStyleDefaults'
+import type { MeasureStyle, MeasureTypeKey } from '../../../FastX'
+import { DEFAULT_MEASURE_STYLE } from '../../../FastX/Quantitative/measureStyleDefaults'
 import { getMapViewer, waitForMapViewer } from './useCoordinateDemo'
 
 /** 量算示例页：测量类型选项 */

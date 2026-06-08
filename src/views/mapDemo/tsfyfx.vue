@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MeasureType, type MeasureTypeKey } from '../../FastX'
-import QuantitativeDemoPanel from './components/common/QuantitativeDemoPanel.vue'
-import QuantitativeTypeCards from './components/common/QuantitativeTypeCards.vue'
-import { useQuantitativeDemo } from './components/common/useQuantitativeDemo'
+import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
+import QuantitativeTypeCards from './components/QuantitativeTypeCards.vue'
+import { useQuantitativeDemo } from './common/useQuantitativeDemo.ts'
 
 const TYPE_OPTIONS = [
   { value: MeasureType.LINE_ANALYZE, label: '直线通视', hint: '左键：观测点 → 目标点', desc: '两点通视' },

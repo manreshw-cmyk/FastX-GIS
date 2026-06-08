@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { keepAlternateDemoEntry } from './components/common/keepAlternateDemoEntry'
+import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { ClearOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
@@ -16,9 +16,9 @@ import type {
   WallSnapshot,
 } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
-import { normalizeHex, parseCssColorForForm } from './components/common/drawFormColor'
-import { bindAreaManagerPublish } from './components/common/useAreaManagerPublish'
-import { waitForMapViewer } from './components/common/useCoordinateDemo'
+import { normalizeHex, parseCssColorForForm } from './common/drawFormColor'
+import { bindAreaManagerPublish } from './common/useAreaManagerPublish'
+import { waitForMapViewer } from './common/useCoordinateDemo'
 
 const title = '绘制（Wall）墙类（底层entity）'
 

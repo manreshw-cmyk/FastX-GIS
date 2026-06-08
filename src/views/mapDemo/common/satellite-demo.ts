@@ -6,7 +6,7 @@
  */
 import * as Cesium from 'cesium'
 
-/** CZML 数据文件（相对 `FastX/build/Data/`） */
+/** CZML 数据文件（相对 public 根目录） */
 export const SATELLITES_CZML = 'json/satellites.czml'
 
 /** 与 CZML 内 clock 起始时刻一致 */
@@ -99,9 +99,9 @@ function coneOrientation(
   Cesium.Cartesian3.normalize(yAxis, yAxis)
 
   const rot = Cesium.Matrix3.fromColumnMajorArray([
-    xAxis.x, yAxis.x, zAxis.x,
-    xAxis.y, yAxis.y, zAxis.y,
-    xAxis.z, yAxis.z, zAxis.z,
+    xAxis.x, xAxis.y, xAxis.z,
+    yAxis.x, yAxis.y, yAxis.z,
+    zAxis.x, zAxis.y, zAxis.z,
   ])
   return Cesium.Quaternion.fromRotationMatrix(rot, result)
 }

@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref } from 'vue'
-import { useMapMouseEventPage } from './components/common/useMapMouseEventPage'
+import { useMapMouseEventPage } from './common/useMapMouseEventPage'
 
 const title = '鼠标左键点击（LeftEventClick）事件'
 const clickCount = ref(0)

@@ -34,7 +34,7 @@ FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `
 
 ```bash
 npm install
-npm run dev       # 开发：http://localhost:5173
+npm run dev       # 开发：http://localhost:5678
 npm run build     # 构建
 npm run preview   # 预览构建结果
 ```

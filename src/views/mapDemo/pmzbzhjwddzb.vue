@@ -2,7 +2,7 @@
 import { CopyOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
-import { copyResult, useMapViewer, useXGXCoordinates } from './components/common/useCoordinateDemo'
+import { copyResult, useMapViewer, useXGXCoordinates } from './common/useCoordinateDemo'
 
 const title = '屏幕坐标转换经纬度（度）坐标'
 const sx = ref(400)
