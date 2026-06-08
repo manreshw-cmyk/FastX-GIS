@@ -52,8 +52,8 @@ const xMapConfig = reactive<XMapConfig>({
   terrainUrl: urls.terrainUrl,
   initialCamera: { useAnimation: true, duration: 2.5 },
   depthTestAgainstTerrain: false,
-  /** 启动时显示经纬网格，便于标绘对照 */
-  showGridAtStartup: false,
+  /** 启动时显示 3D 经纬网，便于标绘对照 */
+  showLonLatGridAtStartup: false,
   /** 未传时 `XMap` 亦默认开启；此处显式写出便于对照文档 */
   antialias: true,
 })

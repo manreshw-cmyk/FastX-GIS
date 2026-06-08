@@ -1,15 +1,14 @@
 import type {
   LayerCameraOrientation,
   LayerCenter,
-  LayerGridStyleOptions,
   LayerInitialCameraOptions,
+  LonLatGridOptions,
   XMapConfig,
 } from '../Types'
 export type {
   LayerCameraOrientation,
   LayerCenter,
-  LayerGridStyleOptions,
   LayerInitialCameraOptions,
+  LonLatGridOptions,
   XMapConfig,
 }
-

@@ -1,7 +1,6 @@
 import type {
   Camera,
   CesiumTerrainProvider,
-  GridImageryProvider,
   Resource,
   TileMapServiceImageryProvider,
   UrlTemplateImageryProvider,
@@ -22,9 +21,8 @@ export type WmtsImageryAddInput = WebMapTileServiceImageryProvider.ConstructorOp
 export type WmsImageryAddInput = WebMapServiceImageryProvider.ConstructorOptions
 export type TmsImageryFromUrlOptions = TileMapServiceImageryProvider.ConstructorOptions
 export type UrlTemplateImageryAddInput = UrlTemplateImageryProvider.ConstructorOptions
-export type GridImageryAddInput = GridImageryProvider.ConstructorOptions
 
-export type { LayerGridStyleOptions } from './gridImagery'
+export type { LonLatGridOptions } from './lonLatGrid'
 
 export type GeoJsonLoadInput = Parameters<typeof GeoJsonDataSource.load>[0]
 export type GeoJsonLoadOptions = NonNullable<Parameters<typeof GeoJsonDataSource.load>[1]>

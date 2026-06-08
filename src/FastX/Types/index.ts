@@ -9,7 +9,6 @@ import type {
   Cartesian3,
   CesiumTerrainProvider,
   Color,
-  GridImageryProvider,
   JulianDate,
   MaterialProperty,
   Primitive,
@@ -52,6 +51,7 @@ import type PolylineVolumeCollection from '../Draw/PolylineVolume/PolylineVolume
 import type Plane from '../Draw/Plane'
 import type PlaneCollection from '../Draw/Plane/PlaneCollection'
 import type Path from '../Draw/Path'
+import type { LonLatGridOptions } from '../Layer/lonLatGrid'
 
 // --- Utils / timelineClock (Utils/timelineClock.ts) ---
 
@@ -2772,18 +2772,9 @@ export interface WallSnapshot {
   outlineWidth?: number;
 }
 
-// --- Layer / gridImagery (Layer/gridImagery.ts) ---
+// --- Layer / lonLatGrid (Layer/lonLatGrid.ts) ---
 
-export interface LayerGridStyleOptions {
-  /** 每瓦片网格划分数，越小越疏。 @default 4 */
-  cells?: number
-  /** 网格线颜色（CSS），如 `rgba(160,160,160,0.35)` */
-  lineColor?: string
-  /** 瓦片底色（CSS）；`transparent` 表示不铺底 */
-  backgroundColor?: string
-  /** 光晕线宽；默认 0 关闭 Cesium 粗光晕 */
-  glowWidth?: number
-}
+export type { LonLatGrid, LonLatGridOptions } from '../Layer/lonLatGrid'
 
 // --- Layer / types (Layer/types.ts) ---
 
@@ -2845,12 +2836,10 @@ export interface LayerInitConfig {
   /** 初次定位：无动画 setView 或有动画 flyTo。 */
   initialCamera?: LayerInitialCameraOptions
 
-  /** 初始化完成后是否自动叠加网格影像层。 @default false */
-  showGridAtStartup?: boolean
-  /** 简化网格样式（线色、疏密等）；未传则用 Layer 内置细灰线默认。 */
-  gridStyle?: LayerGridStyleOptions
-  /** 完整 GridImageryProvider 参数，与 `gridStyle` 合并且本字段优先。 */
-  gridAtStartupOptions?: GridImageryProvider.ConstructorOptions
+  /** 初始化完成后是否自动叠加 3D 经纬网。 @default false */
+  showLonLatGridAtStartup?: boolean
+  /** 3D 经纬网样式；未传则使用 freexdemo 的默认视觉参数。 */
+  lonLatGridOptions?: LonLatGridOptions
 
   performance?: LayerPerformanceInitConfig
   ui?: LayerUiInitConfig
@@ -3158,12 +3147,10 @@ export interface XMapConfig {
   overviewHeightRatio?: number
   depthTestAgainstTerrain?: boolean
 
-  /** 初始化完成后是否叠加经纬网格影像层。 @default false */
-  showGridAtStartup?: boolean
-  /** 简化网格样式；未传则用 Layer 内置细灰线、低密度默认。 */
-  gridStyle?: LayerGridStyleOptions
-  /** 完整 GridImageryProvider 参数，与 `gridStyle` 合并且本字段优先。 */
-  gridAtStartupOptions?: GridImageryProvider.ConstructorOptions
+  /** 初始化完成后是否叠加 3D 经纬网。 @default false */
+  showLonLatGridAtStartup?: boolean
+  /** 3D 经纬网样式；未传则使用 freexdemo 的默认视觉参数。 */
+  lonLatGridOptions?: LonLatGridOptions
   /**
    * 抗锯齿总开关（与常见 Cesium 写法对齐）：
    * - **MSAA**：通过 Viewer 构造参数 `msaaSamples`（默认 `4`，更高更吃性能；可用 `viewerOptions.msaaSamples` 覆盖）。
@@ -3180,4 +3167,3 @@ export interface XMapConfig {
 /** 挂载于 `window.FastX.Types` */
 const Types = Object.freeze({})
 export default Types
-

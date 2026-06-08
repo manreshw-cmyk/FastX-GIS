@@ -6,7 +6,6 @@ import type {
   CzmlLoadOptions,
   GeoJsonLoadInput,
   GeoJsonLoadOptions,
-  GridImageryAddInput,
   ImageryLayerInsertOptions,
   ImageryLayerVisualParams,
   KmlLoadInput,
@@ -27,10 +26,7 @@ import type {
   WmsImageryAddInput,
   WmtsImageryAddInput,
 } from "./types";
-import {
-  mergeGridImageryOptions,
-  type LayerGridStyleOptions,
-} from "./gridImagery";
+import { LonLatGrid, type LonLatGridOptions } from "./lonLatGrid";
 import {
   ensureCesiumNavigation,
   getCesiumNavigation,
@@ -45,7 +41,6 @@ export type {
   GeoJsonDataSource,
   GeoJsonLoadInput,
   GeoJsonLoadOptions,
-  GridImageryAddInput,
   ImageryLayer,
   ImageryLayerInsertOptions,
   ImageryLayerVisualParams,
@@ -71,13 +66,8 @@ export type {
   WmtsImageryAddInput,
 } from "./types";
 
-export {
-  buildDefaultGridImageryOptions,
-  DEFAULT_GRID_CELLS,
-  DEFAULT_GRID_LINE_COLOR_CSS,
-  mergeGridImageryOptions,
-} from "./gridImagery";
-export type { LayerGridStyleOptions } from "./gridImagery";
+export { LonLatGrid } from "./lonLatGrid";
+export type { LonLatGridOptions } from "./lonLatGrid";
 
 /** 比例尺横线固定像素宽度（仅数值随缩放变化） */
 const SCALE_BAR_LINE_PX = 80;
@@ -110,7 +100,7 @@ export class Layer {
 
   private viewer: Cesium.Viewer | null = null;
   private mapName: string | undefined;
-  private gridOverlayLayer: Cesium.ImageryLayer | null = null;
+  private lonLatGrid: LonLatGrid | null = null;
   private overviewViewer: Cesium.Viewer | null = null;
   private overviewContainer: HTMLElement | null = null;
   private overviewPostRenderRemove: (() => void) | null = null;
@@ -245,10 +235,8 @@ export class Layer {
       config.initialCamera,
     );
 
-    if (config.showGridAtStartup) {
-      this.addGridImageryLayer(
-        mergeGridImageryOptions(config.gridStyle, config.gridAtStartupOptions),
-      );
+    if (config.showLonLatGridAtStartup) {
+      this.addLonLatGrid(config.lonLatGridOptions);
     }
 
     if (config.ui?.initialCursor) {
@@ -382,47 +370,37 @@ export class Layer {
   }
 
   /**
-   * 追加网格影像层，并记录为「当前网格层」供 `removeGridImageryLayer` 使用。
+   * 追加 3D 经纬网格，并记录为「当前经纬网」供 `removeLonLatGrid` 使用。
    *
-   * **输入**：`gridOptions`（`GridImageryProvider` 选项，可空）；`insert`（可选）。
-   * **输出**：`ImageryLayer`。
+   * **输入**：`options`（经纬网样式，可空）。
+   * **输出**：`LonLatGrid`。
    *
    * @example
    * ```ts
-   * layer.addGridImageryLayer(undefined, undefined, { lineColor: 'rgba(180,180,180,0.4)' })
+   * layer.addLonLatGrid({ lineColor: 'rgba(255,255,255,0.8)' })
    * ```
    */
-  addGridImageryLayer(
-    gridOptions?: GridImageryAddInput,
-    insert?: ImageryLayerInsertOptions,
-    style?: LayerGridStyleOptions,
-  ): Cesium.ImageryLayer {
-    this.assertViewer();
-    const provider = new Cesium.GridImageryProvider(
-      mergeGridImageryOptions(style, gridOptions),
-    );
-    const layer = this.addImageryProvider(provider, insert?.insertIndex);
-    layer.alpha = 0.86;
-    this.gridOverlayLayer = layer;
-    return layer;
+  addLonLatGrid(options?: LonLatGridOptions): LonLatGrid {
+    const viewer = this.assertViewer();
+    this.removeLonLatGrid();
+    this.lonLatGrid = new LonLatGrid(viewer, options);
+    return this.lonLatGrid;
   }
 
   /**
-   * 移除由 `addGridImageryLayer` / 启动时网格所记录的网格影像层（若存在）。
+   * 移除由 `addLonLatGrid` / 启动时网格所记录的 3D 经纬网格（若存在）。
    *
    * **输入**：无。**输出**：无。
    *
    * @example
    * ```ts
-   * layer.removeGridImageryLayer()
+   * layer.removeLonLatGrid()
    * ```
    */
-  removeGridImageryLayer(): void {
-    const viewer = this.assertViewer();
-    if (this.gridOverlayLayer && !this.gridOverlayLayer.isDestroyed()) {
-      viewer.imageryLayers.remove(this.gridOverlayLayer, false);
-    }
-    this.gridOverlayLayer = null;
+  removeLonLatGrid(): void {
+    this.assertViewer();
+    this.lonLatGrid?.destroy();
+    this.lonLatGrid = null;
   }
 
   /**
@@ -505,7 +483,6 @@ export class Layer {
   ): void {
     const viewer = this.assertViewer();
     viewer.imageryLayers.remove(layer, destroyImageryProvider ?? false);
-    if (layer === this.gridOverlayLayer) this.gridOverlayLayer = null;
   }
 
   /**
@@ -527,7 +504,6 @@ export class Layer {
     const layer = viewer.imageryLayers.get(index);
     if (layer)
       viewer.imageryLayers.remove(layer, destroyImageryProvider ?? false);
-    if (layer === this.gridOverlayLayer) this.gridOverlayLayer = null;
   }
 
   /**
@@ -1696,13 +1672,13 @@ export class Layer {
     }
   }
 
-  /** 最底层非 Grid 的影像层（底图）。 */
+  /** 最底层影像层（底图）。 */
   private findBaseImageryLayer(): Cesium.ImageryLayer | undefined {
     const viewer = this.viewer;
     if (!viewer || viewer.isDestroyed()) return undefined;
     for (let i = 0; i < viewer.imageryLayers.length; i++) {
       const layer = viewer.imageryLayers.get(i);
-      if (layer && layer !== this.gridOverlayLayer) return layer;
+      if (layer) return layer;
     }
     return undefined;
   }
@@ -1750,7 +1726,8 @@ export class Layer {
       this.compassEl = null;
     }
     this.destroyOverviewMap();
-    this.gridOverlayLayer = null;
+    this.lonLatGrid?.destroy();
+    this.lonLatGrid = null;
 
     if (destroyMainViewer && this.viewer && !this.viewer.isDestroyed()) {
       this.viewer.destroy();

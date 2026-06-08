@@ -93,9 +93,8 @@ async function mountMap() {
     terrainUrl: c.terrainUrl,
     initialCamera: c.initialCamera,
     depthTestAgainstTerrain: c.depthTestAgainstTerrain ?? false,
-    showGridAtStartup: c.showGridAtStartup,
-    gridStyle: c.gridStyle,
-    gridAtStartupOptions: c.gridAtStartupOptions,
+    showLonLatGridAtStartup: c.showLonLatGridAtStartup,
+    lonLatGridOptions: c.lonLatGridOptions,
     viewerOptions: resolveViewerOptions(c),
   }
   await layer.initMap(cesiumId, config)

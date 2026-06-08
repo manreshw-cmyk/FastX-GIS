@@ -39,7 +39,7 @@ export function useLayerDemoCleanup() {
   const map = useMapLayerStore()
   const overlays: Cesium.ImageryLayer[] = []
   const trackedEntities: Cesium.Entity[] = []
-  let gridTracked = false
+  let lonLatGridTracked = false
   /** 卫星探测圆锥 preRender 监听的 dispose */
   let sensorDispose: (() => void) | undefined
 
@@ -57,8 +57,8 @@ export function useLayerDemoCleanup() {
     trackedEntities.push(...entities)
   }
 
-  function trackGrid(): void {
-    gridTracked = true
+  function trackLonLatGrid(): void {
+    lonLatGridTracked = true
   }
 
   /** 注册探测圆锥销毁函数（切换示例或清除时调用） */
@@ -80,8 +80,8 @@ export function useLayerDemoCleanup() {
     }
     overlays.length = 0
 
-    if (gridTracked) layer.removeGridImageryLayer()
-    gridTracked = false
+    if (lonLatGridTracked) layer.removeLonLatGrid()
+    lonLatGridTracked = false
 
     for (const entity of trackedEntities) {
       viewer.entities.remove(entity)
@@ -98,7 +98,7 @@ export function useLayerDemoCleanup() {
     getLayer,
     trackImagery,
     trackEntities,
-    trackGrid,
+    trackLonLatGrid,
     trackSensorCones,
     cleanup,
   }
