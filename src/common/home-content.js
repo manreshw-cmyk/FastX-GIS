@@ -86,6 +86,7 @@ const menuDefinitions = [
       "GeoJSON/TopoJSON",
       "KML/KMZ",
       "CZML",
+      "自定义全局地球天空盒",
     ],
   },
   {

@@ -400,6 +400,13 @@
     "imageUrl": "../../assets/images/CZML.png"
   },
   {
+    "key": "layer-8",
+    "title": "自定义全局地球天空盒",
+    "fileName": "layer-skybox",
+    "componentPath": "./layer-skybox.vue",
+    "imageUrl": "../../assets/images/自定义全局地球天空盒.png"
+  },
+  {
     "key": "quantitative-1",
     "title": "距离测量（空间/地表/投影）",
     "fileName": "tdkjjlcl",

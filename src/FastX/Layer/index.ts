@@ -78,6 +78,31 @@ const SCALE_BAR_BLOCK_HEIGHT_PX = 46;
 const NAVIGATION_ABOVE_SCALE_GAP_PX = 8;
 const NAVIGATION_LEFT_PX = 12;
 const NAV_LAYOUT_STYLE_ID = "fx-cesium-navigation-layout";
+/** 自定义天空盒目录下固定要求存在的六面图片文件名。 */
+const SKYBOX_FACE_FILES = {
+  positiveX: "tycho2t3_80_px.jpg",
+  negativeX: "tycho2t3_80_mx.jpg",
+  positiveY: "tycho2t3_80_py.jpg",
+  negativeY: "tycho2t3_80_my.jpg",
+  positiveZ: "tycho2t3_80_pz.jpg",
+  negativeZ: "tycho2t3_80_mz.jpg",
+} as const;
+
+/** Cesium.SkyBox 需要的六面图片地址集合。 */
+type SkyBoxSources = {
+  /** X 轴正方向天空盒图片。 */
+  positiveX: string;
+  /** X 轴负方向天空盒图片。 */
+  negativeX: string;
+  /** Y 轴正方向天空盒图片。 */
+  positiveY: string;
+  /** Y 轴负方向天空盒图片。 */
+  negativeY: string;
+  /** Z 轴正方向天空盒图片。 */
+  positiveZ: string;
+  /** Z 轴负方向天空盒图片。 */
+  negativeZ: string;
+};
 
 /** 比例尺文字：与鼠标经纬度类似，连续小数变化 */
 function formatScaleBarLabel(meters: number): string {
@@ -101,6 +126,10 @@ export class Layer {
   private viewer: Cesium.Viewer | null = null;
   private mapName: string | undefined;
   private lonLatGrid: LonLatGrid | null = null;
+  /** Viewer 创建完成时的默认天空盒，用于示例切换或重置时恢复 Cesium 原始效果。 */
+  private defaultSkyBox: Cesium.SkyBox | undefined;
+  /** 当前由 `setCustomGlobalSkyBox` 创建的天空盒实例，替换或销毁 Viewer 时需要主动释放。 */
+  private customSkyBox: Cesium.SkyBox | null = null;
   private overviewViewer: Cesium.Viewer | null = null;
   private overviewContainer: HTMLElement | null = null;
   private overviewPostRenderRemove: (() => void) | null = null;
@@ -218,6 +247,9 @@ export class Layer {
       config.depthTestAgainstTerrain ?? false;
 
     this.viewer = viewer;
+    // 记录 Viewer 初始化时的天空盒，方便自定义天空盒示例退出或重置时恢复默认效果。
+    this.defaultSkyBox = viewer.scene.skyBox as Cesium.SkyBox | undefined;
+    this.customSkyBox = null;
 
     // Cesium Viewer 默认 LEFT_DOUBLE_CLICK → pickAndTrackObject（双击实体 zoomTo / trackedEntity），此处关闭。
     // viewer.screenSpaceEventHandler.setInputAction(pickAndTrackObject, LEFT_DOUBLE_CLICK)
@@ -782,6 +814,7 @@ export class Layer {
     const v = this.viewer;
     if (!v || v.isDestroyed()) return;
     this.setOverviewMapVisible(false);
+    this.resetGlobalSkyBox();
     this.setSkyAtmosphereVisible(true);
     this.setGlobeLightingEnabled(false);
     this.setScaleBarVisible(false);
@@ -1034,6 +1067,61 @@ export class Layer {
   setSkyAtmosphereVisible(visible: boolean): void {
     const viewer = this.assertViewer();
     if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = visible;
+  }
+
+  /**
+   * 设置自定义全局天空盒。
+   *
+   * **输入**：`baseUrl` — 天空盒目录 URL；目录下必须包含固定六面图片：
+   * `tycho2t3_80_px.jpg`、`tycho2t3_80_mx.jpg`、`tycho2t3_80_py.jpg`、
+   * `tycho2t3_80_my.jpg`、`tycho2t3_80_pz.jpg`、`tycho2t3_80_mz.jpg`。
+   * **输出**：`Promise<Cesium.SkyBox>`。
+   *
+   * @example
+   * ```ts
+   * await layer.setCustomGlobalSkyBox('/assets/images/skybox/skybox_1')
+   * ```
+   */
+  async setCustomGlobalSkyBox(baseUrl: string): Promise<Cesium.SkyBox> {
+    const viewer = this.assertViewer();
+    const sources = this.buildSkyBoxSources(baseUrl);
+    await this.ensureSkyBoxSourcesAvailable(sources);
+
+    const nextSkyBox = new Cesium.SkyBox({ sources });
+    const previousCustomSkyBox = this.customSkyBox;
+    viewer.scene.skyBox = nextSkyBox;
+    this.customSkyBox = nextSkyBox;
+
+    if (
+      previousCustomSkyBox &&
+      previousCustomSkyBox !== nextSkyBox &&
+      !previousCustomSkyBox.isDestroyed()
+    ) {
+      previousCustomSkyBox.destroy();
+    }
+    viewer.scene.requestRender();
+    return nextSkyBox;
+  }
+
+  /**
+   * 重置为 Cesium Viewer 创建时的默认全局天空盒。
+   *
+   * **输入**：无。**输出**：无。
+   *
+   * @example
+   * ```ts
+   * layer.resetGlobalSkyBox()
+   * ```
+   */
+  resetGlobalSkyBox(): void {
+    const viewer = this.assertViewer();
+    const previousCustomSkyBox = this.customSkyBox;
+    viewer.scene.skyBox = this.defaultSkyBox;
+    this.customSkyBox = null;
+    if (previousCustomSkyBox && !previousCustomSkyBox.isDestroyed()) {
+      previousCustomSkyBox.destroy();
+    }
+    viewer.scene.requestRender();
   }
 
   /**
@@ -1703,6 +1791,77 @@ export class Layer {
     return new Cesium.UrlTemplateImageryProvider({ url });
   }
 
+  /**
+   * 根据天空盒目录 URL 生成 Cesium.SkyBox 六面图片地址。
+   *
+   * **输入**：`baseUrl` — 天空盒目录路径。**输出**：六面图片 URL 集合。
+   */
+  private buildSkyBoxSources(baseUrl: string): SkyBoxSources {
+    const root = this.normalizeSkyBoxBaseUrl(baseUrl);
+    return {
+      positiveX: `${root}/${SKYBOX_FACE_FILES.positiveX}`,
+      negativeX: `${root}/${SKYBOX_FACE_FILES.negativeX}`,
+      positiveY: `${root}/${SKYBOX_FACE_FILES.positiveY}`,
+      negativeY: `${root}/${SKYBOX_FACE_FILES.negativeY}`,
+      positiveZ: `${root}/${SKYBOX_FACE_FILES.positiveZ}`,
+      negativeZ: `${root}/${SKYBOX_FACE_FILES.negativeZ}`,
+    };
+  }
+
+  /**
+   * 规范化天空盒目录 URL，兼容 Windows 反斜杠并移除末尾斜杠。
+   *
+   * **输入**：`baseUrl`。**输出**：可直接拼接文件名的目录 URL。
+   */
+  private normalizeSkyBoxBaseUrl(baseUrl: string): string {
+    const trimmed = baseUrl.trim().replace(/\\/g, "/");
+    if (!trimmed) {
+      throw new Error("[FastX.Layer] 天空盒目录 URL 不能为空");
+    }
+    return trimmed.replace(/\/+$/, "");
+  }
+
+  /**
+   * 校验天空盒六面图片是否都能访问，缺任意一面时抛出明确错误。
+   *
+   * **输入**：`sources` — 六面图片 URL 集合。**输出**：校验通过时 resolve。
+   */
+  private async ensureSkyBoxSourcesAvailable(
+    sources: SkyBoxSources,
+  ): Promise<void> {
+    const missing: string[] = [];
+    await Promise.all(
+      Object.values(sources).map(async (url) => {
+        if (!(await this.isUrlAvailable(url))) missing.push(url);
+      }),
+    );
+    if (missing.length) {
+      throw new Error(
+        `[FastX.Layer] 天空盒目录缺少固定六面图片：${missing.join(", ")}`,
+      );
+    }
+  }
+
+  /**
+   * 判断单个天空盒图片 URL 是否可访问。
+   *
+   * **输入**：`url`。**输出**：`true` 表示可访问；服务器不支持 HEAD 时回退 GET。
+   */
+  private async isUrlAvailable(url: string): Promise<boolean> {
+    if (typeof fetch !== "function") return true;
+    try {
+      let res = await fetch(url, { method: "HEAD", cache: "no-store" });
+      if (res.ok) return true;
+      if (res.status === 405 || res.status === 501) {
+        res = await fetch(url, { method: "GET", cache: "no-store" });
+        return res.ok;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   private disposeInternals(destroyMainViewer: boolean): void {
     this.disposeNavigationControl();
     this.scaleBarPostRemove?.();
@@ -1728,6 +1887,13 @@ export class Layer {
     this.destroyOverviewMap();
     this.lonLatGrid?.destroy();
     this.lonLatGrid = null;
+    if (this.viewer && !this.viewer.isDestroyed()) {
+      this.resetGlobalSkyBox();
+    } else if (this.customSkyBox && !this.customSkyBox.isDestroyed()) {
+      this.customSkyBox.destroy();
+      this.customSkyBox = null;
+    }
+    this.defaultSkyBox = undefined;
 
     if (destroyMainViewer && this.viewer && !this.viewer.isDestroyed()) {
       this.viewer.destroy();

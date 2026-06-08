@@ -74,6 +74,7 @@ export function useLayerDemoCleanup() {
 
     sensorDispose?.()
     sensorDispose = undefined
+    layer.resetGlobalSkyBox()
 
     for (const img of overlays) {
       if (!img.isDestroyed()) layer.removeImageryLayer(img, true)
