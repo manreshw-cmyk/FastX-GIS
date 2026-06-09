@@ -17,7 +17,7 @@
 | **鼠标交互** | 点击、移动、拖拽等地图事件封装 |
 | **基础工具** | 集合二三维切换、鹰眼、大气层、光照、视角复位、比例尺、导航罗盘等工具 |
 | **基础标绘** | 点、线、面、圆、扇形、矩形、柱体、走廊、跑道、椭球、墙、Billboard、模型、Box、PolylineVolume、 Plane、Path 、2/3维热力图、点聚合等 |
-| **量算分析** | 空间/地表/投影等距离测量、空间/投影等面积测量、三角测量、方位角测量、直线通视觉、圆形通视、多点通视、视域分析、等高线分析、缓冲区分析 |
+| **量算分析** | 空间/地表/投影等距离测量、空间/投影等面积测量、三角测量、方位角测量、直线通视、圆形通视、多点通视、视域分析、等高线分析、缓冲区分析 |
 | **高性能标绘** | 基础标绘中所有功能均支持 Primitive 高性能批量API |
 | **卫星轨迹** | 轨迹与 Mover 运动体 |
 
@@ -45,11 +45,11 @@ npm install fastx-sdk
 
 ```bash
 # 方式 A：npm 本地安装
-npm install ./fastx-sdk-1.0.1.tgz
+npm install ./fastx-sdk-1.0.2.tgz
 
 # 方式 B：手动解压到 node_modules
 mkdir -p node_modules/fastx-sdk
-tar -xzf fastx-sdk-1.0.1.tgz -C node_modules/fastx-sdk --strip-components=1
+tar -xzf fastx-sdk-1.0.2.tgz -C node_modules/fastx-sdk --strip-components=1
 # Windows 可用解压工具，保证目录名为 node_modules/fastx-sdk 且含 package.json / dist / lib
 ```
 
