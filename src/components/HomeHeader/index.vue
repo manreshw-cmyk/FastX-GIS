@@ -11,6 +11,12 @@ const emit = defineEmits<{
 
 const isFullscreen = ref(false)
 
+function openApiDocs() {
+  const base = import.meta.env.BASE_URL || '/'
+  const root = base.endsWith('/') ? base : `${base}/`
+  window.open(`${root}api-docs/index.html`, '_blank', 'noopener,noreferrer')
+}
+
 function syncFullscreen() {
   isFullscreen.value = Boolean(document.fullscreenElement)
 }
@@ -49,6 +55,14 @@ const handleLogout = () => {
     </div>
 
     <div class="user-actions">
+      <a-tooltip title="API 接口文档">
+        <a-button type="text" class="icon-action-btn" @click="openApiDocs">
+          <template #icon>
+            <book-outlined />
+          </template>
+        </a-button>
+      </a-tooltip>
+
       <div class="user-block">
         <user-outlined class="user-icon" />
         <span class="user-name">{{ username }}</span>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FastX SDK API 手册</title>
+    <link rel="stylesheet" href="./styles/styles.css" />
+  </head>
+  <body>
+    <div class="api-doc-shell">
+      <aside class="api-doc-sidebar">
+        <div class="api-doc-brand">
+          <img src="./images/logo.png" alt="FastX GIS" class="api-doc-brand__logo" />
+          <div>
+            <div class="api-doc-brand__name">FastX SDK</div>
+            <div class="api-doc-brand__sub">API 接口手册</div>
+          </div>
+        </div>
+
+        <label class="api-doc-search" for="api-search">
+          <span class="api-doc-search__icon" aria-hidden="true"></span>
+          <input id="api-search" type="search" placeholder="输入 API 或中文名称" autocomplete="off" />
+        </label>
+
+        <div class="api-doc-tabs" role="tablist" aria-label="文档筛选">
+          <button type="button" class="api-doc-tab is-active" data-mode="all">全部</button>
+          <button type="button" class="api-doc-tab" data-mode="guide">入门</button>
+          <button type="button" class="api-doc-tab" data-mode="module">模块</button>
+        </div>
+
+        <nav id="api-nav" class="api-doc-nav" aria-label="API 文档菜单"></nav>
+      </aside>
+
+      <main class="api-doc-main">
+        <div class="api-doc-main__top">
+          <div>
+            <div id="api-breadcrumb" class="api-doc-breadcrumb"></div>
+            <h1 id="api-page-title">FastX SDK API 手册</h1>
+          </div>
+          <div class="api-doc-actions">
+            <button id="theme-toggle" class="api-doc-theme" type="button" aria-label="切换深色主题"></button>
+            <a class="api-doc-back" href="../index.html" aria-label="返回系统"></a>
+          </div>
+        </div>
+
+        <article id="api-content" class="api-doc-content"></article>
+      </main>
+    </div>
+    <div id="copy-toast" class="copy-toast" role="status" aria-live="polite">复制成功</div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

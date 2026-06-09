@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
-    "build": "vue-tsc -b && vite build",
+    "generate:api-docs": "node scripts/generate-api-docs-data.mjs",
+    "build": "npm run generate:api-docs && vue-tsc -b && vite build",
     "build:sdk": "npm run build --prefix src/FastX/build",
     "preview": "vite preview --outDir FastXDist"
   },
