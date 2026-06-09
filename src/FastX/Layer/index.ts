@@ -104,6 +104,58 @@ type SkyBoxSources = {
   negativeZ: string;
 };
 
+/**
+ * 根据运行环境解析内置鼠标样式资源地址。
+ *
+ * **输入**：`file` 为包内鼠标资源文件名；`viteAssetUrl` 为主工程 Vite 构建可处理的资源 URL。
+ * **输出**：浏览器可直接访问的 `.cur` 资源地址。
+ *
+ * - fastx-sdk：运行时代码位于 `dist/`，鼠标资源随包发布在 `assets/mouse/`。
+ * - 主工程：交给 Vite 处理 `src/FastX/build/assets/mouse` 下的静态资源。
+ */
+function resolveDefaultMouseCursorUrl(file: string, viteAssetUrl: string): string {
+  const self =
+    typeof import.meta !== "undefined" && import.meta.url
+      ? import.meta.url
+      : "";
+  if (/\/fastx-sdk\/dist\//.test(self) || /\\fastx-sdk\\dist\\/.test(self)) {
+    return new URL(`../assets/mouse/${file}`, self).href;
+  }
+  return viteAssetUrl;
+}
+
+/** Cesium 主画布默认内置的鼠标样式资源，不对外暴露配置项。 */
+const DEFAULT_MOUSE_CURSOR_URLS = {
+  /** 左键按下时替换系统鼠标。 */
+  pointer: resolveDefaultMouseCursorUrl(
+    "pointer.cur",
+    new URL("../build/assets/mouse/pointer.cur", import.meta.url).href,
+  ),
+  /** 中键按下倾斜视角时替换系统鼠标。 */
+  tilt: resolveDefaultMouseCursorUrl(
+    "tilt.cur",
+    new URL("../build/assets/mouse/tilt.cur", import.meta.url).href,
+  ),
+  /** 滚轮缩放时额外显示的中心提示，不替换系统鼠标。 */
+  center: resolveDefaultMouseCursorUrl(
+    "center.cur",
+    new URL("../build/assets/mouse/center.cur", import.meta.url).href,
+  ),
+} as const;
+
+/** 左键 / 中键按下时写入 canvas.style.cursor 的完整 CSS 值。 */
+const DEFAULT_MOUSE_PRESS_CURSOR_STYLES = {
+  /** 左键按下：使用 pointer.cur，资源异常时回退浏览器 pointer。 */
+  pointer: `url("${DEFAULT_MOUSE_CURSOR_URLS.pointer}"), pointer`,
+  /** 中键按下：使用 tilt.cur，资源异常时回退浏览器 move。 */
+  tilt: `url("${DEFAULT_MOUSE_CURSOR_URLS.tilt}"), move`,
+} as const;
+
+/** 滚轮缩放提示光标的显示尺寸。 */
+const WHEEL_CENTER_CURSOR_SIZE_PX = 32;
+/** 滚轮缩放停止后中心提示光标保留的时间。 */
+const WHEEL_CENTER_CURSOR_VISIBLE_MS = 360;
+
 /** 比例尺文字：与鼠标经纬度类似，连续小数变化 */
 function formatScaleBarLabel(meters: number): string {
   if (!Number.isFinite(meters) || meters <= 0) return "—";
@@ -158,6 +210,16 @@ export class Layer {
   private initImageryUrlTemplate: string | undefined;
   private initTerrainUrl: string | undefined;
   private baseImageryPreset: BaseImageryPresetKind = "custom";
+  /** 主画布鼠标样式事件解绑函数；`initDefaultMouseCursor` 每次初始化前会先执行旧解绑。 */
+  private defaultMouseCursorRemove: (() => void) | null = null;
+  /** 缩放提示浮层元素，滚轮缩放和右键缩放都会复用同一个 `center.cur` 图片节点。 */
+  private wheelCenterCursorEl: HTMLImageElement | null = null;
+  /** 缩放提示隐藏计时器；连续滚轮或右键拖拽时会刷新该计时器。 */
+  private wheelCenterCursorTimer: number | null = null;
+  /** 初始化内置鼠标样式前 canvas 原始 cursor，`destroy` / 重新初始化时恢复。 */
+  private defaultCanvasCursorBeforeCustomMouse = "";
+  /** 当前正在按下且由内置逻辑临时替换 cursor 的按键；右键缩放不替换系统 cursor。 */
+  private activeDefaultMouseCursorPress: "left" | "middle" | null = null;
 
   /**
    * 初始化地图（图层）。
@@ -274,6 +336,8 @@ export class Layer {
     if (config.ui?.initialCursor) {
       this.setCanvasCursorStyle(config.ui.initialCursor);
     }
+
+    this.initDefaultMouseCursor(viewer);
 
     if (config.ui?.showScaleBar) {
       this.setScaleBarVisible(true);
@@ -1862,7 +1926,225 @@ export class Layer {
     }
   }
 
+  /**
+   * 初始化 Cesium 主画布内置鼠标样式。
+   *
+   * 左键 / 中键按下时隐藏系统指针并替换为 `.cur`；滚轮和右键缩放时保留系统指针，
+   * 额外在鼠标位置显示 `center.cur` 作为缩放中心提示。
+   */
+  private initDefaultMouseCursor(viewer: Cesium.Viewer): void {
+    this.disposeDefaultMouseCursor();
+
+    const canvas = viewer.scene.canvas;
+    this.defaultCanvasCursorBeforeCustomMouse = canvas.style.cursor;
+    this.activeDefaultMouseCursorPress = null;
+    let cursorBeforePress = canvas.style.cursor;
+
+    /** 左键 / 中键按下时记录当前 cursor，并切换为对应 `.cur`。 */
+    const setPressCursor = (kind: "left" | "middle") => {
+      if (!this.activeDefaultMouseCursorPress) {
+        cursorBeforePress = canvas.style.cursor;
+      }
+      this.activeDefaultMouseCursorPress = kind;
+      canvas.style.cursor =
+        kind === "left"
+          ? DEFAULT_MOUSE_PRESS_CURSOR_STYLES.pointer
+          : DEFAULT_MOUSE_PRESS_CURSOR_STYLES.tilt;
+    };
+
+    /** 左键 / 中键释放或离开画布时恢复按下前的 cursor。 */
+    const restorePressCursor = () => {
+      this.activeDefaultMouseCursorPress = null;
+      canvas.style.cursor = cursorBeforePress;
+    };
+
+    /** 鼠标按下入口：左键 / 中键替换 cursor，右键仅显示缩放中心提示。 */
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      if (event.button === 0) {
+        setPressCursor("left");
+      } else if (event.button === 1) {
+        setPressCursor("middle");
+      } else if (event.button === 2) {
+        this.showWheelCenterCursor(canvas, event.clientX, event.clientY);
+      }
+    };
+    /** 鼠标释放入口：只恢复由左键 / 中键接管过的 cursor。 */
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      if (
+        (event.button === 0 &&
+          this.activeDefaultMouseCursorPress === "left") ||
+        (event.button === 1 &&
+          this.activeDefaultMouseCursorPress === "middle")
+      ) {
+        restorePressCursor();
+      }
+    };
+    /** 鼠标离开或 pointer 取消时清理临时 cursor 和缩放提示。 */
+    const onPointerLeave = () => {
+      if (this.activeDefaultMouseCursorPress) restorePressCursor();
+      this.hideWheelCenterCursor();
+    };
+    /** 鼠标移动时同步缩放提示位置；右键拖拽缩放期间持续显示 `center.cur`。 */
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      this.updateWheelCenterCursorPosition(canvas, event.clientX, event.clientY);
+      if ((event.buttons & 2) === 2) {
+        this.showWheelCenterCursor(canvas, event.clientX, event.clientY);
+      }
+    };
+    /** 滚轮缩放时显示 `center.cur`，不改变系统鼠标。 */
+    const onWheel = (event: WheelEvent) => {
+      this.showWheelCenterCursor(canvas, event.clientX, event.clientY);
+    };
+    /** 右键菜单事件触发时也刷新缩放中心提示，保持与右键缩放反馈一致。 */
+    const onContextMenu = (event: MouseEvent) => {
+      this.showWheelCenterCursor(canvas, event.clientX, event.clientY);
+    };
+    /** 鼠标在 canvas 外释放时兜底恢复左键 / 中键 cursor。 */
+    const onWindowPointerUp = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      if (
+        (event.button === 0 &&
+          this.activeDefaultMouseCursorPress === "left") ||
+        (event.button === 1 &&
+          this.activeDefaultMouseCursorPress === "middle")
+      ) {
+        restorePressCursor();
+      }
+    };
+    /** 窗口失焦时兜底清理所有临时鼠标状态。 */
+    const onWindowBlur = () => {
+      if (this.activeDefaultMouseCursorPress) restorePressCursor();
+      this.hideWheelCenterCursor();
+    };
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", onPointerLeave);
+    canvas.addEventListener("pointerleave", onPointerLeave);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("wheel", onWheel, { passive: true });
+    canvas.addEventListener("contextmenu", onContextMenu);
+    window.addEventListener("pointerup", onWindowPointerUp);
+    window.addEventListener("blur", onWindowBlur);
+
+    /** 汇总所有监听解绑逻辑，销毁 Layer 或重新 initMap 时统一执行。 */
+    this.defaultMouseCursorRemove = () => {
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointercancel", onPointerLeave);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("contextmenu", onContextMenu);
+      window.removeEventListener("pointerup", onWindowPointerUp);
+      window.removeEventListener("blur", onWindowBlur);
+      canvas.style.cursor = this.defaultCanvasCursorBeforeCustomMouse;
+      this.activeDefaultMouseCursorPress = null;
+    };
+  }
+
+  /**
+   * 创建或复用缩放中心提示浮层。
+   *
+   * **输入**：`canvas` — Cesium 主画布。**输出**：承载 `center.cur` 的 `HTMLImageElement`。
+   */
+  private ensureWheelCenterCursorElement(
+    canvas: HTMLCanvasElement,
+  ): HTMLImageElement {
+    if (this.wheelCenterCursorEl) return this.wheelCenterCursorEl;
+    const img = document.createElement("img");
+    img.src = DEFAULT_MOUSE_CURSOR_URLS.center;
+    img.alt = "";
+    img.draggable = false;
+    img.style.cssText = [
+      "position:absolute",
+      `width:${WHEEL_CENTER_CURSOR_SIZE_PX}px`,
+      `height:${WHEEL_CENTER_CURSOR_SIZE_PX}px`,
+      "display:none",
+      "pointer-events:none",
+      "user-select:none",
+      "z-index:8",
+      "transform:translate(-50%,-50%)",
+    ].join(";");
+    canvas.parentElement?.appendChild(img);
+    this.wheelCenterCursorEl = img;
+    return img;
+  }
+
+  /**
+   * 显示并刷新缩放中心提示位置。
+   *
+   * **输入**：`canvas` 与浏览器视口坐标 `clientX/clientY`。**输出**：无。
+   */
+  private showWheelCenterCursor(
+    canvas: HTMLCanvasElement,
+    clientX: number,
+    clientY: number,
+  ): void {
+    const el = this.ensureWheelCenterCursorElement(canvas);
+    this.updateWheelCenterCursorPosition(canvas, clientX, clientY);
+    el.style.display = "block";
+    if (this.wheelCenterCursorTimer !== null) {
+      window.clearTimeout(this.wheelCenterCursorTimer);
+    }
+    this.wheelCenterCursorTimer = window.setTimeout(() => {
+      this.hideWheelCenterCursor();
+    }, WHEEL_CENTER_CURSOR_VISIBLE_MS);
+  }
+
+  /**
+   * 按 canvas 父容器坐标更新缩放中心提示位置。
+   *
+   * **输入**：`canvas` 与浏览器视口坐标 `clientX/clientY`。**输出**：无。
+   */
+  private updateWheelCenterCursorPosition(
+    canvas: HTMLCanvasElement,
+    clientX: number,
+    clientY: number,
+  ): void {
+    const el = this.wheelCenterCursorEl;
+    const parent = canvas.parentElement;
+    if (!el || !parent) return;
+    const rect = parent.getBoundingClientRect();
+    el.style.left = `${clientX - rect.left}px`;
+    el.style.top = `${clientY - rect.top}px`;
+  }
+
+  /**
+   * 隐藏缩放中心提示并清理隐藏计时器。
+   *
+   * **输入**：无。**输出**：无。
+   */
+  private hideWheelCenterCursor(): void {
+    if (this.wheelCenterCursorTimer !== null) {
+      window.clearTimeout(this.wheelCenterCursorTimer);
+      this.wheelCenterCursorTimer = null;
+    }
+    if (this.wheelCenterCursorEl) {
+      this.wheelCenterCursorEl.style.display = "none";
+    }
+  }
+
+  /**
+   * 解绑内置鼠标样式事件并移除缩放中心提示浮层。
+   *
+   * **输入**：无。**输出**：无。
+   */
+  private disposeDefaultMouseCursor(): void {
+    this.defaultMouseCursorRemove?.();
+    this.defaultMouseCursorRemove = null;
+    this.hideWheelCenterCursor();
+    this.wheelCenterCursorEl?.remove();
+    this.wheelCenterCursorEl = null;
+    this.defaultCanvasCursorBeforeCustomMouse = "";
+    this.activeDefaultMouseCursorPress = null;
+  }
+
   private disposeInternals(destroyMainViewer: boolean): void {
+    this.disposeDefaultMouseCursor();
     this.disposeNavigationControl();
     this.scaleBarPostRemove?.();
     this.scaleBarPostRemove = null;

@@ -5,3 +5,4 @@ lib/Cesium/
 lib/Cesium.d.ts
 default/
 *.tgz
+.npm-cache/

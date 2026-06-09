@@ -128,6 +128,9 @@ function verifyPackIntegrity() {
       if (/from ['"]cesium['"]/.test(code)) {
         throw new Error('dist/fastx.esm.js 仍引用外部 cesium 包')
       }
+      if (!code.includes('../assets/mouse/')) {
+        throw new Error('dist/fastx.esm.js 未包含包内鼠标样式 assets/mouse 解析逻辑')
+      }
     }],
     ['dist/fastx.cjs.cjs', (p) => {
       const code = fs.readFileSync(p, 'utf8')
@@ -136,6 +139,9 @@ function verifyPackIntegrity() {
       }
       if (!code.includes('__fastxEnsureCesiumBaseUrl')) {
         throw new Error('dist/fastx.cjs.cjs 缺少 Cesium BASE_URL 前置初始化')
+      }
+      if (!code.includes('../assets/mouse/')) {
+        throw new Error('dist/fastx.cjs.cjs 未包含包内鼠标样式 assets/mouse 解析逻辑')
       }
     }],
     ['dist/entry.d.ts', (p) => {
@@ -155,6 +161,15 @@ function verifyPackIntegrity() {
         throw new Error('lib/Cesium/Assets 缺少 approximateTerrainHeights.json')
       }
     }],
+    ['assets/mouse/pointer.cur', (p) => {
+      if (fs.statSync(p).size < 1000) throw new Error('assets/mouse/pointer.cur 体积异常')
+    }],
+    ['assets/mouse/tilt.cur', (p) => {
+      if (fs.statSync(p).size < 1000) throw new Error('assets/mouse/tilt.cur 体积异常')
+    }],
+    ['assets/mouse/center.cur', (p) => {
+      if (fs.statSync(p).size < 1000) throw new Error('assets/mouse/center.cur 体积异常')
+    }],
     ['lib/Cesium.d.ts', null],
     ['lib/heatmap/heatmap.min.js', (p) => {
       if (fs.statSync(p).size < 1000) throw new Error('lib/heatmap/heatmap.min.js 体积异常')
@@ -168,6 +183,9 @@ function verifyPackIntegrity() {
       const pkg = JSON.parse(fs.readFileSync(p, 'utf8'))
       if (pkg.dependencies?.cesium || pkg.peerDependencies?.cesium) {
         throw new Error('package.json 不应依赖外部 cesium（应完全自包含）')
+      }
+      if (!pkg.files?.includes('assets')) {
+        throw new Error('package.json files 缺少 assets，鼠标样式资源不会随 npm 包发布')
       }
     }],
   ]
@@ -204,9 +222,10 @@ function removeOldTgz() {
 function runNpmPack() {
   removeOldTgz()
   log('pack', '正在生成 fastx-sdk-*.tgz …')
+  const npmCache = path.join(buildDir, '.npm-cache')
   const r = spawnSync(
     process.platform === 'win32' ? 'npm.cmd' : 'npm',
-    ['pack', '--silent'],
+    ['pack', '--silent', '--ignore-scripts', '--cache', npmCache],
     { cwd: buildDir, encoding: 'utf8', shell: process.platform === 'win32' },
   )
   if (r.status !== 0) {

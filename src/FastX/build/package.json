@@ -37,6 +37,7 @@
     "dist",
     "lib",
     "vendor",
+    "assets",
     "default",
     "Data",
     "README.md",
