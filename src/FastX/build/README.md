@@ -6,6 +6,8 @@
 
 **在线演示**：[https://manreshw-cmyk.github.io/FastX-GIS/](https://manreshw-cmyk.github.io/FastX-GIS/)
 
+**在线 API 接口手册**：[https://manreshw-cmyk.github.io/FastX-GIS/api-docs/index.html](https://manreshw-cmyk.github.io/FastX-GIS/api-docs/index.html)
+
 ---
 
 ## 特性

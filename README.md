@@ -12,6 +12,8 @@ FastX GIS 是基于 **Cesium** 的三维 GIS 能力库与演示工程：封装 `
 
 **在线演示**：[https://manreshw-cmyk.github.io/FastX-GIS/](https://manreshw-cmyk.github.io/FastX-GIS/)
 
+**在线 API 接口手册**：[https://manreshw-cmyk.github.io/FastX-GIS/api-docs/index.html](https://manreshw-cmyk.github.io/FastX-GIS/api-docs/index.html)
+
 ---
 
 ## 技术栈
@@ -40,6 +42,34 @@ npm run preview   # 预览构建结果
 ```
 
 登录后进入 **地图演示**（`/mapDemo`），左侧菜单切换功能卡片。
+
+---
+
+## 演示软件安装说明
+
+FastX GIS 除了支持 Web 在线演示和 `fastx-sdk` npm 包使用外，也支持通过 Electron 打包为桌面端演示软件安装包。桌面端安装后可直接打开 FastX GIS 演示系统，内置访问打包目录中的静态资源和本地瓦片资源。
+
+### 支持系统与架构
+
+| 系统 | 安装包 | 支持架构 |
+| --- | --- | --- |
+| Windows | `.exe` | 64 位（x64）、32 位（x32） |
+| Debian / Ubuntu | `.deb` | 64 位（x86_64）、32 位（i386）、ARM 64 位（arm64）、ARM 32 位（arm32） |
+| Red Hat / CentOS / Fedora | `.rpm` | 64 位（x86_64）、32 位（x32）、ARM 64 位（arm64） |
+
+### 打包命令
+
+```bash
+npm run build:Electron              # 打包全部系统和全部架构
+npm run build:Electron:win          # 打包 Windows 全架构
+npm run build:Electron:win:x64      # 打包 Windows 64 位
+npm run build:Electron:win:x32      # 打包 Windows 32 位
+npm run build:Electron:linux        # 打包 Linux deb/rpm 全架构
+npm run build:Electron:linux:deb    # 打包 deb 全架构
+npm run build:Electron:linux:rpm    # 打包 rpm 全架构
+```
+
+位置说明：安装包默认输出到 `ElectronDist` 目录下
 
 ---
 

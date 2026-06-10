@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 FastXDist
+ElectronDist
+.tmp/electron
 *.local
 
 # fastx-sdk 构建产物（源码在 src/FastX/build，dist/lib 由 npm run build:sdk 生成）

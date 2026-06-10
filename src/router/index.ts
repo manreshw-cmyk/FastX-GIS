@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import pinia from '../stores'
 import { useUserStore } from '../stores/modules/user'
 
@@ -8,7 +8,9 @@ const MapDemoView = () => import('../views/mapDemo/index.vue')
 const NotFoundView = () => import('../views/not-found/index.vue')
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: import.meta.env.VITE_FASTX_ELECTRON === 'true'
+    ? createWebHashHistory()
+    : createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

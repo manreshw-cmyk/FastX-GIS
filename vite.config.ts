@@ -10,6 +10,9 @@ import colors from "picocolors";
 
 const OUT_DIR = "FastXDist";
 const GITHUB_PAGES_BASE = "/FastX-GIS/";
+const IS_ELECTRON_BUILD =
+  process.env.FASTX_ELECTRON_BUILD === "true" ||
+  process.env.VITE_FASTX_ELECTRON === "true";
 const VENDOR_DIR = path.resolve("src/FastX/build/vendor");
 const CESIUM_BUILD_DIR = path.resolve("node_modules/cesium/Build/Cesium");
 
@@ -201,8 +204,12 @@ export default defineConfig(({ command, isPreview }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  /** build 与 preview 均使用 GitHub Pages 子路径，与产物内资源引用一致 */
-  base: command === "build" || isPreview ? GITHUB_PAGES_BASE : "/",
+  /** 普通生产包使用 GitHub Pages 子路径；Electron 本地 file:// 包使用相对路径。 */
+  base: IS_ELECTRON_BUILD
+    ? "./"
+    : command === "build" || isPreview
+      ? GITHUB_PAGES_BASE
+      : "/",
   server: {
     port: 5678,
     strictPort: true,

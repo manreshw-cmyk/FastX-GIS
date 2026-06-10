@@ -2,7 +2,10 @@
   "name": "FastX-XGS",
   "private": true,
   "version": "1.1.2",
+  "description": "FastX GIS desktop application",
+  "author": "FastX",
   "type": "module",
+  "main": "electron/main.cjs",
   "engines": {
     "node": ">=18",
     "npm": ">=9"
@@ -10,10 +13,92 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
-    "generate:api-docs": "node scripts/generate-api-docs-data.mjs",
+    "generate:api-docs": "node public/api-docs/generate-api-docs-data.mjs",
     "build": "npm run generate:api-docs && vue-tsc -b && vite build",
+    "build:Electron": "node electron/build-electron.mjs --all",
+    "build:Electron:win": "node electron/build-electron.mjs --win",
+    "build:Electron:win:x64": "node electron/build-electron.mjs --win --arch=x64",
+    "build:Electron:win:x32": "node electron/build-electron.mjs --win --arch=x32",
+    "build:Electron:linux": "node electron/build-electron.mjs --linux",
+    "build:Electron:linux:deb": "node electron/build-electron.mjs --linux --target=deb",
+    "build:Electron:linux:deb:x64": "node electron/build-electron.mjs --linux --target=deb --arch=x64",
+    "build:Electron:linux:deb:x32": "node electron/build-electron.mjs --linux --target=deb --arch=x32",
+    "build:Electron:linux:deb:arm64": "node electron/build-electron.mjs --linux --target=deb --arch=arm64",
+    "build:Electron:linux:deb:arm32": "node electron/build-electron.mjs --linux --target=deb --arch=arm32",
+    "build:Electron:linux:rpm": "node electron/build-electron.mjs --linux --target=rpm",
+    "build:Electron:linux:rpm:x64": "node electron/build-electron.mjs --linux --target=rpm --arch=x64",
+    "build:Electron:linux:rpm:x32": "node electron/build-electron.mjs --linux --target=rpm --arch=x32",
+    "build:Electron:linux:rpm:arm64": "node electron/build-electron.mjs --linux --target=rpm --arch=arm64",
     "build:sdk": "npm run build --prefix src/FastX/build",
     "preview": "vite preview --outDir FastXDist"
+  },
+  "build": {
+    "appId": "com.fastx.gis",
+    "productName": "FastX GIS",
+    "directories": {
+      "output": "ElectronDist",
+      "buildResources": "electron"
+    },
+    "files": [
+      "electron/**/*",
+      "FastXDist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "artifactName": "FastX GIS_Setup_V${version}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "icon.ico",
+      "forceCodeSigning": false,
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "packElevateHelper": false,
+      "shortcutName": "FastX GIS",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "uninstallDisplayName": "FastX GIS",
+      "differentialPackage": false,
+      "include": "electron/installer.nsh"
+    },
+    "linux": {
+      "maintainer": "FastX <manreshw-cmyk@users.noreply.github.com>",
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "ia32",
+            "arm64",
+            "armv7l"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "ia32",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Science",
+      "icon": "public/api-docs/images/logo.png"
+    }
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
@@ -30,6 +115,8 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@vitejs/plugin-vue": "^5.1.2",
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
     "picocolors": "^1.1.1",
     "rollup": "^4.40.2",
     "rollup-plugin-dts": "^6.2.1",

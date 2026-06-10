@@ -5,7 +5,7 @@ const FALLBACK_TERRAIN = 'http://localhost:98/taiwan_dem'
 export function resolveMapBaseUrls(): { imageryUrlTemplate: string; terrainUrl: string } {
   const c = typeof window !== 'undefined' ? window.apiConfig : undefined
   return {
-    imageryUrlTemplate: c?.imageryProvider || FALLBACK_IMAGERY,
-    terrainUrl: c?.terrainProvider || FALLBACK_TERRAIN,
+    imageryUrlTemplate: c?.imageryProvider ?? FALLBACK_IMAGERY,
+    terrainUrl: c?.terrainProvider ?? FALLBACK_TERRAIN,
   }
 }

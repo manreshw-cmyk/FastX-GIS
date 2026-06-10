@@ -1274,8 +1274,9 @@
   const search = document.getElementById("api-search");
   const themeToggle = document.getElementById("theme-toggle");
   const copyToast = document.getElementById("copy-toast");
+  const backToTop = document.getElementById("back-to-top");
   let mode = "all";
-  let activeId = location.hash ? decodeURIComponent(location.hash.slice(1)) : "intro";
+  let activeId = "intro";
   let expanded = new Set(["guide"]);
 
   const savedTheme = localStorage.getItem("fastx-api-theme") === "dark" ? "dark" : "light";
@@ -1296,12 +1297,12 @@
   themeToggle?.addEventListener("click", () => {
     setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
   });
+  backToTop?.addEventListener("click", () => {
+    scrollToContentTop("smooth");
+  });
+  window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
   window.addEventListener("hashchange", () => {
-    const id = decodeURIComponent(location.hash.slice(1));
-    if (docsById.has(id)) {
-      activeId = id;
-      renderAll();
-    }
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   });
 
   content.addEventListener("click", (event) => {
@@ -1315,8 +1316,10 @@
 
   async function initDocs() {
     await loadGeneratedApiDocs();
-    if (!docsById.has(activeId)) activeId = "intro";
+    activeId = "intro";
+    history.replaceState(null, "", location.pathname + location.search);
     renderAll();
+    updateBackToTopVisibility();
   }
 
   async function loadGeneratedApiDocs() {
@@ -1541,6 +1544,7 @@
         activeId = id;
         history.replaceState(null, "", `#${encodeURIComponent(id)}`);
         renderAll();
+        scrollToContentTop("auto");
       });
     });
   }
@@ -1559,8 +1563,20 @@
     if (themeToggle) {
       themeToggle.textContent = "";
       themeToggle.dataset.themeIcon = normalized === "dark" ? "light" : "dark";
-      themeToggle.setAttribute("aria-label", normalized === "dark" ? "切换浅色主题" : "切换深色主题");
+      const title = normalized === "dark" ? "切换浅色主题" : "切换深色主题";
+      themeToggle.setAttribute("aria-label", title);
+      themeToggle.setAttribute("title", title);
     }
+  }
+
+  function updateBackToTopVisibility() {
+    if (!backToTop) return;
+    backToTop.classList.toggle("is-visible", window.scrollY > 360);
+  }
+
+  function scrollToContentTop(behavior = "auto") {
+    const top = document.querySelector(".api-doc-main")?.offsetTop || 0;
+    window.scrollTo({ top, behavior });
   }
 
   async function copyCode(code) {
@@ -2010,7 +2026,7 @@
   }
 
   function renderCode(code) {
-    return `<div class="doc-code-block"><button type="button" class="doc-code-copy" data-copy-code aria-label="复制代码"></button><pre class="doc-code"><code>${escapeHtml(code)}</code></pre></div>`;
+    return `<div class="doc-code-block"><button type="button" class="doc-code-copy" data-copy-code aria-label="复制代码" title="复制代码"></button><pre class="doc-code"><code>${escapeHtml(code)}</code></pre></div>`;
   }
 
   function escapeHtml(value) {

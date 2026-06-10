@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootDir = path.resolve(__dirname, '..')
+const rootDir = path.resolve(__dirname, '../..')
 const fastxDir = path.join(rootDir, 'src/FastX')
 const entryFile = path.join(fastxDir, 'build/entry.ts')
 const indexFile = path.join(fastxDir, 'index.ts')
