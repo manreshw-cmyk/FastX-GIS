@@ -308,6 +308,101 @@ export interface BillboardSnapshot {
   description?: string
 }
 
+// --- Draw / Overlay / index (Draw/Overlay/index.ts) ---
+
+export type OverlayLineRenderType = 'entity' | 'primitive'
+
+export type OverlayOffset = { x: number; y: number } | readonly [number, number]
+
+export interface OverlayLineStyle {
+  /** 连线颜色，CSS 颜色字符串，默认 #ff0000 */
+  color?: string
+  /** 连线宽度，默认 2 */
+  width?: number
+  /** 虚线长度，默认 16 */
+  dashLength?: number
+  /** 是否显示虚线 */
+  dashed?: boolean
+  /** 是否显示连线，默认 true */
+  show?: boolean
+}
+
+export interface OverlayViewHeightOptions {
+  /** 是否根据视角高度自动控制标牌显隐，默认 true */
+  enabled?: boolean
+  /** 相机视角高度超过该值时隐藏标牌，默认 1500000 米 */
+  maxHeight?: number
+}
+
+export interface AddOverlayOptions {
+  /** 标牌唯一 id，不传时内部自动生成 */
+  id?: string
+  /** 标牌绑定的 Cesium Entity */
+  entity: Cesium.Entity
+  /** 标牌 DOM 元素或 DOM id */
+  element: string | HTMLElement
+  /** 相对实体屏幕坐标的偏移，默认 [0, -50] */
+  offset?: OverlayOffset
+  /** 连线样式 */
+  lineStyle?: OverlayLineStyle
+  /** 视角高度显隐配置，默认启用；视角过高时隐藏标牌和连线 */
+  viewHeight?: OverlayViewHeightOptions
+  /** 是否允许整牌拖拽，默认 true */
+  draggable?: boolean
+  /** 标牌创建完成后是否立刻显示，默认 true */
+  show?: boolean
+  /** 自定义业务数据 */
+  targetData?: Record<string, unknown>
+  /** 拖拽回调 */
+  onDrag?: (position: { x: number; y: number }, id: string) => void
+  /** 连线渲染方式，默认 entity；primitive 适合大量标牌连线 */
+  renderType?: OverlayLineRenderType
+}
+
+export interface UpdateOverlayProperties {
+  /** 重新绑定的 Cesium Entity */
+  entity?: Cesium.Entity
+  /** 替换后的标牌 DOM 元素或 DOM id */
+  element?: string | HTMLElement
+  /** 相对实体屏幕坐标的偏移 */
+  offset?: OverlayOffset
+  /** 连线样式 */
+  lineStyle?: OverlayLineStyle
+  /** 视角高度显隐配置 */
+  viewHeight?: OverlayViewHeightOptions
+  /** 是否允许整牌拖拽 */
+  draggable?: boolean
+  /** 是否显示 */
+  show?: boolean
+  /** 自定义业务数据补丁 */
+  targetData?: Record<string, unknown>
+  /** 拖拽回调 */
+  onDrag?: (position: { x: number; y: number }, id: string) => void
+  /** 连线渲染方式，默认 entity；primitive 适合大量标牌连线 */
+  renderType?: OverlayLineRenderType
+}
+
+export interface OverlaySnapshot {
+  id: string
+  entityId: string
+  show: boolean
+  offset: { x: number; y: number }
+  lineStyle: {
+    color: string
+    width: number
+    dashLength: number
+    dashed: boolean
+    show: boolean
+  }
+  viewHeight: {
+    enabled: boolean
+    maxHeight: number
+  }
+  renderType: OverlayLineRenderType
+  draggable: boolean
+  targetData: Record<string, unknown>
+}
+
 // --- Draw / Box / BoxCollection (Draw/Box/BoxCollection.ts) ---
 
 export interface BoxCollectionAddItem {

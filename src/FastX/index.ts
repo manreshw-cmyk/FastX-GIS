@@ -28,6 +28,7 @@ import EllipsoidCollection from "./Draw/Ellipsoid/EllipsoidCollection";
 import Wall from "./Draw/Wall";
 import Billboard from "./Draw/Billboard";
 import BillboardCollection from "./Draw/Billboard/BillboardCollection";
+import Overlay from "./Draw/Overlay";
 import Model from "./Draw/Model";
 import ModelCollection from "./Draw/Model/ModelCollection";
 import Box from "./Draw/Box";
@@ -44,13 +45,67 @@ import { Quantitative } from "./Quantitative";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
 import { ensureVendorPlugins } from "./plugins";
+import SpecialEffects from "./SpecialEffects";
 import Utils from "./Utils";
 import Types from "./Types";
 
 export { Utils, Types };
 export type * from "./Types";
+export type * from "./SpecialEffects";
 
 export { Layer, Coordinates, MouseEvent, registerCesiumXVueComponents };
+export {
+  SpecialEffects,
+  RadiationCircle,
+  RadiationCircleCollection,
+  CircleDiffusion,
+  ElectronicFence,
+  ElectronicFenceCollection,
+  PolygonDiffusionWall,
+  PolygonDiffusionWallCollection,
+  RadarEmissionWave,
+  RadarEmissionWaveCollection,
+  HemisphereRadarScan,
+  HemisphereRadarScanCollection,
+  GlobalRain,
+  GlobalSnow,
+  GlobalFog,
+  SingleViewFrustum,
+  SingleViewFrustumCollection,
+  AirRadar,
+  AirRadarCollection,
+  SectorDiffusionRadar,
+  SectorDiffusionRadarCollection,
+  CircleDiffusionRadar,
+  CircleDiffusionRadarCollection,
+  AimEffect,
+  AimEffectCollection,
+  ConeEffect,
+  ConeEffectCollection,
+  ConicalScanner,
+  ConicalScannerCollection,
+  DoubleViewFrustum,
+  DoubleViewFrustumCollection,
+  ParabolaRadar,
+  ParabolaRadarCollection,
+  RingConeScanner,
+  RingConeScannerCollection,
+  RingRadar,
+  RingRadarCollection,
+  ScanRadar,
+  ScanRadarCollection,
+  SquareConeScanner,
+  SquareConeScannerCollection,
+  FireRangeEffect,
+  FireRangeEffectCollection,
+  ParticleSystemEffect,
+  ExplosionEffect,
+  FrameAnimationEffect,
+} from "./SpecialEffects";
+export {
+  EntityFocusEffect,
+  entityFocusEffect,
+} from "./Utils";
 export { createRandomXgxId } from "./Coordinates";
 export { default as Point } from "./Draw/Point";
 export { default as PointCollection } from "./Draw/Point/PointCollection";
@@ -77,6 +132,7 @@ export { default as EllipsoidCollection } from "./Draw/Ellipsoid/EllipsoidCollec
 export { default as Wall } from "./Draw/Wall";
 export { default as Billboard } from "./Draw/Billboard";
 export { default as BillboardCollection } from "./Draw/Billboard/BillboardCollection";
+export { default as Overlay } from "./Draw/Overlay";
 export { default as Model } from "./Draw/Model";
 export { default as ModelCollection } from "./Draw/Model/ModelCollection";
 export { default as Box } from "./Draw/Box";
@@ -188,6 +244,13 @@ export type {
   MouseEventPickPayload,
   MouseEventPickedEntity,
 } from "./MouseEvent";
+export type {
+  EntityFocusEffectOptions,
+  EntityFocusEffectUpdateOptions,
+  EntityFocusPosition,
+  EntityFocusPositionInput,
+  EntityFocusPositionTuple,
+} from "./Utils";
 export type * from "./Layer/types";
 export type { XMapConfig } from "./components/x-map.types";
 export type {
@@ -375,6 +438,15 @@ export type {
   BillboardCollectionUpdateProps,
 } from "./Draw/Billboard/BillboardCollection";
 export type {
+  AddOverlayOptions,
+  OverlayLineRenderType,
+  OverlayLineStyle,
+  OverlayOffset,
+  OverlaySnapshot,
+  OverlayViewHeightOptions,
+  UpdateOverlayProperties,
+} from "./Draw/Overlay";
+export type {
   AddModelOptions,
   ModelPositionsTuple,
   ModelSnapshot,
@@ -465,6 +537,7 @@ const ellipsoidCollectionApi = new EllipsoidCollection();
 const wallApi = new Wall();
 const billboardApi = new Billboard();
 const billboardCollectionApi = new BillboardCollection();
+const overlayApi = new Overlay();
 const modelApi = new Model();
 const modelCollectionApi = new ModelCollection();
 const boxApi = new Box();
@@ -534,6 +607,7 @@ export const FastX = {
   Coordinates,
   Layer,
   MouseEvent,
+  SpecialEffects,
   Point: pointApi,
   PointCollection: pointCollectionApi,
   Label: labelApi,
@@ -559,6 +633,7 @@ export const FastX = {
   Wall: wallApi,
   Billboard: billboardApi,
   BillboardCollection: billboardCollectionApi,
+  Overlay: overlayApi,
   Model: modelApi,
   ModelCollection: modelCollectionApi,
   Box: boxApi,

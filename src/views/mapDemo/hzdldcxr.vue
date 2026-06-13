@@ -4,7 +4,6 @@ import { keepAlternateDemoEntry } from './common/keepAlternateDemoEntry'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import type { Viewer } from 'cesium'
 import type { AreaDrawStartParams, LngLatHeight, PointSnapshot } from '../../FastX'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
 import { normalizeHex, parseCssColorForForm } from './common/drawFormColor'
@@ -47,8 +46,6 @@ const tableData = ref<PointSnapshot[]>([])
 const tableShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
-
-let viewerRef: Viewer | null = null
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -354,7 +351,6 @@ onMounted(async () => {
     message.warning('地图未能在预期时间内就绪')
     return
   }
-  viewerRef = v
   am = window.FastX?.AreaManager
   setupAreaManagerPublish()
   refreshTable()
@@ -372,11 +368,8 @@ onBeforeUnmount(() => {
   am?.cancel()
   am?.unpublish()
   isAreaDrawing.value = false
-  const v = viewerRef
-  viewerRef = null
-  if (v && !v.isDestroyed()) {
-    window.FastX?.Point?.clear(v)
-  }
+  const v = mapStore.getViewer()
+  if (v && !v.isDestroyed()) window.FastX?.Point?.clear(v)
 })
 keepAlternateDemoEntry(addPointFromForm)
 </script>

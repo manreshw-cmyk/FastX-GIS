@@ -71,9 +71,12 @@
       "installerIcon": "icon.ico",
       "uninstallerIcon": "icon.ico",
       "installerHeaderIcon": "icon.ico",
+      "installerSidebar": "installer/assets/installer-sidebar.bmp",
+      "uninstallerSidebar": "installer/assets/uninstaller-sidebar.bmp",
+      "installerHeader": "installer/assets/installer-header.bmp",
       "uninstallDisplayName": "FastX GIS",
       "differentialPackage": false,
-      "include": "electron/installer.nsh"
+      "include": "electron/installer/installer.nsh"
     },
     "linux": {
       "maintainer": "FastX <manreshw-cmyk@users.noreply.github.com>",

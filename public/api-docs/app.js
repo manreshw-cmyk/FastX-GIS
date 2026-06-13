@@ -887,6 +887,8 @@
     event: "事件",
     draw: "标绘",
     measure: "测量",
+    effects: "特效",
+    weather: "气象",
     plugin: "插件",
     tools: "工具",
   };
@@ -1884,6 +1886,134 @@
     return examples[base] || "{\n  color: '#00d6a3',\n  show: true\n}";
   }
 
+  function overlayElementCode(variableName = "element", title = "FastX 标牌") {
+    return `const ${variableName} = document.createElement('div')\nObject.assign(${variableName}.style, {\n  minWidth: '150px',\n  padding: '10px 12px',\n  border: '1px solid rgba(0,214,255,.65)',\n  borderRadius: '6px',\n  background: 'rgba(6,18,32,.86)',\n  color: '#fff',\n  boxShadow: '0 8px 24px rgba(0,0,0,.28)',\n  fontSize: '13px',\n  lineHeight: '1.5'\n})\n${variableName}.innerHTML = '<strong>${title}</strong><br/>HTML 标牌内容'`;
+  }
+
+  function overlayTargetEntityCode(variableName = "entity", id = "overlay-target-001") {
+    return `const ${variableName} = viewer.entities.add({\n  id: '${id}',\n  position: Cesium.Cartesian3.fromDegrees(116.391, 39.907, 120),\n  point: {\n    pixelSize: 10,\n    color: Cesium.Color.fromCssColorString('red'),\n    outlineColor: Cesium.Color.fromCssColorString('#ccc'),\n    outlineWidth: 2\n  }\n})`;
+  }
+
+  function overlayOptionsCode(id = "overlay-001", entityName = "entity", elementName = "element") {
+    return `{\n  id: '${id}',\n  entity: ${entityName},\n  element: ${elementName},\n  show: true,\n  offset: [0, -80],\n  draggable: true,\n  renderType: 'entity',\n  lineStyle: {\n    color: '#00d6ff',\n    width: 2,\n    dashed: false,\n    show: true\n  },\n  viewHeight: {\n    enabled: true,\n    maxHeight: 1500000\n  },\n  targetData: {\n    name: '业务标牌'\n  }\n}`;
+  }
+
+  function overlayMethodExample(methodName) {
+    const target = "window.FastX.Overlay";
+    const setup = `const Cesium = window.FastX.Cesium || window.Cesium\n${viewerExampleLine()}\n${overlayTargetEntityCode()}\n${overlayElementCode()}`;
+    const examples = {
+      add: `${setup}\nconst options = ${overlayOptionsCode()}\n\nconst overlayId = ${target}.add(viewer, options)`,
+      addBatch: `const Cesium = window.FastX.Cesium || window.Cesium\n${viewerExampleLine()}\n${overlayTargetEntityCode("entityA", "overlay-target-001")}\n${overlayTargetEntityCode("entityB", "overlay-target-002")}\n${overlayElementCode("elementA", "FastX 标牌 A")}\n${overlayElementCode("elementB", "FastX 标牌 B")}\nconst items = [\n${indentCode(overlayOptionsCode("overlay-001", "entityA", "elementA"), 2)},\n${indentCode(overlayOptionsCode("overlay-002", "entityB", "elementB"), 2)}\n]\n\nconst ids = ${target}.addBatch(viewer, items)`,
+      updateOverlay: `${overlayElementCode("nextElement", "更新后的标牌")}\n${target}.updateOverlay('overlay-001', {\n  element: nextElement,\n  offset: [20, -90],\n  lineStyle: {\n    color: '#00ff99',\n    width: 3,\n    dashed: true\n  },\n  targetData: {\n    status: 'online'\n  }\n})`,
+      updateLineStyle: `${target}.updateLineStyle('overlay-001', {\n  color: '#00ff99',\n  width: 3,\n  dashed: true,\n  dashLength: 20\n})`,
+      setOffset: `${target}.setOffset('overlay-001', [0, -100])`,
+      resetPosition: `${target}.resetPosition('overlay-001')`,
+      show: `${target}.show('overlay-001')`,
+      hide: `${target}.hide('overlay-001')`,
+      setVisible: `${target}.setVisible('overlay-001', true)`,
+      setAllVisibility: `${target}.setAllVisibility(true)`,
+      getOverlay: `const overlay = ${target}.getOverlay('overlay-001')`,
+      getAllOverlays: `const overlays = ${target}.getAllOverlays()`,
+      getTargetData: `const data = ${target}.getTargetData('overlay-001')`,
+      setTargetData: `${target}.setTargetData('overlay-001', {\n  name: '业务标牌',\n  status: 'online'\n})`,
+      mergeTargetData: `${target}.mergeTargetData('overlay-001', {\n  status: 'warning'\n})`,
+      getElement: `const element = ${target}.getElement('overlay-001')`,
+      getEntity: `const entity = ${target}.getEntity('overlay-001')`,
+      has: `const exists = ${target}.has('overlay-001')`,
+      getIds: `const ids = ${target}.getIds()`,
+      getCount: `const count = ${target}.getCount()`,
+      remove: `${target}.remove('overlay-001')`,
+      removeBatch: `${target}.removeBatch(['overlay-001', 'overlay-002'])`,
+      clear: `${target}.clear()`,
+      pruneInvalid: `${target}.pruneInvalid()`,
+      destroy: `${target}.destroy()`,
+    };
+    return examples[methodName] || `${target}.${methodName}()`;
+  }
+
+  function effectBaseName(name) {
+    return name.replace(/Collection$/, "");
+  }
+
+  function effectId(name) {
+    return `${effectBaseName(name).replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}-001`;
+  }
+
+  function lowerFirst(value) {
+    return value ? `${value.charAt(0).toLowerCase()}${value.slice(1)}` : "api";
+  }
+
+  function effectApiVariableName(name) {
+    return `${lowerFirst(name).replace(/[^A-Za-z0-9_$]/g, "")}Api`;
+  }
+
+  function viewerExampleLine() {
+    return "const viewer = window.FastX.getLayer().viewer";
+  }
+
+  function effectApiSetup(doc, target, classRef) {
+    const constructorArgs = doc.name.endsWith("Collection") ? "" : "viewer";
+    return `${viewerExampleLine()}\nconst ${target} = new ${classRef}(${constructorArgs})`;
+  }
+
+  function effectAddArgs(doc, methodName, optionsName) {
+    return doc.name.endsWith("Collection") || methodName !== "add" ? `viewer, ${optionsName}` : optionsName;
+  }
+
+  function effectExampleObject(name, index = 1) {
+    const base = effectBaseName(name);
+    const id = `${effectBaseName(name).replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}-${String(index).padStart(3, "0")}`;
+    const position = "position: { longitude: 116.391, latitude: 39.907, height: 1200 }";
+    const points = "[\n    { longitude: 116.391, latitude: 39.907, height: 0 },\n    { longitude: 116.421, latitude: 39.917, height: 0 },\n    { longitude: 116.411, latitude: 39.887, height: 0 }\n  ]";
+    const examples = {
+      RadiationCircle: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 0 },\n  maxRadius: 1500,\n  color: 'rgba(0,255,255,0.75)',\n  duration: 1200,\n  count: 3\n}`,
+      CircleDiffusion: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 0 },\n  maxRadius: 1800,\n  color: 'rgba(0,255,120,0.85)',\n  duration: 2000\n}`,
+      ElectronicFence: `{\n  id: '${id}',\n  positions: ${points},\n  height: 600,\n  color: '#00d6ff',\n  duration: 1500\n}`,
+      PolygonDiffusionWall: `{\n  id: '${id}',\n  center: { longitude: 116.391, latitude: 39.907, height: 0 },\n  radius: 1000,\n  edge: 5,\n  height: 200,\n  speed: 15,\n  minRadius: 50,\n  color: '#ffff00'\n}`,
+      RadarEmissionWave: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 1200 },\n  color: '#00FFFF',\n  length: 500000,\n  bottomRadius: 50000,\n  duration: 1800\n}`,
+      HemisphereRadarScan: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 0 },\n  radius: 1000,\n  color: '#00ff0038',\n  scanColor: '#00ff0038',\n  speed: 1\n}`,
+      SingleViewFrustum: `{\n  id: '${id}',\n  ${position},\n  heading: 45,\n  pitch: -20,\n  roll: 0,\n  fov: 45,\n  nearDistance: 10,\n  farDistance: 5000\n}`,
+      AirRadar: `{\n  id: '${id}',\n  ${position},\n  length: 8000,\n  angle: 35,\n  color: 'rgba(0,255,120,0.18)'\n}`,
+      SectorDiffusionRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 3000,\n  angle: 90,\n  color: 'rgba(0,214,255,0.22)'\n}`,
+      CircleDiffusionRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 3000,\n  color: 'rgba(0,214,255,0.22)'\n}`,
+      AimEffect: `{\n  id: '${id}',\n  source: { longitude: 116.391, latitude: 39.907, height: 1500 },\n  target: { longitude: 116.421, latitude: 39.917, height: 200 },\n  color: '#ff4d4f'\n}`,
+      ConeEffect: `{\n  id: '${id}',\n  ${position},\n  length: 3000,\n  bottomRadius: 900,\n  color: 'rgba(255,214,0,0.22)'\n}`,
+      ConicalScanner: `{\n  id: '${id}',\n  ${position},\n  length: 4000,\n  angle: 35,\n  scanColor: '#00d6ff'\n}`,
+      DoubleViewFrustum: `{\n  id: '${id}',\n  ${position},\n  heading: 30,\n  pitch: -15,\n  farDistance: 5000,\n  fov: 40\n}`,
+      ParabolaRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 3000,\n  height: 1600,\n  color: 'rgba(0,255,120,0.2)'\n}`,
+      RingConeScanner: `{\n  id: '${id}',\n  ${position},\n  length: 4000,\n  innerRadius: 600,\n  bottomRadius: 1400,\n  scanColor: '#00d6ff'\n}`,
+      RingRadar: `{\n  id: '${id}',\n  ${position},\n  innerRadius: 800,\n  outerRadius: 3000,\n  color: 'rgba(0,214,255,0.24)'\n}`,
+      ScanRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 3200,\n  scanColor: '#00d6ff',\n  duration: 1800\n}`,
+      SquareConeScanner: `{\n  id: '${id}',\n  ${position},\n  length: 4000,\n  width: 2200,\n  scanColor: '#00d6ff'\n}`,
+      FireRangeEffect: `{\n  id: '${id}',\n  ${position},\n  radius: 2500,\n  angle: 110,\n  scanColor: '#ff4d4f'\n}`,
+      ParticleSystemEffect: `{\n  id: '${id}',\n  ${position},\n  image: '/assets/images/special-effects/explosion/fire2.png',\n  emissionRate: 120,\n  emitter: { type: 'cone', angle: 35 },\n  lifetime: 3\n}`,
+      ExplosionEffect: `{\n  id: '${id}',\n  ${position},\n  lifeTime: 5\n}`,
+      FrameAnimationEffect: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 500 },\n  framePath: '/assets/images/special-effects/frame-animation/blast/',\n  frameCount: 15,\n  duration: 2,\n  loop: false,\n  width: 96,\n  height: 96\n}`,
+      EntityFocusEffect: `{\n  entityId: 'target-entity-001',\n  radius: 1200,\n  duration: 2,\n  color: '#18d6ff'\n}`,
+    };
+    return examples[base] || `{\n  id: '${id}',\n  ${position},\n  color: '#00d6ff'\n}`;
+  }
+
+  function effectUpdateExampleObject(name) {
+    const base = effectBaseName(name);
+    const examples = {
+      FrameAnimationEffect: "{\n  duration: 1.5,\n  loop: false,\n  width: 120,\n  height: 120\n}",
+      ParticleSystemEffect: "{\n  emissionRate: 180,\n  maxSpeed: 45,\n  show: true\n}",
+      ExplosionEffect: "{\n  lifeTime: 4,\n  show: true\n}",
+      EntityFocusEffect: "{\n  radius: 1600,\n  color: '#00d6ff',\n  duration: 2\n}",
+    };
+    return examples[base] || "{\n  color: '#00d6ff',\n  lineColor: '#ffffff',\n  show: true\n}";
+  }
+
+  function weatherOptionsObject(name) {
+    const examples = {
+      GlobalRain: "{\n  tiltAngle: -0.6,\n  rainSize: 0.3,\n  rainSpeed: 60,\n  autoStart: true\n}",
+      GlobalSnow: "{\n  snowSize: 0.02,\n  snowSpeed: 60,\n  autoStart: true\n}",
+      GlobalFog: "{\n  fogDensity: 0.0015,\n  color: 'rgba(180,190,200,0.45)',\n  autoStart: true\n}",
+    };
+    return examples[name] || "{\n  autoStart: true\n}";
+  }
+
   function isArrayMethodParam(method) {
     return methodParamsOf(method).some(
       (param) => /\[\]|Array</.test(param.type) || (["items", "updates", "options"].includes(param.name) && /\[\]/.test(param.type)),
@@ -1929,6 +2059,7 @@
       return examples[methodName] || `window.FastX.Point.${methodName}()`;
     }
     if (doc.group === "draw") {
+      if (doc.name === "Overlay") return overlayMethodExample(methodName);
       const target = `window.FastX.${doc.name}`;
       if (/^add/.test(methodName)) {
         if (doc.name === "Path") {
@@ -1988,6 +2119,68 @@
         return `const viewer = window.FastX.getViewer('mapDemo')\n${methodCall(`window.FastX.${doc.name}`, methodName, method, doc)}`;
       }
       return methodCall(`window.FastX.${doc.name}`, methodName, method, doc);
+    }
+    if (doc.group === "effects") {
+      if (doc.name === "SpecialEffects") return "const { RadiationCircle, ExplosionEffect } = window.FastX.SpecialEffects";
+      if (doc.name === "EntityFocusEffect" || doc.name === "entityFocusEffect") {
+        if (methodName === "focus") {
+          return `${viewerExampleLine()}\n\nwindow.FastX.Utils.entityFocusEffect.focus(viewer, ${effectExampleObject("EntityFocusEffect")})`;
+        }
+        if (/^update/.test(methodName)) return `window.FastX.Utils.entityFocusEffect.update('entity-focus-001', ${effectUpdateExampleObject("EntityFocusEffect")})`;
+        if (/^show/.test(methodName)) return "window.FastX.Utils.entityFocusEffect.show('entity-focus-001', true)";
+        if (/^getAllIds/.test(methodName)) return "const ids = window.FastX.Utils.entityFocusEffect.getAllIds()";
+        if (/^get/.test(methodName)) return "const entities = window.FastX.Utils.entityFocusEffect.get('entity-focus-001')";
+        if (/^remove/.test(methodName)) return "window.FastX.Utils.entityFocusEffect.remove('entity-focus-001')";
+        if (/^clear|^destroy/.test(methodName)) return `window.FastX.Utils.entityFocusEffect.${methodName}()`;
+      }
+      const target = effectApiVariableName(doc.name);
+      const id = effectId(doc.name);
+      const classRef = `window.FastX.SpecialEffects.${doc.name}`;
+      const setup = effectApiSetup(doc, target, classRef);
+      if (/^add/.test(methodName)) {
+        const optionsName = isArrayMethodParam(method) || doc.name.endsWith("Collection") || methodName === "addMany" ? "items" : "options";
+        const optionsValue = optionsName === "items"
+          ? `[\n${indentCode(effectExampleObject(doc.name, 1), 2)},\n${indentCode(effectExampleObject(doc.name, 2), 2)}\n]`
+          : effectExampleObject(doc.name);
+        return `${setup}\nconst ${optionsName} = ${optionsValue}\n\n${target}.${methodName}(${effectAddArgs(doc, methodName, optionsName)})`;
+      }
+      if (/^update/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\nconst id = ${target}.add(${effectAddArgs(doc, "add", "options")})\nconst nextOptions = ${effectUpdateExampleObject(doc.name)}\n\n${target}.${methodName}(id, nextOptions)`;
+      }
+      if (/^restart|^play|^pause|^stop/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\nconst id = ${target}.add(${effectAddArgs(doc, "add", "options")})\n\n${target}.${methodName}(id)`;
+      }
+      if (/^show/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\nconst id = ${target}.add(${effectAddArgs(doc, "add", "options")})\n\n${target}.${methodName}(id, true)`;
+      }
+      if (/^getAllIds/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\n${target}.add(${effectAddArgs(doc, "add", "options")})\n\nconst ids = ${target}.${methodName}()`;
+      }
+      if (/^get/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\nconst id = ${target}.add(${effectAddArgs(doc, "add", "options")})\n\nconst result = ${target}.${methodName}(id)`;
+      }
+      if (/^remove/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\nconst id = ${target}.add(${effectAddArgs(doc, "add", "options")})\n\n${target}.${methodName}(id)`;
+      }
+      if (/^clear|^destroy/.test(methodName)) {
+        return `${setup}\nconst options = ${effectExampleObject(doc.name)}\n${target}.add(${effectAddArgs(doc, "add", "options")})\n\n${target}.${methodName}()`;
+      }
+      return `${setup}\n${requiredArgs ? `${target}.${methodName}(${requiredArgs})` : `${target}.${methodName}()`}`;
+    }
+    if (doc.group === "weather") {
+      const target = effectApiVariableName(doc.name);
+      const classRef = `window.FastX.SpecialEffects.${doc.name}`;
+      const setup = `${viewerExampleLine()}\nconst ${target} = new ${classRef}(viewer)`;
+      if (/^enable/.test(methodName)) {
+        return `${viewerExampleLine()}\nconst ${target} = new ${classRef}(viewer, ${weatherOptionsObject(doc.name)})\n\n${target}.enable()`;
+      }
+      if (/^update/.test(methodName)) {
+        return `${setup}\n\n${target}.update(${weatherOptionsObject(doc.name).replace(/,\n  autoStart: true/, "")})`;
+      }
+      if (/^show/.test(methodName)) return `${setup}\n${target}.enable()\n\n${target}.show(true)`;
+      if (/^disable|^destroy/.test(methodName)) return `${setup}\n${target}.enable()\n\n${target}.${methodName}()`;
+      if (/^getStage/.test(methodName)) return `${setup}\n${target}.enable()\n\nconst stage = ${target}.getStage()`;
+      return `${setup}\n${requiredArgs ? `${target}.${methodName}(${requiredArgs})` : `${target}.${methodName}()`}`;
     }
     if (doc.group === "plugin" || doc.group === "tools") {
       if (doc.methods.length === 1 && methodNameOf(doc.methods[0]) === doc.name) {
