@@ -18,11 +18,13 @@ const groupLabels = {
   event: '事件',
   draw: '标绘',
   measure: '测量',
+  effects: '特效',
+  weather: '气象',
   plugin: '插件',
   tools: '工具',
 }
 
-const groupOrder = ['mount', 'layer', 'coordinates', 'event', 'draw', 'measure', 'plugin', 'tools']
+const groupOrder = ['mount', 'layer', 'coordinates', 'event', 'draw', 'measure', 'effects', 'weather', 'plugin', 'tools']
 
 const preferredOrder = {
   mount: [
@@ -73,8 +75,55 @@ const preferredOrder = {
     'Path',
     'PolylineVolume',
     'PolylineVolumeCollection',
+    'Overlay',
   ],
   measure: ['Quantitative', 'MeasureType', 'AreaManager', 'Heatmap', 'PointAggregation', 'Trajectory', 'Mover'],
+  effects: [
+    'SpecialEffects',
+    'RadiationCircle',
+    'RadiationCircleCollection',
+    'CircleDiffusion',
+    'ElectronicFence',
+    'ElectronicFenceCollection',
+    'PolygonDiffusionWall',
+    'PolygonDiffusionWallCollection',
+    'RadarEmissionWave',
+    'RadarEmissionWaveCollection',
+    'HemisphereRadarScan',
+    'HemisphereRadarScanCollection',
+    'SingleViewFrustum',
+    'SingleViewFrustumCollection',
+    'AirRadar',
+    'AirRadarCollection',
+    'SectorDiffusionRadar',
+    'SectorDiffusionRadarCollection',
+    'CircleDiffusionRadar',
+    'CircleDiffusionRadarCollection',
+    'AimEffect',
+    'AimEffectCollection',
+    'ConeEffect',
+    'ConeEffectCollection',
+    'ConicalScanner',
+    'ConicalScannerCollection',
+    'DoubleViewFrustum',
+    'DoubleViewFrustumCollection',
+    'ParabolaRadar',
+    'ParabolaRadarCollection',
+    'RingConeScanner',
+    'RingConeScannerCollection',
+    'RingRadar',
+    'RingRadarCollection',
+    'ScanRadar',
+    'ScanRadarCollection',
+    'SquareConeScanner',
+    'SquareConeScannerCollection',
+    'FireRangeEffect',
+    'FireRangeEffectCollection',
+    'ParticleSystemEffect',
+    'ExplosionEffect',
+    'FrameAnimationEffect',
+  ],
+  weather: ['GlobalRain', 'GlobalSnow', 'GlobalFog'],
   plugin: [
     'ensureVendorPlugins',
     'ensureTurf',
@@ -88,6 +137,8 @@ const preferredOrder = {
   tools: [
     'Utils',
     'Types',
+    'EntityFocusEffect',
+    'entityFocusEffect',
     'defaultShapeParamsForType',
     'parseShapeTypeKey',
     'resolvePolylineCartesians',
@@ -136,6 +187,8 @@ const apiMeta = {
   VENDOR_MANIFEST: ['插件清单', 'fastx-sdk 内置 vendor 插件清单。'],
   Utils: ['工具集', 'FastX 工具函数集合。'],
   Types: ['类型集合', 'FastX 类型导出的统一入口，主要用于 TypeScript 类型引用。'],
+  EntityFocusEffect: ['实体定位聚焦效果', '基础工具 API，用于快速飞行定位到实体或坐标，并叠加临时聚焦扩散圈。'],
+  entityFocusEffect: ['实体定位聚焦实例', 'FastX.Utils 中内置的实体聚焦工具实例，可直接调用 focus、update、show、remove 等方法。'],
   defaultShapeParamsForType: ['默认体线形状参数', '获取 PolylineVolume 指定形状的默认参数。'],
   parseShapeTypeKey: ['解析体线形状', '把字符串形状 key 转成 PolylineVolume 支持的形状类型。'],
   resolvePolylineCartesians: ['解析线坐标', '把线坐标输入统一转换为 Cesium.Cartesian3 数组。'],
@@ -153,6 +206,8 @@ const apiMeta = {
 }
 
 const drawNames = new Set(preferredOrder.draw)
+const effectNames = new Set(preferredOrder.effects)
+const weatherNames = new Set(preferredOrder.weather)
 for (const name of preferredOrder.draw) {
   const cn = {
     Point: '点',
@@ -161,6 +216,7 @@ for (const name of preferredOrder.draw) {
     LabelCollection: '批量标签',
     Billboard: '图标',
     BillboardCollection: '批量图标',
+    Overlay: '标牌',
     PolyLine: '线',
     PolyLineCollection: '批量线',
     Polygon: '面',
@@ -196,6 +252,77 @@ for (const name of preferredOrder.draw) {
     isCollection
       ? `${cn} API，用于批量创建、更新、查询、显隐和清理对应图元集合。`
       : `${cn} API，用于创建、更新、查询、显隐和清理单体标绘对象。`,
+  ]
+}
+
+const effectCnMap = {
+  SpecialEffects: '特效集合',
+  RadiationCircle: '辐射圈',
+  RadiationCircleCollection: '批量辐射圈',
+  CircleDiffusion: '圆扩散',
+  ElectronicFence: '电子围栏',
+  ElectronicFenceCollection: '批量电子围栏',
+  PolygonDiffusionWall: '多边形扩散墙',
+  PolygonDiffusionWallCollection: '批量多边形扩散墙',
+  RadarEmissionWave: '雷达发射波',
+  RadarEmissionWaveCollection: '批量雷达发射波',
+  HemisphereRadarScan: '半球雷达扫描',
+  HemisphereRadarScanCollection: '批量半球雷达扫描',
+  SingleViewFrustum: '单视椎体',
+  SingleViewFrustumCollection: '批量单视椎体',
+  AirRadar: '空中雷达',
+  AirRadarCollection: '批量空中雷达',
+  SectorDiffusionRadar: '扩散雷达扇形',
+  SectorDiffusionRadarCollection: '批量扩散雷达扇形',
+  CircleDiffusionRadar: '扩散雷达圆形',
+  CircleDiffusionRadarCollection: '批量扩散雷达圆形',
+  AimEffect: '瞄准特效',
+  AimEffectCollection: '批量瞄准特效',
+  ConeEffect: '圆锥特效',
+  ConeEffectCollection: '批量圆锥特效',
+  ConicalScanner: '锥体扫描',
+  ConicalScannerCollection: '批量锥体扫描',
+  DoubleViewFrustum: '双面视锥体',
+  DoubleViewFrustumCollection: '批量双面视锥体',
+  ParabolaRadar: '抛物面雷达',
+  ParabolaRadarCollection: '批量抛物面雷达',
+  RingConeScanner: '双圆锥环面扫描体',
+  RingConeScannerCollection: '批量双圆锥环面扫描体',
+  RingRadar: '环形雷达扫描',
+  RingRadarCollection: '批量环形雷达扫描',
+  ScanRadar: '扫描雷达',
+  ScanRadarCollection: '批量扫描雷达',
+  SquareConeScanner: '四方锥体扫描',
+  SquareConeScannerCollection: '批量四方锥体扫描',
+  FireRangeEffect: '火力范围特效',
+  FireRangeEffectCollection: '批量火力范围特效',
+  ParticleSystemEffect: '粒子系统特效',
+  ExplosionEffect: '爆炸效果',
+  FrameAnimationEffect: '帧动画特效',
+}
+
+for (const [name, cn] of Object.entries(effectCnMap)) {
+  const isCollection = name.endsWith('Collection')
+  apiMeta[name] = [
+    cn,
+    name === 'SpecialEffects'
+      ? 'FastX 特效模块集合，统一导出空间特效、雷达扫描、视锥体、粒子和帧动画等能力。'
+      : isCollection
+        ? `${cn} API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。`
+        : `${cn} API，用于创建、更新、查询、显隐和清理单体特效。`,
+  ]
+}
+
+const weatherCnMap = {
+  GlobalRain: '全局雨',
+  GlobalSnow: '全局雪',
+  GlobalFog: '全局大雾',
+}
+
+for (const [name, cn] of Object.entries(weatherCnMap)) {
+  apiMeta[name] = [
+    cn,
+    `${cn} API，用于在 Cesium 场景中启用、禁用、更新和销毁全局气象后处理效果。`,
   ]
 }
 
@@ -265,7 +392,10 @@ function collectImportMap(file) {
   return map
 }
 
-function collectLocalTypeExports(file) {
+function collectLocalTypeExports(file, visited = new Set()) {
+  const full = path.normalize(file)
+  if (visited.has(full)) return new Map()
+  visited.add(full)
   const source = readSource(file)
   const types = new Map()
   for (const stmt of source.statements) {
@@ -280,6 +410,20 @@ function collectLocalTypeExports(file) {
       for (const decl of stmt.declarationList.declarations) {
         if (ts.isIdentifier(decl.name) && /^[A-Z]/.test(decl.name.text)) {
           types.set(decl.name.text, { file, imported: decl.name.text })
+        }
+      }
+    }
+    if (ts.isExportDeclaration(stmt) && stmt.isTypeOnly && stmt.moduleSpecifier) {
+      const target = resolveModule(file, stmt.moduleSpecifier.text)
+      if (!target) continue
+      if (!stmt.exportClause) {
+        for (const [name, record] of collectLocalTypeExports(target, visited)) types.set(name, record)
+        continue
+      }
+      if (ts.isNamedExports(stmt.exportClause)) {
+        for (const el of stmt.exportClause.elements) {
+          const name = el.name.text
+          types.set(name, { file: target, imported: el.propertyName?.text ?? name })
         }
       }
     }
@@ -472,6 +616,7 @@ const parameterDescriptions = {
   lng: '经度，单位为度。',
   lat: '纬度，单位为度。',
   height: '高度，单位为米。',
+  maxHeight: '最大视角高度，单位为米；超过该高度时自动隐藏标牌。',
   altitude: '高度，单位为米。',
   position: '对象所在位置，通常由经度、纬度和高度组成。',
   positions: '对象的坐标点集合，用于线、面、墙体、走廊等多点对象。',
@@ -517,6 +662,7 @@ const parameterDescriptions = {
   font: '文字字体样式。',
   description: '对象说明信息，通常用于实体详情或业务备注。',
   style: '样式配置。',
+  viewHeight: '视角高度显隐配置，用于相机过高时自动隐藏标牌。',
   type: '类型标识，用于区分处理方式或业务类别。',
   name: '名称。',
   value: '需要设置的值。',
@@ -640,6 +786,93 @@ const parameterDescriptions = {
   far: '远距离阈值。',
   nearValue: '近距离对应值。',
   farValue: '远距离对应值。',
+  viewer: 'Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。',
+  visible: '是否显示当前特效。',
+  position: '特效中心点或发射点坐标，支持 Cesium.Cartesian3、经纬高数组或经纬高对象。',
+  positions: '特效顶点坐标集合，支持 Cesium.Cartesian3、经纬高数组或经纬高对象。',
+  source: '特效起点坐标。',
+  target: '特效目标点坐标。',
+  center: '特效中心点坐标。',
+  color: '特效主体颜色。',
+  fillColor: '特效填充面颜色。',
+  outlineColor: '特效轮廓线颜色。',
+  lineColor: '特效线框颜色。',
+  scanColor: '扫描光束或扫描面的颜色。',
+  lineWidth: '轮廓线宽度，单位为像素。',
+  segments: '几何分段数，数值越大弧线和曲面越平滑。',
+  heading: '航向角，单位为度。',
+  pitch: '俯仰角，单位为度。',
+  roll: '翻滚角，单位为度。',
+  scale: '整体缩放比例。',
+  length: '特效探测长度或视锥深度，单位为米。',
+  radius: '半径，单位为米。',
+  maxRadius: '最大扩散半径，单位为米。',
+  minRadius: '初始扩散半径，单位为米。',
+  bottomRadius: '锥体底面半径，单位为米。',
+  topRadius: '锥体顶面半径，单位为米。',
+  innerRadius: '内部辅助环半径，单位为米。',
+  outerRadius: '外部半径，单位为米。',
+  height: '特效高度，单位为米。',
+  width: '宽度，单位为米或像素，按对应 API 说明确定。',
+  depth: '深度，单位为米。',
+  angle: '张角或扫描角度，单位为度。',
+  startAngle: '起始角度，单位为度。',
+  endAngle: '结束角度，单位为度。',
+  startAzimuth: '起始方位角，单位为度。',
+  endAzimuth: '结束方位角，单位为度。',
+  fov: '视场角，单位为度。',
+  nearDistance: '近裁剪距离或近端距离，单位为米。',
+  farDistance: '远裁剪距离或远端距离，单位为米。',
+  fill: '是否渲染半透明填充面。',
+  show: '是否显示当前特效。',
+  maximumHeights: '墙体每个顶点的最大高度数组，单位为米。',
+  minimumHeights: '墙体每个顶点的最小高度数组，单位为米。',
+  image: '粒子或动态材质使用的图片资源地址。',
+  framePath: '帧动画图片目录，目录下图片按编号顺序组织。',
+  frameCount: '帧动画图片总数量。',
+  extension: '帧动画图片扩展名。',
+  startIndex: '帧动画起始图片编号。',
+  filePrefix: '帧动画图片文件名前缀。',
+  fileSuffix: '帧动画图片文件名后缀。',
+  framePadding: '帧动画图片编号补零位数。',
+  autoPlay: '创建后是否自动播放动画。',
+  lifeTime: '爆炸等一次性特效的总生命周期，单位为秒。',
+  emissionRate: '粒子系统每秒发射的粒子数量。',
+  emitter: '粒子发射器配置。',
+  offset: '发射器局部偏移，单位为米。',
+  bursts: '粒子系统生命周期内的爆发配置。',
+  startScale: '粒子出生时的缩放比例。',
+  endScale: '粒子消失时的缩放比例。',
+  startColor: '粒子出生时颜色。',
+  endColor: '粒子消失时颜色。',
+  imageSize: '粒子图片固定尺寸，单位为像素。',
+  minImageSize: '粒子图片最小尺寸，单位为像素。',
+  maxImageSize: '粒子图片最大尺寸，单位为像素。',
+  minSpeed: '粒子最小速度，单位为米/秒。',
+  maxSpeed: '粒子最大速度，单位为米/秒。',
+  lifetime: '粒子系统发射持续时间，单位为秒。',
+  particleLife: '单个粒子的固定生命周期，单位为秒。',
+  minLife: '单个粒子的最小生命周期，单位为秒。',
+  maxLife: '单个粒子的最大生命周期，单位为秒。',
+  mass: '粒子质量，单位为千克。',
+  minMass: '粒子最小质量，单位为千克。',
+  maxMass: '粒子最大质量，单位为千克。',
+  visibleDistance: '粒子系统可见距离范围。',
+  updateCallback: '粒子逐帧更新回调，可用于添加重力、风向等外力。',
+  tiltAngle: '雨丝倾斜角度。',
+  rainSize: '雨丝尺寸，数值越大雨丝越明显。',
+  rainSpeed: '雨丝移动速度。',
+  snowSize: '雪花尺寸，数值越大雪花越明显。',
+  snowSpeed: '雪花下落速度。',
+  fogDensity: '雾效浓度。',
+  autoStart: '创建实例后是否立即启用效果。',
+  entity: '需要聚焦的 Cesium Entity。',
+  entityId: '需要聚焦的实体 id。',
+  ringCount: '聚焦圈数量。',
+  flyTo: '是否同步执行相机飞行。',
+  range: '相机飞行后距离目标中心的范围，单位为米。',
+  flyDuration: '相机飞行时长，单位为秒。',
+  removeOnComplete: '动画结束后是否自动移除临时聚焦效果。',
 }
 
 function parameterLeafName(name) {
@@ -787,6 +1020,109 @@ function collectMethods(apiName, record) {
   return []
 }
 
+function createSyntheticMethod(name, params, returnType, description) {
+  return { name, params, returnType, description }
+}
+
+function createSyntheticParam(name, type, required = true, description = '') {
+  return {
+    name,
+    type,
+    optional: !required,
+    defaultValue: required ? '必填' : '-',
+    description,
+  }
+}
+
+function isWeatherApi(name) {
+  return weatherNames.has(name)
+}
+
+function isSpecialEffectApi(name) {
+  return effectNames.has(name) || isWeatherApi(name)
+}
+
+function addMethodIfMissing(methods, method) {
+  if (!methods.some((item) => item.name === method.name)) methods.push(method)
+}
+
+function methodRank(method) {
+  const params = method.params ?? []
+  const names = params.map((param) => param.name).join(',')
+  if (names.includes('viewerOrOptions') || names.includes('maybeOptions')) return 0
+  if (params.some((param) => param.name === 'viewer') && params.some((param) => param.name === 'options')) return 3
+  if (params.length === 1 && params[0].name === 'options') return 2
+  return 1
+}
+
+function dedupeMethods(methods) {
+  const map = new Map()
+  for (const method of methods) {
+    const current = map.get(method.name)
+    if (!current || methodRank(method) > methodRank(current)) map.set(method.name, method)
+  }
+  return [...map.values()]
+}
+
+function firstTypeBySuffix(types, suffix) {
+  return types.find((type) => type.endsWith(suffix))
+}
+
+function defaultAddType(apiName, types) {
+  return firstTypeBySuffix(types, 'AddOptions') ?? `${apiName.replace(/Collection$/, '')}AddOptions`
+}
+
+function defaultUpdateType(apiName, types) {
+  return firstTypeBySuffix(types, 'UpdateOptions') ?? `${apiName.replace(/Collection$/, '')}UpdateOptions`
+}
+
+function enrichSpecialEffectMethods(apiName, methods, types) {
+  if (!isSpecialEffectApi(apiName) || apiName === 'SpecialEffects' || apiName === 'entityFocusEffect') return methods
+  const enriched = [...methods]
+  const addType = defaultAddType(apiName, types)
+  const updateType = defaultUpdateType(apiName, types)
+  const isCollection = apiName.endsWith('Collection')
+
+  if (apiName === 'GlobalRain' || apiName === 'GlobalSnow' || apiName === 'GlobalFog') {
+    const optionType = firstTypeBySuffix(types, 'Options') ?? `${apiName}Options`
+    addMethodIfMissing(enriched, createSyntheticMethod('enable', [], 'Cesium.PostProcessStage', '启用全局气象特效。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('disable', [], 'void', '禁用全局气象特效但保留内部 Stage。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('show', [createSyntheticParam('visible', 'boolean', true)], 'void', '设置全局气象特效显隐。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('update', [createSyntheticParam('options', `Omit<${optionType}, "autoStart">`, true)], 'void', '更新全局气象特效参数。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('getStage', [], 'Cesium.PostProcessStage | null', '获取当前后处理 Stage。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('destroy', [], 'void', '移除并销毁全局气象特效。'))
+    return enriched
+  }
+
+  if (apiName === 'FrameAnimationEffect') {
+    addMethodIfMissing(enriched, createSyntheticMethod('add', [createSyntheticParam('viewer', 'Cesium.Viewer'), createSyntheticParam('options', addType)], 'string | undefined', '新增帧动画特效。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('addMany', [createSyntheticParam('viewer', 'Cesium.Viewer'), createSyntheticParam('options', `${addType}[]`)], 'string[]', '批量新增帧动画特效。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('update', [createSyntheticParam('id', 'string'), createSyntheticParam('options', updateType)], 'boolean', '更新指定帧动画特效。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('play', [createSyntheticParam('id', 'string')], 'boolean', '播放或继续播放指定帧动画。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('pause', [createSyntheticParam('id', 'string')], 'boolean', '暂停指定帧动画。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('stop', [createSyntheticParam('id', 'string')], 'boolean', '停止指定帧动画并回到第一帧。'))
+  } else if (apiName === 'ParticleSystemEffect' || apiName === 'ExplosionEffect') {
+    addMethodIfMissing(enriched, createSyntheticMethod('add', [createSyntheticParam('viewer', 'Cesium.Viewer'), createSyntheticParam('options', addType)], 'string | undefined', `新增${apiMeta[apiName]?.[0] ?? apiName}。`))
+    addMethodIfMissing(enriched, createSyntheticMethod('addMany', [createSyntheticParam('viewer', 'Cesium.Viewer'), createSyntheticParam('options', `${addType}[]`)], 'string[]', `批量新增${apiMeta[apiName]?.[0] ?? apiName}。`))
+    addMethodIfMissing(enriched, createSyntheticMethod('update', [createSyntheticParam('id', 'string'), createSyntheticParam('options', updateType)], 'boolean', `更新指定${apiMeta[apiName]?.[0] ?? apiName}。`))
+    addMethodIfMissing(enriched, createSyntheticMethod('restart', [createSyntheticParam('id', 'string')], 'boolean', '重新播放非循环粒子特效。'))
+  } else if (apiName === 'CircleDiffusion') {
+    addMethodIfMissing(enriched, createSyntheticMethod('add', [createSyntheticParam('options', addType)], 'string', '新增圆扩散特效。'))
+    addMethodIfMissing(enriched, createSyntheticMethod('update', [createSyntheticParam('id', 'string'), createSyntheticParam('options', updateType)], 'boolean', '更新指定圆扩散特效。'))
+  } else {
+    addMethodIfMissing(enriched, createSyntheticMethod('add', [createSyntheticParam('viewer', 'Cesium.Viewer'), createSyntheticParam('options', isCollection ? `${addType}[]` : addType)], isCollection ? 'string[]' : 'string | undefined', `新增${apiMeta[apiName]?.[0] ?? apiName}。`))
+    addMethodIfMissing(enriched, createSyntheticMethod('update', [createSyntheticParam('id', 'string'), createSyntheticParam('options', updateType)], 'boolean', `更新指定${apiMeta[apiName]?.[0] ?? apiName}。`))
+  }
+
+  addMethodIfMissing(enriched, createSyntheticMethod('show', [createSyntheticParam('id', 'string'), createSyntheticParam('visible', 'boolean')], 'boolean', `设置指定${apiMeta[apiName]?.[0] ?? apiName}显隐。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('get', [createSyntheticParam('id', 'string')], 'Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined', `获取指定${apiMeta[apiName]?.[0] ?? apiName}实例。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('getAllIds', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'string[]', '获取当前管理的全部特效 id。'))
+  addMethodIfMissing(enriched, createSyntheticMethod('remove', [createSyntheticParam('id', 'string')], 'boolean', `删除指定${apiMeta[apiName]?.[0] ?? apiName}。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('clear', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'void', '清空当前类管理的全部特效。'))
+  addMethodIfMissing(enriched, createSyntheticMethod('destroy', [], 'void', '销毁当前类管理的全部特效并释放资源。'))
+  return dedupeMethods(enriched)
+}
+
 function collectFastXObjectMethod(name) {
   const source = readSource(indexFile)
   const methods = []
@@ -825,10 +1161,23 @@ function membersFromPropertySignatures(members, source) {
 
 function getReferencedTypeName(node) {
   if (!node) return null
+  if (ts.isIdentifier(node)) return node.text
+  if (ts.isPropertyAccessExpression(node)) return node.name.text
   if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) return node.typeName.text
   if (ts.isArrayTypeNode(node)) return getReferencedTypeName(node.elementType)
   if (ts.isTypeOperatorNode(node)) return getReferencedTypeName(node.type)
   return null
+}
+
+function omittedKeysFromType(typeName) {
+  const omitted = new Set()
+  const match = String(typeName || '').match(/\bOmit\s*<[^,]+,\s*([^>]+)>/)
+  if (!match) return omitted
+  for (const item of match[1].split('|')) {
+    const key = item.trim().replace(/^['"`]|['"`]$/g, '')
+    if (key) omitted.add(key)
+  }
+  return omitted
 }
 
 function collectTypeMembers(typeName, typeExports, visited = new Set()) {
@@ -864,7 +1213,27 @@ function collectTypeMembers(typeName, typeExports, visited = new Set()) {
     return refName ? collectTypeMembers(refName, typeExports, visited) : []
   }
   if (!ts.isInterfaceDeclaration(decl)) return []
-  return membersFromPropertySignatures(decl.members, source)
+  const rows = []
+  const seen = new Set()
+  for (const clause of decl.heritageClauses ?? []) {
+    for (const item of clause.types ?? []) {
+      const refName = getReferencedTypeName(item.expression)
+      if (!refName) continue
+      for (const member of collectTypeMembers(refName, typeExports, new Set(visited))) {
+        const key = `${member.name}:${member.type}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        rows.push(member)
+      }
+    }
+  }
+  for (const member of membersFromPropertySignatures(decl.members, source)) {
+    const key = `${member.name}:${member.type}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    rows.push(member)
+  }
+  return rows
 }
 
 function normalizeTypeName(typeName) {
@@ -888,6 +1257,7 @@ function collectExpandedTypeRows(prefix, typeName, typeExports, depth = 0, visit
   visited.add(key)
 
   const rows = []
+  const omittedKeys = omittedKeysFromType(normalized)
   if (/\{\s*id\s*:\s*string\s*\}/.test(normalized)) {
     rows.push({
       name: `${prefix}.id`,
@@ -904,6 +1274,7 @@ function collectExpandedTypeRows(prefix, typeName, typeExports, depth = 0, visit
 
   for (const typeName of typeNames) {
     for (const member of collectTypeMembers(typeName, typeExports)) {
+      if (omittedKeys.has(member.name)) continue
       const name = `${prefix}.${member.name}`
       rows.push({
         name,
@@ -919,10 +1290,12 @@ function collectExpandedTypeRows(prefix, typeName, typeExports, depth = 0, visit
 
 function relatedTypes(apiName, typeExports) {
   const result = []
+  const baseName = apiName.replace(/Collection$/, '')
   for (const name of typeExports.keys()) {
     if (
       name === apiName ||
       name.includes(apiName) ||
+      name.includes(baseName) ||
       name.startsWith(`Add${apiName}`) ||
       name.startsWith(`Update${apiName}`) ||
       (apiName.endsWith('Collection') && name.includes(apiName.replace(/Collection$/, 'Collection')))
@@ -934,18 +1307,19 @@ function relatedTypes(apiName, typeExports) {
 }
 
 function normalizeParameterRows(rows) {
-  const requiredNames = rows.filter((row) => row.defaultValue === '必填').map((row) => row.name)
   return rows.map((row) => {
-    const hasRequiredChild = requiredNames.some((name) => name.startsWith(`${row.name}.`))
+    const isDefaultShow =
+      row.name === 'add.options.show' && /默认\s*true/i.test(`${row.description ?? ''} ${row.defaultValue ?? ''}`)
     return {
       ...row,
-      defaultValue: row.defaultValue === '必填' || hasRequiredChild ? '必填' : '-',
+      defaultValue: row.defaultValue === '必填' ? '必填' : isDefaultShow ? 'true' : '-',
       description: describeParameter(row.name, row.type, row.description),
     }
   })
 }
 
 function parameterRows(apiName, methods, types, typeExports) {
+  if (apiName === 'SpecialEffects') return []
   const rows = []
   const seen = new Set()
 
@@ -989,10 +1363,13 @@ function parameterRows(apiName, methods, types, typeExports) {
 }
 
 function groupFor(name) {
+  if (name === 'EntityFocusEffect' || name === 'entityFocusEffect') return 'tools'
   for (const [groupId, names] of Object.entries(preferredOrder)) {
     if (names.includes(name)) return groupId
   }
   if (drawNames.has(name)) return 'draw'
+  if (weatherNames.has(name) || /^Global(Rain|Snow|Fog)/.test(name)) return 'weather'
+  if (effectNames.has(name) || /Effect|Radar|Scanner|Frustum|Fence|Diffusion|Radiation|Particle|Explosion|FrameAnimation/.test(name)) return 'effects'
   return 'tools'
 }
 
@@ -1008,8 +1385,29 @@ function usageFor(name, groupId) {
   if (name === 'Layer') return "const layer = new FastX.Layer()\nawait layer.initMap('map', { mapName: 'mapDemo' })"
   if (drawNames.has(name)) {
     const addMethod = name.endsWith('Collection') ? `add${name.replace('Collection', 's')}` : 'add'
-    return `const viewer = window.FastX.getViewer('mapDemo')\nwindow.FastX.${name}.${addMethod}(viewer, options)`
+    return `const viewer = window.FastX.getLayer().viewer\nwindow.FastX.${name}.${addMethod}(viewer, options)`
   }
+  if (groupId === 'effects') {
+    const baseName = name.replace(/Collection$/, '')
+    const isCollection = name.endsWith('Collection')
+    const constructorArgs = isCollection ? '' : 'viewer'
+    const addArgs = isCollection ? 'viewer, options' : 'options'
+    let options = "{ position: { longitude: 116.391, latitude: 39.907, height: 120 } }"
+    if (baseName === 'ElectronicFence') {
+      options = "{ positions: [{ longitude: 116.391, latitude: 39.907, height: 0 }, { longitude: 116.421, latitude: 39.917, height: 0 }, { longitude: 116.411, latitude: 39.887, height: 0 }], height: 500 }"
+    }
+    if (baseName === 'PolygonDiffusionWall') {
+      options = "{ center: { longitude: 116.391, latitude: 39.907, height: 0 }, radius: 1000, edge: 5, height: 200, speed: 15, minRadius: 50 }"
+    }
+    if (baseName === 'RadarEmissionWave') {
+      options = "{ position: { longitude: 116.391, latitude: 39.907, height: 1200 }, color: '#00FFFF', length: 500000, bottomRadius: 50000 }"
+    }
+    if (baseName === 'HemisphereRadarScan') {
+      options = "{ position: { longitude: 116.391, latitude: 39.907, height: 0 }, radius: 1000, color: '#00ff0038', scanColor: '#00ff0038', speed: 1 }"
+    }
+    return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}(${constructorArgs})\nconst options = ${options}\neffect.add(${addArgs})`
+  }
+  if (groupId === 'weather') return `const viewer = window.FastX.getLayer().viewer\nconst weather = new window.FastX.SpecialEffects.${name}(viewer)\nweather.enable()`
   if (groupId === 'plugin' || groupId === 'tools') return `${name}()`
   return `window.FastX.${name}`
 }
@@ -1043,8 +1441,8 @@ function buildDocs() {
     const groupId = groupFor(name)
     const meta = apiMeta[name] ?? [name, `${name} 是 fastx-sdk 对外暴露的 API。`]
     const record = records.get(name) ?? (entryExports.types.has(name) ? entryExports.types.get(name) : null)
-    const methods = collectMethods(name, record)
     const types = relatedTypes(name, entryExports.types)
+    const methods = enrichSpecialEffectMethods(name, collectMethods(name, record), types)
     const params = parameterRows(name, methods, types, entryExports.types)
     groupMap.get(groupId).items.push({
       id: name,
@@ -1068,7 +1466,7 @@ function buildDocs() {
     generatedAt: new Date().toISOString(),
     source: 'src/FastX/build/entry.ts',
     packageNamedExports: [...packageNames].sort(),
-    groups: groups.filter((group) => group.items.length),
+    groups: groups.filter((group) => group.items.length || group.id === 'weather'),
   }
 }
 
