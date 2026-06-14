@@ -457,73 +457,80 @@
   },
   {
     "key": "special-effects-1",
-    "title": "粒子特效（飞机尾焰）",
-    "fileName": "lztxfjwy",
-    "componentPath": "./lztxfjwy.vue",
+    "title": "爆炸",
+    "fileName": "sfx-explosion",
+    "componentPath": "./sfx-explosion.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "special-effects-2",
-    "title": "粒子特效（爆炸效果）",
-    "fileName": "lztxbzxg",
-    "componentPath": "./lztxbzxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "帧动画",
+    "fileName": "sfx-frame-animation",
+    "componentPath": "./sfx-frame-animation.vue",
+    "imageUrl": "../../assets/images/帧动画.png"
   },
   {
     "key": "special-effects-3",
-    "title": "粒子特效（局部下雨效果）",
-    "fileName": "lztxjbxyxg",
-    "componentPath": "./lztxjbxyxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "辐射圈",
+    "fileName": "sfx-radiation-circle",
+    "componentPath": "./sfx-radiation-circle.vue",
+    "imageUrl": "../../assets/images/辐射圈.png"
   },
   {
     "key": "special-effects-4",
-    "title": "粒子特效（局部下雪效果）",
-    "fileName": "lztxjbxxxg",
-    "componentPath": "./lztxjbxxxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "圆扩散",
+    "fileName": "sfx-circle-diffusion",
+    "componentPath": "./sfx-circle-diffusion.vue",
+    "imageUrl": "../../assets/images/圆扩散.png"
   },
   {
     "key": "special-effects-5",
-    "title": "粒子特效（局部起雾效果）",
-    "fileName": "lztxjbqwxg",
-    "componentPath": "./lztxjbqwxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "电子围栏",
+    "fileName": "sfx-electronic-fence",
+    "componentPath": "./sfx-electronic-fence.vue",
+    "imageUrl": "../../assets/images/电子围栏.png"
   },
   {
     "key": "special-effects-6",
-    "title": "粒子特效（局部闪电效果）",
-    "fileName": "lztxjbsdxg",
-    "componentPath": "./lztxjbsdxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "多边形扩散墙",
+    "fileName": "sfx-polygon-diffusion-wall",
+    "componentPath": "./sfx-polygon-diffusion-wall.vue",
+    "imageUrl": "../../assets/images/多边形扩散墙.png"
   },
   {
     "key": "special-effects-7",
-    "title": "水波纹效果",
-    "fileName": "sbwxg",
-    "componentPath": "./sbwxg.vue",
+    "title": "单视椎体",
+    "fileName": "sfx-single-view-frustum",
+    "componentPath": "./sfx-single-view-frustum.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
     "key": "special-effects-8",
-    "title": "电子围栏效果",
-    "fileName": "dzwlxg",
-    "componentPath": "./dzwlxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "雷达发射波",
+    "fileName": "sfx-radar-emission-wave",
+    "componentPath": "./sfx-radar-emission-wave.vue",
+    "imageUrl": "../../assets/images/雷达发射波.png"
   },
   {
     "key": "special-effects-9",
-    "title": "雷达扫描效果",
-    "fileName": "ldsmxg",
-    "componentPath": "./ldsmxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "半球雷达扫描",
+    "fileName": "sfx-hemisphere-radar-scan",
+    "componentPath": "./sfx-hemisphere-radar-scan.vue",
+    "imageUrl": "../../assets/images/半球雷达扫描.png"
   },
   {
     "key": "special-effects-10",
-    "title": "动态扩散点效果",
-    "fileName": "dtksdxg",
-    "componentPath": "./dtksdxg.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "空中扫描雷达",
+    "fileName": "sfx-air-radar",
+    "componentPath": "./sfx-air-radar.vue",
+    "imageUrl": "../../assets/images/空中扫描雷达.png"
+  },
+  {
+    "key": "special-effects-11",
+    "title": "扇弧形雷达扫描",
+    "fileName": "sfx-sector-arc-radar-scan",
+    "componentPath": "./sfx-sector-arc-radar-scan.vue",
+    "imageUrl": "../../assets/images/扇弧形雷达扫描.png"
   },
   {
     "key": "meteorology-hydrology-1",

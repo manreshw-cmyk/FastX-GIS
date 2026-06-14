@@ -1,17 +1,19 @@
 /**
- * 圆扩散特效。
- * 使用 Cesium PostProcessStage 在地表生成动态扩散扫描圈。
+ * 圆扩散。
+ * 使用贴地 Ellipse + 自定义材质，在世界坐标系下保持固定米制半径，不随相机缩放变化。
  */
 import * as Cesium from "cesium";
 import {
   SpecialEffectsColorInput,
   SpecialEffectsPositionInput,
   createSpecialEffectId,
-  destroyPostProcessStage,
+  isValidViewer,
+  removeEntity,
   requestSceneRender,
-  toCartographic,
+  toCartesian3,
   toCesiumColor,
 } from "../shared";
+import { CircleDiffusionMaterialProperty, registerCircleDiffusionMaterial } from "./material";
 
 /** 圆扩散新增参数。 */
 export interface CircleDiffusionAddOptions {
@@ -33,50 +35,92 @@ export interface CircleDiffusionAddOptions {
 export type CircleDiffusionUpdateOptions = Partial<Omit<CircleDiffusionAddOptions, "id">>;
 
 interface CircleDiffusionRecord {
-  stage: Cesium.PostProcessStage;
-  center: Cesium.Cartographic;
-  color: Cesium.Color;
+  viewer: Cesium.Viewer;
+  entity: Cesium.Entity;
+  material: CircleDiffusionMaterialProperty;
   maxRadius: number;
-  duration: number;
-  startTime: number;
-  scratchCenter: Cesium.Cartesian4;
-  scratchCenterHigh: Cesium.Cartesian4;
-  scratchNormal: Cesium.Cartesian3;
+  removeRenderListener: () => void;
 }
 
-/** 圆扩散特效，通过后处理在地表生成动态扩散扫描圈。 */
+const DEFAULT_CIRCLE_DIFFUSION_RADIUS = 1000;
+const DEFAULT_CIRCLE_DIFFUSION_DURATION = 2000;
+
+/** 圆扩散，在贴地 Ellipse 上绘制动态扩散扫描圈。 */
 export default class CircleDiffusion {
-  /** Cesium Viewer 实例。 */
-  private readonly viewer: Cesium.Viewer;
-  /** 当前类管理的圆扩散后处理 Stage。 */
+  private readonly defaultViewer?: Cesium.Viewer;
   private readonly records = new Map<string, CircleDiffusionRecord>();
 
-  constructor(viewer: Cesium.Viewer) {
-    this.viewer = viewer;
+  constructor(viewer?: Cesium.Viewer) {
+    this.defaultViewer = viewer;
+    registerCircleDiffusionMaterial();
   }
 
-  /** 新增一个圆扩散效果，返回效果 id。 */
-  add(options: CircleDiffusionAddOptions): string {
+  /** 新增圆扩散，支持 add(viewer, options) 和 new CircleDiffusion(viewer).add(options) 两种调用方式。 */
+  add(viewer: Cesium.Viewer, options: CircleDiffusionAddOptions): string | undefined;
+  add(options: CircleDiffusionAddOptions): string | undefined;
+  add(
+    viewerOrOptions: Cesium.Viewer | CircleDiffusionAddOptions,
+    maybeOptions?: CircleDiffusionAddOptions,
+  ): string | undefined {
+    const resolved = this.resolveViewerOptions(viewerOrOptions, maybeOptions);
+    if (!resolved) return undefined;
+    const { viewer, options } = resolved;
     const id = options.id ?? createSpecialEffectId("circle-diffusion");
-    const record = this.createRecord(options);
-    record.stage.enabled = options.show ?? true;
-    this.viewer.scene.postProcessStages.add(record.stage);
+    if (this.records.has(id) || viewer.entities.getById(id)) return undefined;
+
+    const maxRadius = normalizeCircleDiffusionRadius(options.maxRadius);
+    const material = new CircleDiffusionMaterialProperty({
+      color: toCesiumColor(options.color, Cesium.Color.LIME),
+      duration: options.duration ?? DEFAULT_CIRCLE_DIFFUSION_DURATION,
+    });
+    const entity = viewer.entities.add({
+      id,
+      name: "FastX Circle Diffusion",
+      position: toCartesian3(options.position),
+      show: options.show ?? true,
+      ellipse: {
+        semiMinorAxis: maxRadius,
+        semiMajorAxis: maxRadius,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        material,
+      },
+    });
+
+    const record: CircleDiffusionRecord = {
+      viewer,
+      entity,
+      material,
+      maxRadius,
+      removeRenderListener: this.bindRenderLoop(viewer, id),
+    };
     this.records.set(id, record);
-    requestSceneRender(this.viewer);
+    requestSceneRender(viewer);
     return id;
   }
 
-  /** 更新指定圆扩散效果。 */
+  /** 更新指定圆扩散的位置、颜色、半径、动画时长或显隐状态。 */
   update(id: string, options: CircleDiffusionUpdateOptions): boolean {
     const record = this.records.get(id);
-    if (!record) return false;
-    if (options.position) record.center = toCartographic(options.position);
-    if (options.color) record.color = toCesiumColor(options.color, record.color);
-    if (typeof options.maxRadius === "number") record.maxRadius = options.maxRadius;
-    if (typeof options.duration === "number") record.duration = options.duration;
-    if (typeof options.show === "boolean") record.stage.enabled = options.show;
-    record.startTime = Date.now();
-    requestSceneRender(this.viewer);
+    if (!record || !record.entity.ellipse) return false;
+
+    let shouldRestart = false;
+    if (options.position !== undefined) {
+      record.entity.position = new Cesium.ConstantPositionProperty(toCartesian3(options.position));
+    }
+    if (options.color !== undefined) record.material.color = toCesiumColor(options.color, record.material.color);
+    if (typeof options.duration === "number") {
+      record.material.duration = options.duration;
+    }
+    if (typeof options.maxRadius === "number") {
+      const maxRadius = normalizeCircleDiffusionRadius(options.maxRadius, record.maxRadius);
+      record.maxRadius = maxRadius;
+      record.entity.ellipse.semiMinorAxis = new Cesium.ConstantProperty(maxRadius);
+      record.entity.ellipse.semiMajorAxis = new Cesium.ConstantProperty(maxRadius);
+      shouldRestart = true;
+    }
+    if (typeof options.show === "boolean") record.entity.show = options.show;
+    if (shouldRestart) record.material.restart();
+    requestSceneRender(record.viewer);
     return true;
   }
 
@@ -84,138 +128,76 @@ export default class CircleDiffusion {
   show(id: string, visible: boolean): boolean {
     const record = this.records.get(id);
     if (!record) return false;
-    record.stage.enabled = visible;
-    requestSceneRender(this.viewer);
+    record.entity.show = visible;
+    requestSceneRender(record.viewer);
     return true;
   }
 
-  /** 获取指定圆扩散后处理 Stage。 */
-  get(id: string): Cesium.PostProcessStage | undefined {
-    return this.records.get(id)?.stage;
+  /** 获取指定圆扩散对应的 Entity。 */
+  get(id: string): Cesium.Entity | undefined {
+    return this.records.get(id)?.entity;
   }
 
-  /** 删除指定圆扩散效果。 */
-  /** 获取当前管理的全部圆扩散 id。 */
-  getAllIds(): string[] {
-    return [...this.records.keys()];
+  /** 获取当前管理的全部圆扩散 id；传入 viewer 时只返回该 Viewer 下的 id。 */
+  getAllIds(viewer?: Cesium.Viewer): string[] {
+    return [...this.records.entries()]
+      .filter(([, record]) => !viewer || record.viewer === viewer)
+      .map(([id]) => id);
   }
 
+  /** 删除指定圆扩散并解绑动画刷新监听。 */
   remove(id: string): boolean {
     const record = this.records.get(id);
     if (!record) return false;
-    destroyPostProcessStage(this.viewer, record.stage);
+    record.removeRenderListener();
+    removeEntity(record.viewer, record.entity);
     this.records.delete(id);
     return true;
   }
 
-  /** 清空所有圆扩散效果。 */
-  clear(): void {
-    this.records.forEach((record) => destroyPostProcessStage(this.viewer, record.stage));
-    this.records.clear();
+  /** 清空全部圆扩散；传入 viewer 时只清空该 Viewer 下的圆扩散。 */
+  clear(viewer?: Cesium.Viewer): void {
+    for (const [id, record] of [...this.records]) {
+      if (!viewer || record.viewer === viewer) {
+        record.removeRenderListener();
+        removeEntity(record.viewer, record.entity);
+        this.records.delete(id);
+      }
+    }
   }
 
-  /** 销毁当前类管理的所有圆扩散效果。 */
+  /** 销毁当前实例管理的全部圆扩散。 */
   destroy(): void {
     this.clear();
   }
 
-  /** 创建圆扩散后处理记录。 */
-  private createRecord(options: CircleDiffusionAddOptions): CircleDiffusionRecord {
-    const record: CircleDiffusionRecord = {
-      stage: undefined as unknown as Cesium.PostProcessStage,
-      center: toCartographic(options.position),
-      color: toCesiumColor(options.color, Cesium.Color.LIME),
-      maxRadius: options.maxRadius ?? 1000,
-      duration: options.duration ?? 2000,
-      startTime: Date.now(),
-      scratchCenter: new Cesium.Cartesian4(),
-      scratchCenterHigh: new Cesium.Cartesian4(),
-      scratchNormal: new Cesium.Cartesian3(),
+  /** 兼容显式传 viewer 和构造函数传 viewer 两种调用方式。 */
+  private resolveViewerOptions(
+    viewerOrOptions: Cesium.Viewer | CircleDiffusionAddOptions,
+    maybeOptions?: CircleDiffusionAddOptions,
+  ): { viewer: Cesium.Viewer; options: CircleDiffusionAddOptions } | undefined {
+    const viewer = maybeOptions ? (viewerOrOptions as Cesium.Viewer) : this.defaultViewer;
+    const options = maybeOptions ?? (viewerOrOptions as CircleDiffusionAddOptions);
+    return isValidViewer(viewer) ? { viewer, options } : undefined;
+  }
+
+  /** 动态材质依赖时间 Uniform，requestRenderMode 下需要持续请求下一帧。 */
+  private bindRenderLoop(viewer: Cesium.Viewer, id: string): () => void {
+    const listener = () => {
+      const record = this.records.get(id);
+      if (record?.entity.show) requestSceneRender(viewer);
     };
-
-    record.stage = new Cesium.PostProcessStage({
-      name: "fastx_circle_diffusion",
-      fragmentShader: CircleDiffusion.getFragmentShader(),
-      uniforms: {
-        u_scanCenterEC: () => this.getScanCenter(record),
-        u_scanPlaneNormalEC: () => this.getScanPlaneNormal(record),
-        u_radius: () => (record.maxRadius * ((Date.now() - record.startTime) % record.duration)) / record.duration,
-        u_scanColor: () => record.color,
-      },
-    });
-    return record;
+    viewer.scene.preRender.addEventListener(listener);
+    return () => {
+      if (!viewer.isDestroyed()) viewer.scene.preRender.removeEventListener(listener);
+    };
   }
+}
 
-  /** 计算扩散中心在相机坐标系中的位置。 */
-  private getScanCenter(record: CircleDiffusionRecord): Cesium.Cartesian4 {
-    const center = Cesium.Cartographic.toCartesian(record.center);
-    const center4 = new Cesium.Cartesian4(center.x, center.y, center.z, 1);
-    return Cesium.Matrix4.multiplyByVector(this.viewer.camera.viewMatrix, center4, record.scratchCenter);
-  }
-
-  /** 计算扩散平面法线在相机坐标系中的方向。 */
-  private getScanPlaneNormal(record: CircleDiffusionRecord): Cesium.Cartesian3 {
-    const center = Cesium.Cartographic.toCartesian(record.center);
-    const centerHigh = Cesium.Cartographic.toCartesian(
-      new Cesium.Cartographic(record.center.longitude, record.center.latitude, record.center.height + 500),
-    );
-    const center4 = new Cesium.Cartesian4(center.x, center.y, center.z, 1);
-    const centerHigh4 = new Cesium.Cartesian4(centerHigh.x, centerHigh.y, centerHigh.z, 1);
-    const temp = Cesium.Matrix4.multiplyByVector(this.viewer.camera.viewMatrix, center4, record.scratchCenter);
-    const tempHigh = Cesium.Matrix4.multiplyByVector(
-      this.viewer.camera.viewMatrix,
-      centerHigh4,
-      record.scratchCenterHigh,
-    );
-
-    record.scratchNormal.x = tempHigh.x - temp.x;
-    record.scratchNormal.y = tempHigh.y - temp.y;
-    record.scratchNormal.z = tempHigh.z - temp.z;
-    return Cesium.Cartesian3.normalize(record.scratchNormal, record.scratchNormal);
-  }
-
-  /** 圆扩散片元着色器。 */
-  private static getFragmentShader(): string {
-    return `
-      uniform sampler2D colorTexture;
-      uniform sampler2D depthTexture;
-      in vec2 v_textureCoordinates;
-      uniform vec4 u_scanCenterEC;
-      uniform vec3 u_scanPlaneNormalEC;
-      uniform float u_radius;
-      uniform vec4 u_scanColor;
-      out vec4 fragColor;
-      vec4 toEye(in vec2 uv, in float depth) {
-        vec2 xy = vec2((uv.x * 2.0 - 1.0), (uv.y * 2.0 - 1.0));
-        vec4 posInCamera = czm_inverseProjection * vec4(xy, depth, 1.0);
-        posInCamera = posInCamera / posInCamera.w;
-        return posInCamera;
-      }
-      vec3 pointProjectOnPlane(in vec3 planeNormal, in vec3 planeOrigin, in vec3 point) {
-        vec3 v01 = point - planeOrigin;
-        float d = dot(planeNormal, v01);
-        return point - planeNormal * d;
-      }
-      float getDepth(in vec4 depth) {
-        float z_window = czm_unpackDepth(depth);
-        z_window = czm_reverseLogDepth(z_window);
-        float n_range = czm_depthRange.near;
-        float f_range = czm_depthRange.far;
-        return (2.0 * z_window - n_range - f_range) / (f_range - n_range);
-      }
-      void main() {
-        fragColor = texture(colorTexture, v_textureCoordinates);
-        float depth = getDepth(texture(depthTexture, v_textureCoordinates));
-        vec4 viewPos = toEye(v_textureCoordinates, depth);
-        vec3 prjOnPlane = pointProjectOnPlane(u_scanPlaneNormalEC.xyz, u_scanCenterEC.xyz, viewPos.xyz);
-        float dis = length(prjOnPlane.xyz - u_scanCenterEC.xyz);
-        if (dis < u_radius) {
-          float f = 1.0 - abs(u_radius - dis) / u_radius;
-          f = pow(f, 18.0);
-          fragColor = mix(fragColor, u_scanColor, f);
-        }
-        fragColor.a = fragColor.a / 2.0;
-      }
-    `;
-  }
+/** 规整扩散半径，避免非法半径导致 Ellipse 几何异常。 */
+export function normalizeCircleDiffusionRadius(
+  radius: number | undefined,
+  fallback = DEFAULT_CIRCLE_DIFFUSION_RADIUS,
+): number {
+  return Number.isFinite(radius) && Number(radius) > 0 ? Number(radius) : fallback;
 }

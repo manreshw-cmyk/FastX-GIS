@@ -91,7 +91,7 @@ export interface EffectRenderSpec {
 }
 
 /** 局部坐标点。 */
-type LocalPoint = readonly [x: number, y: number, z: number];
+export type LocalPoint = readonly [x: number, y: number, z: number];
 
 /** 合并空间特效通用默认参数。 */
 export function resolveSpatialOptions(
@@ -111,6 +111,21 @@ export function resolveSpatialOptions(
     segments: Math.max(8, Math.floor(options.segments ?? 96)),
     show: options.show ?? true,
   };
+}
+
+/** 与 buildConeLikeSpec 一致：Entity 锥轴沿局部 -Z（CylinderGraphics 默认沿 +Z）。 */
+export function createConeEntityOrientation(
+  position: Cesium.Cartesian3,
+  attitude: Pick<EffectAttitudeOptions, "heading" | "pitch" | "roll">,
+): Cesium.Quaternion {
+  const hpr = new Cesium.HeadingPitchRoll(
+    Cesium.Math.toRadians(attitude.heading ?? 0),
+    Cesium.Math.toRadians(attitude.pitch ?? 0),
+    Cesium.Math.toRadians(attitude.roll ?? 0),
+  );
+  const world = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+  const cylinderToConeAxis = Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_X, Math.PI, new Cesium.Quaternion());
+  return Cesium.Quaternion.multiply(world, cylinderToConeAxis, new Cesium.Quaternion());
 }
 
 /** 创建局部坐标到世界坐标的转换矩阵。 */
@@ -210,6 +225,7 @@ export function createEntitiesFromSpec(
         positions: line.positions,
         width: line.width,
         material: line.color,
+        arcType: Cesium.ArcType.NONE,
       },
     }),
   );
@@ -246,7 +262,7 @@ function createFacePrimitive(id: string, faces: EffectFaceSpec[], show: boolean)
         id: `${id}-face-${index}`,
         geometry: createFaceGeometry(face.positions),
         attributes: {
-          color: Cesium.ColorGeometryInstanceAttribute.fromColor(face.color),
+          color: Cesium.ColorGeometryInstanceAttribute.fromColor(toPrimitiveColor(face.color)),
         },
       }),
     );
@@ -263,7 +279,90 @@ function createFacePrimitive(id: string, faces: EffectFaceSpec[], show: boolean)
   });
 }
 
+/** 创建单个任意空间面片 Primitive。 */
+export function createFacePrimitiveFromPositions(
+  id: string,
+  positions: Cesium.Cartesian3[],
+  color: Cesium.Color,
+  show: boolean,
+): Cesium.Primitive {
+  return new Cesium.Primitive({
+    geometryInstances: new Cesium.GeometryInstance({
+      id,
+      geometry: createFaceGeometry(positions),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(toPrimitiveColor(color)),
+      },
+    }),
+    appearance: new Cesium.PerInstanceColorAppearance({
+      translucent: true,
+      closed: false,
+      flat: true,
+    }),
+    asynchronous: false,
+    show,
+  });
+}
+
+/** 创建局部坐标面片 Primitive，并通过 modelMatrix 放置到世界坐标。 */
+export function createFacePrimitiveFromLocalPoints(
+  id: string,
+  points: readonly LocalPoint[],
+  color: Cesium.Color,
+  modelMatrix: Cesium.Matrix4,
+  show: boolean,
+): Cesium.Primitive {
+  return new Cesium.Primitive({
+    geometryInstances: new Cesium.GeometryInstance({
+      id,
+      geometry: createFaceGeometry(points.map((point) => new Cesium.Cartesian3(point[0], point[1], point[2]))),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(toPrimitiveColor(color)),
+      },
+    }),
+    appearance: new Cesium.PerInstanceColorAppearance({
+      translucent: true,
+      closed: false,
+      flat: true,
+    }),
+    asynchronous: false,
+    modelMatrix: Cesium.Matrix4.clone(modelMatrix),
+    show,
+  });
+}
+
 /** 创建任意空间面片几何，按扇形三角剖分。 */
+/** 创建局部坐标线 Primitive，并通过 modelMatrix 设置到世界坐标。 */
+export function createLinePrimitiveFromLocalPoints(
+  id: string,
+  points: readonly LocalPoint[],
+  color: Cesium.Color,
+  width: number,
+  modelMatrix: Cesium.Matrix4,
+  show: boolean,
+): Cesium.Primitive {
+  return new Cesium.Primitive({
+    geometryInstances: new Cesium.GeometryInstance({
+      id,
+      geometry: new Cesium.PolylineGeometry({
+        positions: points.map((point) => new Cesium.Cartesian3(point[0], point[1], point[2])),
+        width,
+        arcType: Cesium.ArcType.NONE,
+        vertexFormat: Cesium.PolylineColorAppearance.VERTEX_FORMAT,
+      }),
+      attributes: {
+        color: Cesium.ColorGeometryInstanceAttribute.fromColor(toPrimitiveColor(color)),
+      },
+    }),
+    appearance: new Cesium.PolylineColorAppearance({
+      translucent: true,
+    }),
+    asynchronous: false,
+    modelMatrix: Cesium.Matrix4.clone(modelMatrix),
+    show,
+  });
+}
+
 function createFaceGeometry(positions: Cesium.Cartesian3[]): Cesium.Geometry {
   const values = new Float64Array(positions.length * 3);
   positions.forEach((position, index) => {
@@ -302,10 +401,11 @@ function createLinePrimitive(id: string, lines: EffectLineSpec[], show: boolean)
         geometry: new Cesium.PolylineGeometry({
           positions: line.positions,
           width: line.width,
+          arcType: Cesium.ArcType.NONE,
           vertexFormat: Cesium.PolylineColorAppearance.VERTEX_FORMAT,
         }),
         attributes: {
-          color: Cesium.ColorGeometryInstanceAttribute.fromColor(line.color),
+          color: Cesium.ColorGeometryInstanceAttribute.fromColor(toPrimitiveColor(line.color)),
         },
       }),
     );
@@ -323,6 +423,11 @@ function createLinePrimitive(id: string, lines: EffectLineSpec[], show: boolean)
 /** 创建闭合线。 */
 export function closeLine<T>(points: T[]): T[] {
   return points.length > 0 ? [...points, points[0]!] : points;
+}
+
+/** 规整 Primitive 颜色，避免 Cesium 在读取 red/green/blue/alpha 时遇到空值。 */
+function toPrimitiveColor(color: Cesium.Color | undefined): Cesium.Color {
+  return color instanceof Cesium.Color ? color : Cesium.Color.WHITE;
 }
 
 /** 将连续网格点拆成四边形面片。 */

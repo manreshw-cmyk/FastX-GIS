@@ -18,6 +18,7 @@ import {
   RadarEmissionWaveMaterialProperty,
   registerRadarEmissionWaveMaterial,
 } from "./material";
+import { createConeEntityOrientation } from "../common/effect-geometry";
 
 /** 雷达发射波新增参数。 */
 export interface RadarEmissionWaveAddOptions {
@@ -236,15 +237,10 @@ export function patchAttitude(
   if (typeof options.roll === "number") attitude.roll = options.roll;
 }
 
-/** 根据位置和姿态角创建四元数。 */
+/** 根据位置和姿态角创建四元数（圆柱 +Z 对齐锥体 -Z）。 */
 export function createRadarEmissionWaveOrientation(
   position: Cesium.Cartesian3,
   attitude: RadarEmissionWaveAttitude,
 ): Cesium.Quaternion {
-  const hpr = new Cesium.HeadingPitchRoll(
-    Cesium.Math.toRadians(attitude.heading),
-    Cesium.Math.toRadians(attitude.pitch),
-    Cesium.Math.toRadians(attitude.roll),
-  );
-  return Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+  return createConeEntityOrientation(position, attitude);
 }

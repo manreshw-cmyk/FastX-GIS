@@ -49,6 +49,8 @@ export interface FrameAnimationEffectAddOptions {
   width?: number;
   /** Billboard 高度，单位：像素。 */
   height?: number;
+  /** Billboard 旋转角，单位：度。 */
+  rotation?: number;
   /** Billboard 缩放倍数。 */
   scale?: number;
   /** Billboard 颜色。 */
@@ -274,6 +276,7 @@ export default class FrameAnimationEffect {
         image: imageProperty,
         width: options.width,
         height: options.height,
+        rotation: options.rotation !== undefined ? Cesium.Math.toRadians(options.rotation) : undefined,
         scale: options.scale,
         color: options.color ? toCesiumColor(options.color, Cesium.Color.WHITE) : undefined,
         horizontalOrigin: this.resolveHorizontalOrigin(options.horizontalOrigin),

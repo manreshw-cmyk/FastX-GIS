@@ -5,6 +5,7 @@
 import RadiationCircle from "./RadiationCircle";
 import RadiationCircleCollection from "./RadiationCircle/RadiationCircleCollection";
 import CircleDiffusion from "./CircleDiffusion";
+import CircleDiffusionCollection from "./CircleDiffusion/CircleDiffusionCollection";
 import ElectronicFence from "./ElectronicFence";
 import ElectronicFenceCollection from "./ElectronicFence/ElectronicFenceCollection";
 import PolygonDiffusionWall from "./PolygonDiffusionWall";
@@ -20,6 +21,8 @@ import SingleViewFrustum from "./SingleViewFrustum";
 import SingleViewFrustumCollection from "./SingleViewFrustum/SingleViewFrustumCollection";
 import AirRadar from "./AirRadar";
 import AirRadarCollection from "./AirRadar/AirRadarCollection";
+import SectorArcRadarScan from "./SectorArcRadarScan";
+import SectorArcRadarScanCollection from "./SectorArcRadarScan/SectorArcRadarScanCollection";
 import SectorDiffusionRadar from "./SectorDiffusionRadar";
 import SectorDiffusionRadarCollection from "./SectorDiffusionRadar/SectorDiffusionRadarCollection";
 import CircleDiffusionRadar from "./CircleDiffusionRadar";
@@ -53,6 +56,7 @@ export { default as RadiationCircleCollection } from "./RadiationCircle/Radiatio
 export type { RadiationCircleAddOptions, RadiationCircleUpdateOptions } from "./RadiationCircle";
 
 export { default as CircleDiffusion } from "./CircleDiffusion";
+export { default as CircleDiffusionCollection } from "./CircleDiffusion/CircleDiffusionCollection";
 export type { CircleDiffusionAddOptions, CircleDiffusionUpdateOptions } from "./CircleDiffusion";
 
 export { default as ElectronicFence } from "./ElectronicFence";
@@ -91,6 +95,10 @@ export type { SingleViewFrustumAddOptions, SingleViewFrustumUpdateOptions } from
 export { default as AirRadar } from "./AirRadar";
 export { default as AirRadarCollection } from "./AirRadar/AirRadarCollection";
 export type { AirRadarAddOptions, AirRadarUpdateOptions } from "./AirRadar";
+
+export { default as SectorArcRadarScan } from "./SectorArcRadarScan";
+export { default as SectorArcRadarScanCollection } from "./SectorArcRadarScan/SectorArcRadarScanCollection";
+export type { SectorArcRadarScanAddOptions, SectorArcRadarScanUpdateOptions } from "./SectorArcRadarScan";
 
 export { default as SectorDiffusionRadar } from "./SectorDiffusionRadar";
 export { default as SectorDiffusionRadarCollection } from "./SectorDiffusionRadar/SectorDiffusionRadarCollection";
@@ -169,6 +177,7 @@ export const SpecialEffects = {
   RadiationCircle,
   RadiationCircleCollection,
   CircleDiffusion,
+  CircleDiffusionCollection,
   ElectronicFence,
   ElectronicFenceCollection,
   PolygonDiffusionWall,
@@ -184,6 +193,8 @@ export const SpecialEffects = {
   SingleViewFrustumCollection,
   AirRadar,
   AirRadarCollection,
+  SectorArcRadarScan,
+  SectorArcRadarScanCollection,
   SectorDiffusionRadar,
   SectorDiffusionRadarCollection,
   CircleDiffusionRadar,
