@@ -83,6 +83,7 @@ const preferredOrder = {
     'RadiationCircle',
     'RadiationCircleCollection',
     'CircleDiffusion',
+    'CircleDiffusionCollection',
     'ElectronicFence',
     'ElectronicFenceCollection',
     'PolygonDiffusionWall',
@@ -95,6 +96,8 @@ const preferredOrder = {
     'SingleViewFrustumCollection',
     'AirRadar',
     'AirRadarCollection',
+    'SectorArcRadarScan',
+    'SectorArcRadarScanCollection',
     'SectorDiffusionRadar',
     'SectorDiffusionRadarCollection',
     'CircleDiffusionRadar',
@@ -260,6 +263,7 @@ const effectCnMap = {
   RadiationCircle: '辐射圈',
   RadiationCircleCollection: '批量辐射圈',
   CircleDiffusion: '圆扩散',
+  CircleDiffusionCollection: '批量圆扩散',
   ElectronicFence: '电子围栏',
   ElectronicFenceCollection: '批量电子围栏',
   PolygonDiffusionWall: '多边形扩散墙',
@@ -270,8 +274,10 @@ const effectCnMap = {
   HemisphereRadarScanCollection: '批量半球雷达扫描',
   SingleViewFrustum: '单视椎体',
   SingleViewFrustumCollection: '批量单视椎体',
-  AirRadar: '空中雷达',
-  AirRadarCollection: '批量空中雷达',
+  AirRadar: '空中扫描雷达',
+  AirRadarCollection: '批量空中扫描雷达',
+  SectorArcRadarScan: '扇弧形雷达扫描',
+  SectorArcRadarScanCollection: '批量扇弧形雷达扫描',
   SectorDiffusionRadar: '扩散雷达扇形',
   SectorDiffusionRadarCollection: '批量扩散雷达扇形',
   CircleDiffusionRadar: '扩散雷达圆形',
@@ -1043,23 +1049,48 @@ function isSpecialEffectApi(name) {
 }
 
 function addMethodIfMissing(methods, method) {
-  if (!methods.some((item) => item.name === method.name)) methods.push(method)
+  const matches = methods.filter((item) => item.name === method.name)
+  if (!matches.length) {
+    methods.push(method)
+    return
+  }
+  for (const item of matches) {
+    if (!item.description && method.description) item.description = method.description
+    if (!item.returnType && method.returnType) item.returnType = method.returnType
+  }
 }
 
-function methodRank(method) {
+function methodRank(method, apiName = '') {
   const params = method.params ?? []
   const names = params.map((param) => param.name).join(',')
   if (names.includes('viewerOrOptions') || names.includes('maybeOptions')) return 0
+  if (isSpecialEffectApi(apiName) && !apiName.endsWith('Collection')) {
+    if (params.length === 1 && params[0].name === 'options') return 4
+    if (params.some((param) => param.name === 'viewer') && params.some((param) => param.name === 'options')) return 3
+  }
   if (params.some((param) => param.name === 'viewer') && params.some((param) => param.name === 'options')) return 3
   if (params.length === 1 && params[0].name === 'options') return 2
   return 1
 }
 
-function dedupeMethods(methods) {
+function dedupeMethods(methods, apiName = '') {
   const map = new Map()
   for (const method of methods) {
     const current = map.get(method.name)
-    if (!current || methodRank(method) > methodRank(current)) map.set(method.name, method)
+    if (!current) {
+      map.set(method.name, method)
+      continue
+    }
+    const merged = {
+      ...method,
+      description: method.description || current.description,
+      returnType: method.returnType || current.returnType,
+    }
+    if (methodRank(method, apiName) > methodRank(current, apiName)) {
+      map.set(method.name, merged)
+    } else if (!current.description && method.description) {
+      map.set(method.name, { ...current, description: method.description })
+    }
   }
   return [...map.values()]
 }
@@ -1120,7 +1151,7 @@ function enrichSpecialEffectMethods(apiName, methods, types) {
   addMethodIfMissing(enriched, createSyntheticMethod('remove', [createSyntheticParam('id', 'string')], 'boolean', `删除指定${apiMeta[apiName]?.[0] ?? apiName}。`))
   addMethodIfMissing(enriched, createSyntheticMethod('clear', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'void', '清空当前类管理的全部特效。'))
   addMethodIfMissing(enriched, createSyntheticMethod('destroy', [], 'void', '销毁当前类管理的全部特效并释放资源。'))
-  return dedupeMethods(enriched)
+  return dedupeMethods(enriched, apiName)
 }
 
 function collectFastXObjectMethod(name) {
