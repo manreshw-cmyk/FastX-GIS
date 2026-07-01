@@ -1,6 +1,7 @@
 /**
  * 瞄准特效。
  * Entity 类用于单体绘制，AimEffectCollection 用于 Primitive 批量绘制。
+ * 目标环平面会自动垂直于起点到目标点方向，形成真实空间锥体瞄准效果。
  */
 import * as Cesium from "cesium";
 import type { SpecialEffectsColorInput, SpecialEffectsPositionInput } from "../shared";
@@ -9,25 +10,36 @@ import { RenderableEntityEffect } from "../common/renderable-effect";
 import { resolveSpatialOptions, type ResolvedSpatialEffectOptions } from "../common/effect-geometry";
 import { buildAimEffectSpec } from "../common/radar-builders";
 
+/** 默认连线颜色。 */
+const DEFAULT_AIM_EFFECT_COLOR = Cesium.Color.fromCssColorString("rgba(255,0,0,0.4)")!;
+/** 默认瞄准环和十字线颜色。 */
+const DEFAULT_AIM_EFFECT_LINE_COLOR = Cesium.Color.WHITE;
+/** 默认线宽，单位：像素。 */
+const DEFAULT_AIM_EFFECT_LINE_WIDTH = 1;
+/** 默认外圈半径，单位：米。 */
+const DEFAULT_AIM_EFFECT_OUTSIDE_RADIUS = 50000;
+/** 默认内圈半径，单位：米。 */
+const DEFAULT_AIM_EFFECT_INSIDE_RADIUS = 1;
+
 /** 瞄准特效新增参数。 */
 export interface AimEffectAddOptions {
   /** 唯一 id，不传时 SDK 自动生成。 */
   id?: string;
-  /** 瞄准起点，通常为发射平台位置。 */
+  /** 瞄准起点，通常为发射平台或传感器位置。 */
   source: SpecialEffectsPositionInput;
-  /** 瞄准目标点。 */
+  /** 瞄准目标点，目标环会围绕该点生成。 */
   target: SpecialEffectsPositionInput;
-  /** 起点到目标点连线颜色。默认 rgba(255,80,80,0.75)。 */
+  /** 起点到目标点连线及锥体面颜色。默认 rgba(255,0,0,0.4)。 */
   color?: SpecialEffectsColorInput;
-  /** 瞄准环和十字线颜色。默认 rgba(255,255,255,0.9)。 */
+  /** 瞄准环和十字线颜色。默认 #ffffff。 */
   lineColor?: SpecialEffectsColorInput;
-  /** 线宽，单位：像素。默认 2。 */
+  /** 线宽，单位：像素。默认 1。 */
   lineWidth?: number;
   /** 几何分段数。默认 96。 */
   segments?: number;
   /** 外圈半径，单位：米。默认 50000。 */
   outsideRadius?: number;
-  /** 内圈半径，单位：米；不传时为外圈半径的 0.52。 */
+  /** 内圈半径，单位：米。默认 1。 */
   insideRadius?: number;
   /** 是否显示。默认 true。 */
   show?: boolean;
@@ -64,19 +76,23 @@ export default class AimEffect extends RenderableEntityEffect<AimEffectAddOption
 /** 合并瞄准特效默认参数。 */
 export function resolveAimEffectOptions(options: AimEffectAddOptions & { id: string }): AimEffectResolvedOptions {
   const target = toCartesian3(options.target);
-  const outsideRadius = options.outsideRadius ?? 50000;
+  const outsideRadius = normalizePositiveNumber(options.outsideRadius, DEFAULT_AIM_EFFECT_OUTSIDE_RADIUS);
+  const insideRadius = Math.min(
+    normalizePositiveNumber(options.insideRadius, DEFAULT_AIM_EFFECT_INSIDE_RADIUS),
+    outsideRadius,
+  );
   const spatial = resolveSpatialOptions(
     {
       id: options.id,
       position: target,
       color: options.color,
       lineColor: options.lineColor,
-      lineWidth: options.lineWidth ?? 2,
+      lineWidth: options.lineWidth ?? DEFAULT_AIM_EFFECT_LINE_WIDTH,
       segments: options.segments,
       show: options.show,
     },
-    Cesium.Color.fromCssColorString("rgba(255,0,0,0.1)")!,
-    Cesium.Color.fromCssColorString("rgba(255,255,255,1.0)")!,
+    DEFAULT_AIM_EFFECT_COLOR,
+    DEFAULT_AIM_EFFECT_LINE_COLOR,
   );
   return {
     ...options,
@@ -85,6 +101,11 @@ export function resolveAimEffectOptions(options: AimEffectAddOptions & { id: str
     source: toCartesian3(options.source),
     target,
     outsideRadius,
-    insideRadius: options.insideRadius ?? outsideRadius * 0.52,
+    insideRadius,
   };
+}
+
+/** 规整正数参数，避免半径传入 0、负数或 NaN 后生成异常几何。 */
+function normalizePositiveNumber(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }

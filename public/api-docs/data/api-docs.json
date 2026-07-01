@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-14T16:17:43.962Z",
+  "generatedAt": "2026-07-01T12:13:44.978Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -48398,7 +48398,7 @@
               "name": "addEffects.options.source",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准起点，通常为发射平台位置。"
+              "description": "瞄准起点，通常为发射平台或传感器位置。"
             },
             {
               "name": "addEffects.options.source.longitude",
@@ -48422,7 +48422,7 @@
               "name": "addEffects.options.target",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准目标点。"
+              "description": "瞄准目标点，目标环会围绕该点生成。"
             },
             {
               "name": "addEffects.options.target.longitude",
@@ -48446,19 +48446,19 @@
               "name": "addEffects.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "起点到目标点连线颜色。默认 rgba(255,80,80,0.75)。"
+              "description": "起点到目标点连线及锥体面颜色。默认 rgba(255,0,0,0.4)。"
             },
             {
               "name": "addEffects.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "瞄准环和十字线颜色。默认 rgba(255,255,255,0.9)。"
+              "description": "瞄准环和十字线颜色。默认 #ffffff。"
             },
             {
               "name": "addEffects.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 2。"
+              "description": "线宽，单位：像素。默认 1。"
             },
             {
               "name": "addEffects.options.segments",
@@ -48476,7 +48476,7 @@
               "name": "addEffects.options.insideRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内圈半径，单位：米；不传时为外圈半径的 0.52。"
+              "description": "内圈半径，单位：米。默认 1。"
             },
             {
               "name": "addEffects.options.show",
@@ -48506,7 +48506,7 @@
               "name": "add.options.source",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准起点，通常为发射平台位置。"
+              "description": "瞄准起点，通常为发射平台或传感器位置。"
             },
             {
               "name": "add.options.source.longitude",
@@ -48530,7 +48530,7 @@
               "name": "add.options.target",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准目标点。"
+              "description": "瞄准目标点，目标环会围绕该点生成。"
             },
             {
               "name": "add.options.target.longitude",
@@ -48554,19 +48554,19 @@
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "起点到目标点连线颜色。默认 rgba(255,80,80,0.75)。"
+              "description": "起点到目标点连线及锥体面颜色。默认 rgba(255,0,0,0.4)。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "瞄准环和十字线颜色。默认 rgba(255,255,255,0.9)。"
+              "description": "瞄准环和十字线颜色。默认 #ffffff。"
             },
             {
               "name": "add.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 2。"
+              "description": "线宽，单位：像素。默认 1。"
             },
             {
               "name": "add.options.segments",
@@ -48584,7 +48584,7 @@
               "name": "add.options.insideRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内圈半径，单位：米；不传时为外圈半径的 0.52。"
+              "description": "内圈半径，单位：米。默认 1。"
             },
             {
               "name": "add.options.show",
@@ -48641,7 +48641,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.AimEffect(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.AimEffect(viewer)\nconst options = { source: { longitude: 116.391, latitude: 39.907, height: 300000 }, target: { longitude: 116.421, latitude: 39.917, height: 300000 }, outsideRadius: 50000, insideRadius: 1, color: 'rgba(255,0,0,0.4)', lineColor: '#ffffff', lineWidth: 1 }\neffect.add(options)",
           "access": "import { AimEffect } from 'fastx-sdk'",
           "generated": true
         },
@@ -48828,7 +48828,7 @@
               "name": "addEffects.options.source",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准起点，通常为发射平台位置。"
+              "description": "瞄准起点，通常为发射平台或传感器位置。"
             },
             {
               "name": "addEffects.options.source.longitude",
@@ -48852,7 +48852,7 @@
               "name": "addEffects.options.target",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准目标点。"
+              "description": "瞄准目标点，目标环会围绕该点生成。"
             },
             {
               "name": "addEffects.options.target.longitude",
@@ -48876,19 +48876,19 @@
               "name": "addEffects.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "起点到目标点连线颜色。默认 rgba(255,80,80,0.75)。"
+              "description": "起点到目标点连线及锥体面颜色。默认 rgba(255,0,0,0.4)。"
             },
             {
               "name": "addEffects.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "瞄准环和十字线颜色。默认 rgba(255,255,255,0.9)。"
+              "description": "瞄准环和十字线颜色。默认 #ffffff。"
             },
             {
               "name": "addEffects.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 2。"
+              "description": "线宽，单位：像素。默认 1。"
             },
             {
               "name": "addEffects.options.segments",
@@ -48906,7 +48906,7 @@
               "name": "addEffects.options.insideRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内圈半径，单位：米；不传时为外圈半径的 0.52。"
+              "description": "内圈半径，单位：米。默认 1。"
             },
             {
               "name": "addEffects.options.show",
@@ -48948,7 +48948,7 @@
               "name": "add.options.source",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准起点，通常为发射平台位置。"
+              "description": "瞄准起点，通常为发射平台或传感器位置。"
             },
             {
               "name": "add.options.source.longitude",
@@ -48972,7 +48972,7 @@
               "name": "add.options.target",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "瞄准目标点。"
+              "description": "瞄准目标点，目标环会围绕该点生成。"
             },
             {
               "name": "add.options.target.longitude",
@@ -48996,19 +48996,19 @@
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "起点到目标点连线颜色。默认 rgba(255,80,80,0.75)。"
+              "description": "起点到目标点连线及锥体面颜色。默认 rgba(255,0,0,0.4)。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "瞄准环和十字线颜色。默认 rgba(255,255,255,0.9)。"
+              "description": "瞄准环和十字线颜色。默认 #ffffff。"
             },
             {
               "name": "add.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 2。"
+              "description": "线宽，单位：像素。默认 1。"
             },
             {
               "name": "add.options.segments",
@@ -49026,7 +49026,7 @@
               "name": "add.options.insideRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内圈半径，单位：米；不传时为外圈半径的 0.52。"
+              "description": "内圈半径，单位：米。默认 1。"
             },
             {
               "name": "add.options.show",
@@ -49071,7 +49071,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.AimEffectCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.AimEffectCollection()\nconst options = { source: { longitude: 116.391, latitude: 39.907, height: 300000 }, target: { longitude: 116.421, latitude: 39.917, height: 300000 }, outsideRadius: 50000, insideRadius: 1, color: 'rgba(255,0,0,0.4)', lineColor: '#ffffff', lineWidth: 1 }\neffect.add(viewer, options)",
           "access": "import { AimEffectCollection } from 'fastx-sdk'",
           "generated": true
         },
@@ -49080,9 +49080,9 @@
           "kind": "api",
           "group": "effects",
           "name": "ConeEffect",
-          "cn": "圆锥特效",
-          "title": "ConeEffect（圆锥特效）",
-          "description": "圆锥特效 API，用于创建、更新、查询、显隐和清理单体特效。",
+          "cn": "圆锥扫描特效",
+          "title": "ConeEffect（圆锥扫描特效）",
+          "description": "圆锥扫描特效 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
             {
               "name": "addCones",
@@ -49103,7 +49103,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增圆锥特效 Entity，返回成功创建的 id。"
+              "description": "批量新增圆锥扫描特效 Entity，返回成功创建的 id。"
             },
             {
               "name": "add",
@@ -49124,7 +49124,7 @@
                 }
               ],
               "returnType": "string | undefined",
-              "description": "新增圆锥特效。"
+              "description": "新增圆锥扫描特效。"
             },
             {
               "name": "update",
@@ -49145,7 +49145,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定圆锥特效。"
+              "description": "更新指定圆锥扫描特效。"
             },
             {
               "name": "show",
@@ -49166,7 +49166,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定圆锥特效显隐。"
+              "description": "设置指定圆锥扫描特效显隐。"
             },
             {
               "name": "get",
@@ -49180,7 +49180,7 @@
                 }
               ],
               "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定圆锥特效实例。"
+              "description": "获取指定圆锥扫描特效实例。"
             },
             {
               "name": "getAllIds",
@@ -49208,7 +49208,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定圆锥特效。"
+              "description": "删除指定圆锥扫描特效。"
             },
             {
               "name": "clear",
@@ -49258,7 +49258,7 @@
               "name": "addCones.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "圆锥顶点位置。"
+              "description": "圆锥顶点位置，支持 [longitude, latitude, height]。"
             },
             {
               "name": "addCones.options.position.longitude",
@@ -49303,22 +49303,40 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addCones.options.color",
+              "name": "addCones.options.coneLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥面颜色。默认 rgba(255,180,0,0.18)。"
+              "description": "圆锥母线和底部外圈线颜色。默认 rgba(255,0,0,1)。"
             },
             {
-              "name": "addCones.options.lineColor",
+              "name": "addCones.options.scanLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥线框颜色。默认 rgba(255,220,120,0.85)。"
+              "description": "扫描环、辅助环和径向线颜色。默认 rgba(0,255,0,1)。"
             },
             {
-              "name": "addCones.options.innerLineColor",
+              "name": "addCones.options.coneFillColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "内圈和径向连接线颜色，默认 rgba(0,255,0,1)。"
+              "description": "圆锥面填充色。默认 rgba(0,255,255,0.25)。"
+            },
+            {
+              "name": "addCones.options.showConeFill",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否填充圆锥背景。默认 false。"
+            },
+            {
+              "name": "addCones.options.showCone",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示圆锥母线、底部外圈和填充面。默认 true。"
+            },
+            {
+              "name": "addCones.options.showScan",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示扫描环、辅助环和径向线。默认 true。"
             },
             {
               "name": "addCones.options.lineWidth",
@@ -49330,7 +49348,7 @@
               "name": "addCones.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
+              "description": "线框密度，同时控制圆锥母线、扫描环和径向线数量。默认 280。"
             },
             {
               "name": "addCones.options.height",
@@ -49339,28 +49357,22 @@
               "description": "圆锥高度，单位：米。默认 500000。"
             },
             {
-              "name": "addCones.options.bottomRadius",
+              "name": "addCones.options.baseRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "圆锥底部半径，单位：米。默认 100000。"
             },
             {
-              "name": "addCones.options.innerRadius",
+              "name": "addCones.options.scanRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内部辅助环半径，单位：米。默认 70000。"
-            },
-            {
-              "name": "addCones.options.fill",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示半透明面。默认 false。"
+              "description": "扫描环半径，单位：米。默认 70000，可小于或大于 baseRadius。"
             },
             {
               "name": "addCones.options.show",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示整体特效。默认 true。"
             },
             {
               "name": "add.viewer",
@@ -49384,7 +49396,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "圆锥顶点位置。"
+              "description": "圆锥顶点位置，支持 [longitude, latitude, height]。"
             },
             {
               "name": "add.options.position.longitude",
@@ -49429,22 +49441,40 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "add.options.color",
+              "name": "add.options.coneLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥面颜色。默认 rgba(255,180,0,0.18)。"
+              "description": "圆锥母线和底部外圈线颜色。默认 rgba(255,0,0,1)。"
             },
             {
-              "name": "add.options.lineColor",
+              "name": "add.options.scanLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥线框颜色。默认 rgba(255,220,120,0.85)。"
+              "description": "扫描环、辅助环和径向线颜色。默认 rgba(0,255,0,1)。"
             },
             {
-              "name": "add.options.innerLineColor",
+              "name": "add.options.coneFillColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "内圈和径向连接线颜色，默认 rgba(0,255,0,1)。"
+              "description": "圆锥面填充色。默认 rgba(0,255,255,0.25)。"
+            },
+            {
+              "name": "add.options.showConeFill",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否填充圆锥背景。默认 false。"
+            },
+            {
+              "name": "add.options.showCone",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示圆锥母线、底部外圈和填充面。默认 true。"
+            },
+            {
+              "name": "add.options.showScan",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示扫描环、辅助环和径向线。默认 true。"
             },
             {
               "name": "add.options.lineWidth",
@@ -49456,7 +49486,7 @@
               "name": "add.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
+              "description": "线框密度，同时控制圆锥母线、扫描环和径向线数量。默认 280。"
             },
             {
               "name": "add.options.height",
@@ -49465,28 +49495,22 @@
               "description": "圆锥高度，单位：米。默认 500000。"
             },
             {
-              "name": "add.options.bottomRadius",
+              "name": "add.options.baseRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "圆锥底部半径，单位：米。默认 100000。"
             },
             {
-              "name": "add.options.innerRadius",
+              "name": "add.options.scanRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内部辅助环半径，单位：米。默认 70000。"
-            },
-            {
-              "name": "add.options.fill",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示半透明面。默认 false。"
+              "description": "扫描环半径，单位：米。默认 70000，可小于或大于 baseRadius。"
             },
             {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示整体特效。默认 true。"
             },
             {
               "name": "update.id",
@@ -49537,7 +49561,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConeEffect(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConeEffect(viewer)\nconst options = { position: [120.3, 23.5, 1000], height: 500000, baseRadius: 100000, scanRadius: 70000, segments: 280, coneLineColor: 'rgba(255,0,0,1)', scanLineColor: 'rgba(0,255,0,1)', coneFillColor: 'rgba(0,255,255,0.25)', showConeFill: false, showCone: true, showScan: true }\neffect.add(options)",
           "access": "import { ConeEffect } from 'fastx-sdk'",
           "generated": true
         },
@@ -49546,9 +49570,9 @@
           "kind": "api",
           "group": "effects",
           "name": "ConeEffectCollection",
-          "cn": "批量圆锥特效",
-          "title": "ConeEffectCollection（批量圆锥特效）",
-          "description": "批量圆锥特效 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
+          "cn": "批量圆锥扫描特效",
+          "title": "ConeEffectCollection（批量圆锥扫描特效）",
+          "description": "批量圆锥扫描特效 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
           "methods": [
             {
               "name": "addCones",
@@ -49569,7 +49593,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增圆锥特效 Primitive，返回成功创建的 id。"
+              "description": "批量新增圆锥扫描特效 Primitive，返回成功创建的 id。"
             },
             {
               "name": "update",
@@ -49590,7 +49614,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定圆锥特效 Primitive。"
+              "description": "更新指定圆锥扫描特效 Primitive。"
             },
             {
               "name": "add",
@@ -49611,7 +49635,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "新增批量圆锥特效。"
+              "description": "新增批量圆锥扫描特效。"
             },
             {
               "name": "show",
@@ -49632,7 +49656,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定批量圆锥特效显隐。"
+              "description": "设置指定批量圆锥扫描特效显隐。"
             },
             {
               "name": "get",
@@ -49646,7 +49670,7 @@
                 }
               ],
               "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量圆锥特效实例。"
+              "description": "获取指定批量圆锥扫描特效实例。"
             },
             {
               "name": "getAllIds",
@@ -49674,7 +49698,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定批量圆锥特效。"
+              "description": "删除指定批量圆锥扫描特效。"
             },
             {
               "name": "clear",
@@ -49724,7 +49748,7 @@
               "name": "addCones.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "圆锥顶点位置。"
+              "description": "圆锥顶点位置，支持 [longitude, latitude, height]。"
             },
             {
               "name": "addCones.options.position.longitude",
@@ -49769,22 +49793,40 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addCones.options.color",
+              "name": "addCones.options.coneLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥面颜色。默认 rgba(255,180,0,0.18)。"
+              "description": "圆锥母线和底部外圈线颜色。默认 rgba(255,0,0,1)。"
             },
             {
-              "name": "addCones.options.lineColor",
+              "name": "addCones.options.scanLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥线框颜色。默认 rgba(255,220,120,0.85)。"
+              "description": "扫描环、辅助环和径向线颜色。默认 rgba(0,255,0,1)。"
             },
             {
-              "name": "addCones.options.innerLineColor",
+              "name": "addCones.options.coneFillColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "内圈和径向连接线颜色，默认 rgba(0,255,0,1)。"
+              "description": "圆锥面填充色。默认 rgba(0,255,255,0.25)。"
+            },
+            {
+              "name": "addCones.options.showConeFill",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否填充圆锥背景。默认 false。"
+            },
+            {
+              "name": "addCones.options.showCone",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示圆锥母线、底部外圈和填充面。默认 true。"
+            },
+            {
+              "name": "addCones.options.showScan",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示扫描环、辅助环和径向线。默认 true。"
             },
             {
               "name": "addCones.options.lineWidth",
@@ -49796,7 +49838,7 @@
               "name": "addCones.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
+              "description": "线框密度，同时控制圆锥母线、扫描环和径向线数量。默认 280。"
             },
             {
               "name": "addCones.options.height",
@@ -49805,28 +49847,22 @@
               "description": "圆锥高度，单位：米。默认 500000。"
             },
             {
-              "name": "addCones.options.bottomRadius",
+              "name": "addCones.options.baseRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "圆锥底部半径，单位：米。默认 100000。"
             },
             {
-              "name": "addCones.options.innerRadius",
+              "name": "addCones.options.scanRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内部辅助环半径，单位：米。默认 70000。"
-            },
-            {
-              "name": "addCones.options.fill",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示半透明面。默认 false。"
+              "description": "扫描环半径，单位：米。默认 70000，可小于或大于 baseRadius。"
             },
             {
               "name": "addCones.options.show",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示整体特效。默认 true。"
             },
             {
               "name": "update.id",
@@ -49862,7 +49898,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "圆锥顶点位置。"
+              "description": "圆锥顶点位置，支持 [longitude, latitude, height]。"
             },
             {
               "name": "add.options.position.longitude",
@@ -49907,22 +49943,40 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "add.options.color",
+              "name": "add.options.coneLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥面颜色。默认 rgba(255,180,0,0.18)。"
+              "description": "圆锥母线和底部外圈线颜色。默认 rgba(255,0,0,1)。"
             },
             {
-              "name": "add.options.lineColor",
+              "name": "add.options.scanLineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆锥线框颜色。默认 rgba(255,220,120,0.85)。"
+              "description": "扫描环、辅助环和径向线颜色。默认 rgba(0,255,0,1)。"
             },
             {
-              "name": "add.options.innerLineColor",
+              "name": "add.options.coneFillColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "内圈和径向连接线颜色，默认 rgba(0,255,0,1)。"
+              "description": "圆锥面填充色。默认 rgba(0,255,255,0.25)。"
+            },
+            {
+              "name": "add.options.showConeFill",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否填充圆锥背景。默认 false。"
+            },
+            {
+              "name": "add.options.showCone",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示圆锥母线、底部外圈和填充面。默认 true。"
+            },
+            {
+              "name": "add.options.showScan",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示扫描环、辅助环和径向线。默认 true。"
             },
             {
               "name": "add.options.lineWidth",
@@ -49934,7 +49988,7 @@
               "name": "add.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
+              "description": "线框密度，同时控制圆锥母线、扫描环和径向线数量。默认 280。"
             },
             {
               "name": "add.options.height",
@@ -49943,28 +49997,22 @@
               "description": "圆锥高度，单位：米。默认 500000。"
             },
             {
-              "name": "add.options.bottomRadius",
+              "name": "add.options.baseRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "圆锥底部半径，单位：米。默认 100000。"
             },
             {
-              "name": "add.options.innerRadius",
+              "name": "add.options.scanRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内部辅助环半径，单位：米。默认 70000。"
-            },
-            {
-              "name": "add.options.fill",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示半透明面。默认 false。"
+              "description": "扫描环半径，单位：米。默认 70000，可小于或大于 baseRadius。"
             },
             {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示整体特效。默认 true。"
             },
             {
               "name": "show.id",
@@ -50003,7 +50051,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConeEffectCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConeEffectCollection()\nconst options = { position: [120.3, 23.5, 1000], height: 500000, baseRadius: 100000, scanRadius: 70000, segments: 280, coneLineColor: 'rgba(255,0,0,1)', scanLineColor: 'rgba(0,255,0,1)', coneFillColor: 'rgba(0,255,255,0.25)', showConeFill: false, showCone: true, showScan: true }\neffect.add(viewer, options)",
           "access": "import { ConeEffectCollection } from 'fastx-sdk'",
           "generated": true
         },
@@ -53577,6 +53625,41 @@
           "description": "环形雷达扫描 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
             {
+              "name": "add",
+              "params": [
+                {
+                  "name": "options",
+                  "type": "RingRadarAddOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string | undefined",
+              "description": "新增环形雷达扫描。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "RingRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增环形雷达扫描 Entity，返回成功创建的 id。"
+            },
+            {
               "name": "addRadars",
               "params": [
                 {
@@ -53598,27 +53681,6 @@
               "description": "批量新增环形雷达扫描 Entity，返回成功创建的 id。"
             },
             {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "RingRadarAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增环形雷达扫描。"
-            },
-            {
               "name": "update",
               "params": [
                 {
@@ -53637,7 +53699,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定环形雷达扫描。"
+              "description": "更新指定环形雷达扫描 Entity。"
             },
             {
               "name": "show",
@@ -53671,8 +53733,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定环形雷达扫描实例。"
+              "returnType": "Cesium.Entity[] | undefined",
+              "description": "获取指定特效对应的 Entity 集合。"
             },
             {
               "name": "getAllIds",
@@ -53686,7 +53748,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "获取当前管理的全部 id；传入 viewer 时只返回该 Viewer 下的 id。"
             },
             {
               "name": "remove",
@@ -53714,13 +53776,13 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
+              "description": "清空全部环形雷达扫描；传入 viewer 时只清空该 Viewer 下的特效。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
+              "description": "销毁当前管理器中的全部环形雷达扫描。"
             }
           ],
           "types": [
@@ -53728,6 +53790,384 @@
             "RingRadarUpdateOptions"
           ],
           "params": [
+            {
+              "name": "add.options",
+              "type": "RingRadarAddOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "add.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "add.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点。"
+            },
+            {
+              "name": "add.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "add.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "add.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "add.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "add.options.innerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环半径，单位：米。默认 33000。"
+            },
+            {
+              "name": "add.options.outerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
+            },
+            {
+              "name": "add.options.innerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "add.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "add.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "add.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "add.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "add.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "add.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "add.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "add.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "add.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否开启扫描叶片闪烁。默认 false。"
+            },
+            {
+              "name": "add.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
+            },
+            {
+              "name": "add.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "add.options.show",
+              "type": "boolean",
+              "defaultValue": "true",
+              "description": "是否显示。默认 true。"
+            },
+            {
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addMany.options",
+              "type": "RingRadarAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addMany.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.innerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环半径，单位：米。默认 33000。"
+            },
+            {
+              "name": "addMany.options.outerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
+            },
+            {
+              "name": "addMany.options.innerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "addMany.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addMany.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "addMany.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addMany.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "addMany.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "addMany.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "addMany.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "addMany.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addMany.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否开启扫描叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addMany.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
+            },
+            {
+              "name": "addMany.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
+            },
+            {
+              "name": "addMany.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
+            },
             {
               "name": "addRadars.viewer",
               "type": "Cesium.Viewer",
@@ -53795,52 +54235,124 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 66000。"
-            },
-            {
               "name": "addRadars.options.innerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内半径，单位：米。默认 60000。"
+              "description": "内环半径，单位：米。默认 33000。"
             },
             {
-              "name": "addRadars.options.minElevationAngle",
+              "name": "addRadars.options.outerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 0。"
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
             },
             {
-              "name": "addRadars.options.maxElevationAngle",
+              "name": "addRadars.options.innerDomeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 20。"
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "addRadars.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addRadars.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "addRadars.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addRadars.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "addRadars.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "addRadars.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "addRadars.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addRadars.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否开启扫描叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addRadars.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
+            },
+            {
+              "name": "addRadars.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
+            },
+            {
+              "name": "addRadars.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
             },
             {
               "name": "addRadars.options.show",
@@ -53848,6 +54360,241 @@
               "defaultValue": "-",
               "description": "是否显示。默认 true。"
             },
+            {
+              "name": "update.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "update.options",
+              "type": "RingRadarUpdateOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "show.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "show.visible",
+              "type": "boolean",
+              "defaultValue": "必填",
+              "description": "是否显示当前特效。"
+            },
+            {
+              "name": "get.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "getAllIds.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "remove.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "clear.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadar(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.add(options)",
+          "access": "import { RingRadar } from 'fastx-sdk'",
+          "generated": true
+        },
+        {
+          "id": "RingRadarCollection",
+          "kind": "api",
+          "group": "effects",
+          "name": "RingRadarCollection",
+          "cn": "批量环形雷达扫描",
+          "title": "RingRadarCollection（批量环形雷达扫描）",
+          "description": "批量环形雷达扫描 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
+          "methods": [
+            {
+              "name": "add",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "RingRadarAddOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string | undefined",
+              "description": "新增一个环形雷达扫描，返回特效 id。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "RingRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增环形雷达扫描，返回成功创建的 id。"
+            },
+            {
+              "name": "addRadars",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "RingRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增环形雷达扫描，返回成功创建的 id。"
+            },
+            {
+              "name": "update",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "RingRadarUpdateOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "更新指定环形雷达扫描。"
+            },
+            {
+              "name": "show",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "visible",
+                  "type": "boolean",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "设置指定环形雷达扫描显隐。"
+            },
+            {
+              "name": "get",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Cesium.Entity[] | undefined",
+              "description": "获取指定特效对应的 Entity 集合。"
+            },
+            {
+              "name": "getAllIds",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "获取当前管理的全部 id；传入 viewer 时只返回该 Viewer 下的 id。"
+            },
+            {
+              "name": "remove",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "删除指定环形雷达扫描。"
+            },
+            {
+              "name": "clear",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "void",
+              "description": "清空全部环形雷达扫描；传入 viewer 时只清空该 Viewer 下的特效。"
+            },
+            {
+              "name": "destroy",
+              "params": [],
+              "returnType": "void",
+              "description": "销毁当前管理器中的全部环形雷达扫描。"
+            }
+          ],
+          "types": [
+            "RingRadarAddOptions",
+            "RingRadarUpdateOptions"
+          ],
+          "params": [
             {
               "name": "add.viewer",
               "type": "Cesium.Viewer",
@@ -53915,52 +54662,124 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 66000。"
-            },
-            {
               "name": "add.options.innerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内半径，单位：米。默认 60000。"
+              "description": "内环半径，单位：米。默认 33000。"
             },
             {
-              "name": "add.options.minElevationAngle",
+              "name": "add.options.outerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 0。"
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
             },
             {
-              "name": "add.options.maxElevationAngle",
+              "name": "add.options.innerDomeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 20。"
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "add.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "add.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "add.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "add.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "add.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "add.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "add.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "add.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "add.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否开启扫描叶片闪烁。默认 false。"
+            },
+            {
+              "name": "add.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
+            },
+            {
+              "name": "add.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
             },
             {
               "name": "add.options.show",
@@ -53969,219 +54788,197 @@
               "description": "是否显示。默认 true。"
             },
             {
-              "name": "update.id",
-              "type": "string",
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
               "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             },
             {
-              "name": "update.options",
-              "type": "RingRadarUpdateOptions",
+              "name": "addMany.options",
+              "type": "RingRadarAddOptions[]",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
             {
-              "name": "show.id",
+              "name": "addMany.options.id",
               "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
             },
             {
-              "name": "show.visible",
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.innerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环半径，单位：米。默认 33000。"
+            },
+            {
+              "name": "addMany.options.outerRadius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
+            },
+            {
+              "name": "addMany.options.innerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "addMany.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addMany.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "addMany.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addMany.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "addMany.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "addMany.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "addMany.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "addMany.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addMany.options.scanBlink",
               "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
               "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+              "description": "是否开启扫描叶片闪烁。默认 false。"
             },
             {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
+              "name": "addMany.options.horizontalSegments",
+              "type": "number",
               "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadar(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { RingRadar } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "RingRadarCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "RingRadarCollection",
-          "cn": "批量环形雷达扫描",
-          "title": "RingRadarCollection（批量环形雷达扫描）",
-          "description": "批量环形雷达扫描 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "RingRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增环形雷达扫描 Primitive，返回成功创建的 id。"
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
             },
             {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "RingRadarUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定环形雷达扫描 Primitive。"
+              "name": "addMany.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
             },
             {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "RingRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量环形雷达扫描。"
+              "name": "addMany.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
             },
             {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定批量环形雷达扫描显隐。"
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
             },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量环形雷达扫描实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定批量环形雷达扫描。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "RingRadarAddOptions",
-            "RingRadarUpdateOptions"
-          ],
-          "params": [
             {
               "name": "addRadars.viewer",
               "type": "Cesium.Viewer",
@@ -54249,52 +55046,124 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 66000。"
-            },
-            {
               "name": "addRadars.options.innerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "内半径，单位：米。默认 60000。"
+              "description": "内环半径，单位：米。默认 33000。"
             },
             {
-              "name": "addRadars.options.minElevationAngle",
+              "name": "addRadars.options.outerRadius",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 0。"
+              "description": "外环半径，单位：米。默认 66000；不传时为内环半径的 2 倍。"
             },
             {
-              "name": "addRadars.options.maxElevationAngle",
+              "name": "addRadars.options.innerDomeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 20。"
+              "description": "内环弧形隆起高度，单位：米。默认 9000。"
+            },
+            {
+              "name": "addRadars.options.outerDomeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧形隆起高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addRadars.options.innerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环弧面颜色。默认 rgba(0,255,72,0.38)。"
+            },
+            {
+              "name": "addRadars.options.innerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.innerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "内环网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addRadars.options.innerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "内环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.outerSurfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环弧面颜色。默认 rgba(200,96,31,0.34)。"
+            },
+            {
+              "name": "addRadars.options.outerSurfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.outerGridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外环网格线颜色。默认 rgba(200,96,31,0.78)。"
+            },
+            {
+              "name": "addRadars.options.outerGridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外环网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,244,0,0.48)。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+            },
+            {
+              "name": "addRadars.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addRadars.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否开启扫描叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addRadars.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数，数值越大曲面越圆滑。默认 96。"
+            },
+            {
+              "name": "addRadars.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数，数值越大网格越密。默认 10。"
+            },
+            {
+              "name": "addRadars.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
             },
             {
               "name": "addRadars.options.show",
@@ -54313,126 +55182,6 @@
               "type": "RingRadarUpdateOptions",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "RingRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 66000。"
-            },
-            {
-              "name": "add.options.innerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "内半径，单位：米。默认 60000。"
-            },
-            {
-              "name": "add.options.minElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.maxElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 20。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
             },
             {
               "name": "show.id",
@@ -54471,7 +55220,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadarCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.addRadars(viewer, [options])",
           "access": "import { RingRadarCollection } from 'fastx-sdk'",
           "generated": true
         },

@@ -533,6 +533,90 @@
     "imageUrl": "../../assets/images/扇弧形雷达扫描.png"
   },
   {
+    "key": "special-effects-12",
+    "title": "瞄准特效",
+    "fileName": "sfx-aim-effect",
+    "componentPath": "./sfx-aim-effect.vue",
+    "imageUrl": "../../assets/images/瞄准特效.png"
+  },
+  {
+    "key": "special-effects-13",
+    "title": "锥体扫描",
+    "fileName": "sfx-conical-scanner",
+    "componentPath": "./sfx-conical-scanner.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-14",
+    "title": "双面视锥体",
+    "fileName": "sfx-double-view-frustum",
+    "componentPath": "./sfx-double-view-frustum.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-15",
+    "title": "双圆锥环面扫描体",
+    "fileName": "sfx-ring-cone-scanner",
+    "componentPath": "./sfx-ring-cone-scanner.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-16",
+    "title": "四方锥体扫描",
+    "fileName": "sfx-square-cone-scanner",
+    "componentPath": "./sfx-square-cone-scanner.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-17",
+    "title": "圆锥扫描特效",
+    "fileName": "sfx-cone-effect",
+    "componentPath": "./sfx-cone-effect.vue",
+    "imageUrl": "../../assets/images/圆锥扫描特效.png"
+  },
+  {
+    "key": "special-effects-18",
+    "title": "抛物面雷达",
+    "fileName": "sfx-parabola-radar",
+    "componentPath": "./sfx-parabola-radar.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-19",
+    "title": "扫描雷达",
+    "fileName": "sfx-scan-radar",
+    "componentPath": "./sfx-scan-radar.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-20",
+    "title": "环形雷达扫描",
+    "fileName": "sfx-ring-radar",
+    "componentPath": "./sfx-ring-radar.vue",
+    "imageUrl": "../../assets/images/环形雷达扫描.png"
+  },
+  {
+    "key": "special-effects-21",
+    "title": "火力范围",
+    "fileName": "sfx-fire-range-effect",
+    "componentPath": "./sfx-fire-range-effect.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-22",
+    "title": "扩散雷达扇形",
+    "fileName": "sfx-sector-diffusion-radar",
+    "componentPath": "./sfx-sector-diffusion-radar.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "special-effects-23",
+    "title": "扩散雷达圆形",
+    "fileName": "sfx-circle-diffusion-radar",
+    "componentPath": "./sfx-circle-diffusion-radar.vue",
+    "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
     "key": "meteorology-hydrology-1",
     "title": "台风",
     "fileName": "tf",

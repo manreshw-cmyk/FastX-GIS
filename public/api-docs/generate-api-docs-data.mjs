@@ -284,8 +284,8 @@ const effectCnMap = {
   CircleDiffusionRadarCollection: '批量扩散雷达圆形',
   AimEffect: '瞄准特效',
   AimEffectCollection: '批量瞄准特效',
-  ConeEffect: '圆锥特效',
-  ConeEffectCollection: '批量圆锥特效',
+  ConeEffect: '圆锥扫描特效',
+  ConeEffectCollection: '批量圆锥扫描特效',
   ConicalScanner: '锥体扫描',
   ConicalScannerCollection: '批量锥体扫描',
   DoubleViewFrustum: '双面视锥体',
@@ -630,6 +630,14 @@ const parameterDescriptions = {
   point: '点位坐标。',
   points: '点位坐标集合。',
   radius: '半径，单位为米。',
+  baseRadius: '圆锥底部半径，单位为米。',
+  scanRadius: '扫描环半径，单位为米。',
+  coneLineColor: '圆锥母线和底部外圈线颜色。',
+  scanLineColor: '扫描环、辅助环和径向线颜色。',
+  coneFillColor: '圆锥面填充色。',
+  showConeFill: '是否填充圆锥背景。',
+  showCone: '是否显示圆锥母线、底部外圈和填充面。',
+  showScan: '是否显示扫描环、辅助环和径向线。',
   radii: '椭球三个方向的半径或统一半径。',
   width: '宽度，单位通常为像素或米，具体取决于对应 API。',
   heightSize: '高度尺寸。',
@@ -804,6 +812,31 @@ const parameterDescriptions = {
   outlineColor: '特效轮廓线颜色。',
   lineColor: '特效线框颜色。',
   scanColor: '扫描光束或扫描面的颜色。',
+  innerDomeHeight: '内环弧形隆起高度，单位为米。',
+  outerDomeHeight: '外环弧形隆起高度，单位为米。',
+  innerSurfaceColor: '内环弧面颜色。',
+  innerSurfaceAlpha: '内环弧面透明度，范围 0 到 1。',
+  innerGridColor: '内环网格线颜色。',
+  innerGridAlpha: '内环网格线透明度，范围 0 到 1。',
+  outerSurfaceColor: '外环弧面颜色。',
+  outerSurfaceAlpha: '外环弧面透明度，范围 0 到 1。',
+  outerGridColor: '外环网格线颜色。',
+  outerGridAlpha: '外环网格线透明度，范围 0 到 1。',
+  scanBladeColor: '扫描叶片颜色。',
+  scanBladeAlpha: '扫描叶片透明度，范围 0 到 1。',
+  scanBladeAngle: '扫描叶片角宽，单位为度；0 表示使用内置推荐角宽。',
+  scanSpeed: '扫描旋转速度，单位为度/秒。',
+  scanBlink: '是否启用扫描叶片闪烁。',
+  gridLineWidth: '网格线宽度，单位为像素。',
+  outerColor: '外环三维环带颜色。',
+  outerAlpha: '外环三维环带透明度。',
+  outerLineColor: '外环网格线颜色。',
+  outerLineAlpha: '外环网格线透明度。',
+  innerColor: '内环三维环带颜色。',
+  innerAlpha: '内环三维环带透明度。',
+  innerLineColor: '内环网格线颜色。',
+  innerLineAlpha: '内环网格线透明度。',
+  scanAlpha: '扫描叶片透明度。',
   lineWidth: '轮廓线宽度，单位为像素。',
   segments: '几何分段数，数值越大弧线和曲面越平滑。',
   heading: '航向角，单位为度。',
@@ -818,6 +851,20 @@ const parameterDescriptions = {
   topRadius: '锥体顶面半径，单位为米。',
   innerRadius: '内部辅助环半径，单位为米。',
   outerRadius: '外部半径，单位为米。',
+  outerHeight: '外环三维环带高度，单位为米。',
+  innerHeight: '内环三维环带高度，单位为米。',
+  horizontalSegments: '水平插值点数，数值越大曲面越圆滑。',
+  verticalSegments: '垂直插值点数，数值越大环带网格越密。',
+  bladeAngle: '扫描叶片角宽，单位为度。',
+  blink: '是否启用扫描叶片闪烁。',
+  baseRadius: '圆锥底部半径，单位为米。',
+  scanRadius: '扫描环半径，单位为米。',
+  coneLineColor: '圆锥母线和底部外圈线颜色。',
+  scanLineColor: '扫描环、辅助环和径向线颜色。',
+  coneFillColor: '圆锥面填充色。',
+  showConeFill: '是否填充圆锥背景。',
+  showCone: '是否显示圆锥母线、底部外圈和填充面。',
+  showScan: '是否显示扫描环、辅助环和径向线。',
   height: '特效高度，单位为米。',
   width: '宽度，单位为米或像素，按对应 API 说明确定。',
   depth: '深度，单位为米。',
@@ -1435,6 +1482,18 @@ function usageFor(name, groupId) {
     }
     if (baseName === 'HemisphereRadarScan') {
       options = "{ position: { longitude: 116.391, latitude: 39.907, height: 0 }, radius: 1000, color: '#00ff0038', scanColor: '#00ff0038', speed: 1 }"
+    }
+    if (baseName === 'AimEffect') {
+      options = "{ source: { longitude: 116.391, latitude: 39.907, height: 300000 }, target: { longitude: 116.421, latitude: 39.917, height: 300000 }, outsideRadius: 50000, insideRadius: 1, color: 'rgba(255,0,0,0.4)', lineColor: '#ffffff', lineWidth: 1 }"
+    }
+    if (baseName === 'ConeEffect') {
+      options = "{ position: [120.3, 23.5, 1000], height: 500000, baseRadius: 100000, scanRadius: 70000, segments: 280, coneLineColor: 'rgba(255,0,0,1)', scanLineColor: 'rgba(0,255,0,1)', coneFillColor: 'rgba(0,255,255,0.25)', showConeFill: false, showCone: true, showScan: true }"
+    }
+    if (baseName === 'RingRadar') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
+    }
+    if (baseName === 'RingRadar' && isCollection) {
+      return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}()\nconst options = ${options}\neffect.addRadars(viewer, [options])`
     }
     return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}(${constructorArgs})\nconst options = ${options}\neffect.add(${addArgs})`
   }

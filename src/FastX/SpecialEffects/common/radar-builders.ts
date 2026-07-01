@@ -55,6 +55,14 @@ export interface AimEffectSpecOptions extends ResolvedSpatialEffectOptions {
   insideRadius: number;
 }
 
+/** 瞄准目标环所在平面的二维坐标轴。 */
+interface AimPlaneAxes {
+  /** 目标环平面横向轴。 */
+  right: Cesium.Cartesian3;
+  /** 目标环平面纵向轴。 */
+  up: Cesium.Cartesian3;
+}
+
 /** 锥体扫描参数。 */
 export interface ConicalScannerSpecOptions extends ResolvedSpatialEffectOptions {
   /** 扫描高度，单位：米。 */
@@ -196,15 +204,15 @@ export function buildDiffusionRadarSpec(options: DiffusionRadarSpecOptions): Eff
 
 /** 创建瞄准特效规格。 */
 export function buildAimEffectSpec(options: AimEffectSpecOptions): EffectRenderSpec {
-  const targetFrame = Cesium.Transforms.eastNorthUpToFixedFrame(options.target);
-  const outside = localPointsToWorld(createCircleLocalPoints(options.outsideRadius, options.segments, 0), targetFrame);
-  const inside = localPointsToWorld(createCircleLocalPoints(options.insideRadius, options.segments, 0), targetFrame);
+  const axes = createAimPlaneAxes(options.target, options.source);
+  const outside = createAimRingPoints(options.target, axes, options.outsideRadius, options.segments);
+  const inside = createAimRingPoints(options.target, axes, options.insideRadius, options.segments);
   const crossSize = options.outsideRadius;
   const cross = [
-    localPointsToWorld([[-crossSize, 0, 0], [-options.insideRadius, 0, 0]], targetFrame),
-    localPointsToWorld([[options.insideRadius, 0, 0], [crossSize, 0, 0]], targetFrame),
-    localPointsToWorld([[0, -crossSize, 0], [0, -options.insideRadius, 0]], targetFrame),
-    localPointsToWorld([[0, options.insideRadius, 0], [0, crossSize, 0]], targetFrame),
+    createAimAxisLine(options.target, axes.right, -crossSize, -options.insideRadius),
+    createAimAxisLine(options.target, axes.right, options.insideRadius, crossSize),
+    createAimAxisLine(options.target, axes.up, -crossSize, -options.insideRadius),
+    createAimAxisLine(options.target, axes.up, options.insideRadius, crossSize),
   ];
   const faces = outside.slice(0, -1).map((point, index) => ({
     positions: [options.source, point, outside[(index + 1) % (outside.length - 1)]!],
@@ -219,6 +227,77 @@ export function buildAimEffectSpec(options: AimEffectSpecOptions): EffectRenderS
       ...cross.map((positions) => ({ positions, color: options.lineColor, width: options.lineWidth })),
     ],
   };
+}
+
+/** 创建垂直于瞄准轴的目标环，使锥体和瞄准环保持立体姿态。 */
+function createAimRingPoints(
+  target: Cesium.Cartesian3,
+  axes: AimPlaneAxes,
+  radius: number,
+  segments: number,
+): Cesium.Cartesian3[] {
+  const total = Math.max(8, segments);
+  const points: Cesium.Cartesian3[] = [];
+  for (let index = 0; index <= total; index += 1) {
+    const angle = (Cesium.Math.TWO_PI * index) / total;
+    points.push(createAimPlanePoint(target, axes.right, axes.up, Math.cos(angle) * radius, Math.sin(angle) * radius));
+  }
+  return points;
+}
+
+/** 创建瞄准十字线。 */
+function createAimAxisLine(
+  target: Cesium.Cartesian3,
+  axis: Cesium.Cartesian3,
+  start: number,
+  end: number,
+): Cesium.Cartesian3[] {
+  return [
+    Cesium.Cartesian3.add(
+      target,
+      Cesium.Cartesian3.multiplyByScalar(axis, start, new Cesium.Cartesian3()),
+      new Cesium.Cartesian3(),
+    ),
+    Cesium.Cartesian3.add(
+      target,
+      Cesium.Cartesian3.multiplyByScalar(axis, end, new Cesium.Cartesian3()),
+      new Cesium.Cartesian3(),
+    ),
+  ];
+}
+
+/** 计算目标环平面坐标轴，平面法线对齐 source -> target。 */
+function createAimPlaneAxes(target: Cesium.Cartesian3, source: Cesium.Cartesian3): AimPlaneAxes {
+  const direction = Cesium.Cartesian3.subtract(target, source, new Cesium.Cartesian3());
+  const forward = Cesium.Cartesian3.magnitude(direction) > 0.001
+    ? Cesium.Cartesian3.normalize(direction, new Cesium.Cartesian3())
+    : Cesium.Cartesian3.UNIT_Z;
+  const eastNorthUp = Cesium.Transforms.eastNorthUpToFixedFrame(target);
+  const localUp = new Cesium.Cartesian3(eastNorthUp[8], eastNorthUp[9], eastNorthUp[10]);
+  const fallback = new Cesium.Cartesian3(eastNorthUp[0], eastNorthUp[1], eastNorthUp[2]);
+  const reference = Math.abs(Cesium.Cartesian3.dot(forward, localUp)) > 0.96 ? fallback : localUp;
+  const right = Cesium.Cartesian3.normalize(
+    Cesium.Cartesian3.cross(reference, forward, new Cesium.Cartesian3()),
+    new Cesium.Cartesian3(),
+  );
+  const up = Cesium.Cartesian3.normalize(
+    Cesium.Cartesian3.cross(forward, right, new Cesium.Cartesian3()),
+    new Cesium.Cartesian3(),
+  );
+  return { right, up };
+}
+
+/** 在目标环平面内按二维偏移创建世界坐标点。 */
+function createAimPlanePoint(
+  target: Cesium.Cartesian3,
+  right: Cesium.Cartesian3,
+  up: Cesium.Cartesian3,
+  x: number,
+  y: number,
+): Cesium.Cartesian3 {
+  const xOffset = Cesium.Cartesian3.multiplyByScalar(right, x, new Cesium.Cartesian3());
+  const yOffset = Cesium.Cartesian3.multiplyByScalar(up, y, new Cesium.Cartesian3());
+  return Cesium.Cartesian3.add(target, Cesium.Cartesian3.add(xOffset, yOffset, new Cesium.Cartesian3()), new Cesium.Cartesian3());
 }
 
 /** 创建锥体扫描规格。 */

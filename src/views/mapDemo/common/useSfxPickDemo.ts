@@ -67,8 +67,12 @@ export function useSfxPickDemo<TForm extends SfxBaseRow, TOptions>(
     createDefaultForm: () => TForm
     buildOptions: (form: TForm) => TOptions
     getApi: (viewer: Viewer) => SfxPickDemoApi<TOptions>
+    /** 拾取时是否保留当前表单 height，不使用地图拾取高度 */
+    preserveHeightOnPick?: boolean
     /** 拾取时是否将 height 置 0，默认 true */
     zeroHeightOnPick?: boolean
+    /** 自定义拾取高度规整逻辑，用于避免负高程等业务无效值 */
+    normalizePickedHeight?: (height: number) => number
   },
 ) {
   const mapStore = useMapLayerStore()
@@ -108,8 +112,10 @@ export function useSfxPickDemo<TForm extends SfxBaseRow, TOptions>(
     if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return
     form.longitude = longitude
     form.latitude = latitude
-    if (zeroHeightOnPick) form.height = 0
-    else if (Number.isFinite(height)) form.height = height
+    if (config.preserveHeightOnPick) {
+      // 只更新经纬度，保留用户在参数详情中设置的离地高度。
+    } else if (zeroHeightOnPick) form.height = 0
+    else if (Number.isFinite(height)) form.height = config.normalizePickedHeight?.(height) ?? height
     hasMapPick.value = true
   }
 
