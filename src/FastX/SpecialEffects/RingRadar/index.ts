@@ -1,8 +1,7 @@
 /**
  * 环形雷达扫描特效。
  *
- * 单体绘制为内外双层三维弧形环带：内环 3 个垂直扫描叶片，外环 1 个垂直扫描叶片，
- * 外环叶片与内环第 1 个叶片同步重叠。
+ * 单体使用 Entity 绘制，批量类使用 Primitive 绘制；两条路径共用同一套参数解析、几何点位和动画计算。
  */
 import * as Cesium from "cesium";
 import type { SpecialEffectsColorInput, SpecialEffectsPositionInput } from "../shared";
@@ -14,10 +13,18 @@ import {
   toCartesian3,
   toCesiumColor,
 } from "../shared";
-import { createLocalFrame, localToWorld, type LocalPoint } from "../common/effect-geometry";
-
-const AUTO_SCAN_BLADE_ANGLE = 32;
-const INNER_SCAN_BLADE_COUNT = 3;
+import {
+  calcRingRadarScanAlpha,
+  calcRingRadarScanAngle,
+  createRingRadarAnimationState,
+  type RingRadarAnimationState,
+} from "./animation";
+import {
+  createRingRadarScanBladeFaces,
+  createRingRadarStaticGeometry,
+  type RingRadarFaceSpec,
+  type RingRadarLineSpec,
+} from "./geometry";
 
 const RING_RADAR_DEFAULTS = {
   innerRadius: 33_000,
@@ -25,7 +32,7 @@ const RING_RADAR_DEFAULTS = {
   innerDomeHeight: 9_000,
   outerDomeHeight: 18_000,
   scanSpeed: 45,
-  scanBladeAngle: 0,
+  scanBladeAngle: 1,
   horizontalSegments: 96,
   verticalSegments: 10,
   gridLineWidth: 1,
@@ -80,7 +87,7 @@ export interface RingRadarAddOptions {
   scanBladeColor?: SpecialEffectsColorInput;
   /** 扫描叶片透明度，范围 0 到 1。 */
   scanBladeAlpha?: number;
-  /** 扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。 */
+  /** 扫描叶片角宽，单位：度。默认 1。 */
   scanBladeAngle?: number;
   /** 扫描旋转速度，单位：度/秒。默认 45。 */
   scanSpeed?: number;
@@ -122,7 +129,6 @@ export interface RingRadarResolvedOptions {
   scanBladeColor: Cesium.Color;
   scanBladeAlpha: number;
   scanBladeAngle: number;
-  activeScanBladeAngle: number;
   scanSpeed: number;
   scanBlink: boolean;
   horizontalSegments: number;
@@ -138,10 +144,6 @@ interface RingRadarRecord {
   options: RingRadarResolvedOptions;
   entities: Cesium.Entity[];
   removeTick: () => void;
-}
-
-interface RingRadarAnimationState {
-  startTime: number;
 }
 
 /** 环形雷达扫描 Entity 单体绘制类。 */
@@ -300,7 +302,7 @@ export function resolveRingRadarOptions(options: RingRadarAddOptions & { id: str
   );
   const scanBladeAngle = clamp(
     finiteNumber(options.scanBladeAngle, RING_RADAR_DEFAULTS.scanBladeAngle),
-    0,
+    1,
     120,
   );
 
@@ -352,7 +354,6 @@ export function resolveRingRadarOptions(options: RingRadarAddOptions & { id: str
     scanBladeColor,
     scanBladeAlpha: scanBladeColor.alpha,
     scanBladeAngle,
-    activeScanBladeAngle: scanBladeAngle === 0 ? AUTO_SCAN_BLADE_ANGLE : scanBladeAngle,
     scanSpeed: finiteNumber(options.scanSpeed, RING_RADAR_DEFAULTS.scanSpeed),
     scanBlink: options.scanBlink ?? RING_RADAR_DEFAULTS.scanBlink,
     horizontalSegments: integerAtLeast(options.horizontalSegments, RING_RADAR_DEFAULTS.horizontalSegments, 16),
@@ -367,338 +368,89 @@ function createRingRadarEntities(
   id: string,
   options: RingRadarResolvedOptions,
 ): Cesium.Entity[] {
-  const entities: Cesium.Entity[] = [];
-  const animation: RingRadarAnimationState = { startTime: Date.now() };
-  const matrix = createLocalFrame(options);
-
-  entities.push(
-    ...createDomeSurface(
-      viewer,
-      `${id}-outer`,
-      "FastX Ring Radar Outer Surface",
-      options.outerRadius,
-      options.outerDomeHeight,
-      options.outerSurfaceColor,
-      options,
-      matrix,
-    ),
-  );
-  entities.push(
-    ...createDomeGrid(
-      viewer,
-      `${id}-outer`,
-      "FastX Ring Radar Outer Grid",
-      options.outerRadius,
-      options.outerDomeHeight,
-      options.outerGridColor,
-      options,
-      matrix,
-    ),
-  );
-  entities.push(
-    ...createDomeSurface(
-      viewer,
-      `${id}-inner`,
-      "FastX Ring Radar Inner Surface",
-      options.innerRadius,
-      options.innerDomeHeight,
-      options.innerSurfaceColor,
-      options,
-      matrix,
-    ),
-  );
-  entities.push(
-    ...createDomeGrid(
-      viewer,
-      `${id}-inner`,
-      "FastX Ring Radar Inner Grid",
-      options.innerRadius,
-      options.innerDomeHeight,
-      options.innerGridColor,
-      options,
-      matrix,
-    ),
-  );
-  entities.push(
-    createScanBlade(
-      viewer,
-      `${id}-outer-scan-blade`,
-      "FastX Ring Radar Outer Scan Blade",
-      options.outerRadius,
-      options.outerDomeHeight,
-      0,
-      options,
-      animation,
-    ),
-  );
-
-  for (let index = 0; index < INNER_SCAN_BLADE_COUNT; index += 1) {
-    entities.push(
-      createScanBlade(
-        viewer,
-        `${id}-inner-scan-blade-${index}`,
-        "FastX Ring Radar Inner Scan Blade",
-        options.innerRadius,
-        options.innerDomeHeight,
-        (360 / INNER_SCAN_BLADE_COUNT) * index,
-        options,
-        animation,
-      ),
-    );
-  }
-
-  return entities;
+  const staticGeometry = createRingRadarStaticGeometry(options);
+  const animation = createRingRadarAnimationState();
+  return [
+    ...staticGeometry.faces.map((face, index) => createFaceEntity(viewer, `${id}-surface-${index}`, "FastX Ring Radar Surface", face, options.show)),
+    ...staticGeometry.lines.map((line, index) => createLineEntity(viewer, `${id}-grid-${index}`, "FastX Ring Radar Grid", line, options.show)),
+    ...createScanBladeEntities(viewer, id, options, animation),
+  ];
 }
 
-function createDomeSurface(
-  viewer: Cesium.Viewer,
-  idPrefix: string,
-  name: string,
-  radius: number,
-  domeHeight: number,
-  color: Cesium.Color,
-  options: RingRadarResolvedOptions,
-  matrix: Cesium.Matrix4,
-): Cesium.Entity[] {
-  const entities: Cesium.Entity[] = [];
-  const material = new Cesium.ColorMaterialProperty(Cesium.Color.clone(color));
-
-  for (let row = 0; row < options.verticalSegments; row += 1) {
-    for (let col = 0; col < options.horizontalSegments; col += 1) {
-      entities.push(
-        viewer.entities.add({
-          id: `${idPrefix}-surface-${row}-${col}`,
-          name,
-          show: options.show,
-          polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(
-              domePatchPositions(radius, domeHeight, options, matrix, row, col),
-            ),
-            material,
-            perPositionHeight: true,
-          },
-        }),
-      );
-    }
-  }
-
-  return entities;
-}
-
-function createDomeGrid(
-  viewer: Cesium.Viewer,
-  idPrefix: string,
-  name: string,
-  radius: number,
-  domeHeight: number,
-  color: Cesium.Color,
-  options: RingRadarResolvedOptions,
-  matrix: Cesium.Matrix4,
-): Cesium.Entity[] {
-  const entities: Cesium.Entity[] = [];
-  const material = new Cesium.ColorMaterialProperty(Cesium.Color.clone(color));
-
-  for (let row = 1; row <= options.verticalSegments; row += 1) {
-    const currentRadius = (radius * row) / options.verticalSegments;
-    entities.push(
-      addPolyline(
-        viewer,
-        `${idPrefix}-grid-ring-${row}`,
-        domeCirclePositions(radius, domeHeight, currentRadius, options, matrix),
-        material,
-        options,
-        name,
-      ),
-    );
-  }
-
-  const radialStep = Math.max(1, Math.floor(options.horizontalSegments / 36));
-  for (let col = 0; col < options.horizontalSegments; col += radialStep) {
-    const angle = (360 * col) / options.horizontalSegments;
-    const positions: Cesium.Cartesian3[] = [];
-    for (let row = 0; row <= options.verticalSegments; row += 1) {
-      const currentRadius = (radius * row) / options.verticalSegments;
-      positions.push(domeWorldPoint(currentRadius, angle, radius, domeHeight, matrix));
-    }
-    entities.push(
-      addPolyline(viewer, `${idPrefix}-grid-radial-${col}`, positions, material, options, name),
-    );
-  }
-
-  return entities;
-}
-
-function createScanBlade(
+function createFaceEntity(
   viewer: Cesium.Viewer,
   id: string,
   name: string,
-  radius: number,
-  domeHeight: number,
-  angleOffset: number,
-  options: RingRadarResolvedOptions,
-  animation: RingRadarAnimationState,
+  face: RingRadarFaceSpec,
+  show: boolean,
 ): Cesium.Entity {
-  const material = animatedColorMaterial(options.scanBladeColor, options.scanBlink, animation);
-
   return viewer.entities.add({
     id,
     name,
-    show: options.show,
+    show,
     polygon: {
-      hierarchy: new Cesium.CallbackProperty(() => {
-        const matrix = createLocalFrame(options);
-        const angle = scanAngle(options, animation) + angleOffset;
-        return new Cesium.PolygonHierarchy(
-          scanBladePositions(radius, domeHeight, angle, options, matrix),
-        );
-      }, false),
-      material,
+      hierarchy: new Cesium.PolygonHierarchy(face.positions),
+      material: new Cesium.ColorMaterialProperty(Cesium.Color.clone(face.color)),
       perPositionHeight: true,
     },
   });
 }
 
-function addPolyline(
+function createLineEntity(
   viewer: Cesium.Viewer,
   id: string,
-  positions: Cesium.Cartesian3[],
-  material: Cesium.MaterialProperty,
-  options: RingRadarResolvedOptions,
   name: string,
+  line: RingRadarLineSpec,
+  show: boolean,
 ): Cesium.Entity {
   return viewer.entities.add({
     id,
     name,
-    show: options.show,
+    show,
     polyline: {
-      positions,
-      width: options.gridLineWidth,
-      material,
+      positions: line.positions,
+      width: line.width,
+      material: new Cesium.ColorMaterialProperty(Cesium.Color.clone(line.color)),
       arcType: Cesium.ArcType.NONE,
     },
   });
 }
 
-function domePatchPositions(
-  radius: number,
-  domeHeight: number,
+function createScanBladeEntities(
+  viewer: Cesium.Viewer,
+  id: string,
   options: RingRadarResolvedOptions,
-  matrix: Cesium.Matrix4,
-  row: number,
-  col: number,
-): Cesium.Cartesian3[] {
-  const innerRowRadius = (radius * row) / options.verticalSegments;
-  const outerRowRadius = (radius * (row + 1)) / options.verticalSegments;
-  const startAngle = (360 * col) / options.horizontalSegments;
-  const endAngle = (360 * (col + 1)) / options.horizontalSegments;
-
-  if (row === 0) {
-    return [
-      domeWorldPoint(innerRowRadius, startAngle, radius, domeHeight, matrix),
-      domeWorldPoint(outerRowRadius, endAngle, radius, domeHeight, matrix),
-      domeWorldPoint(outerRowRadius, startAngle, radius, domeHeight, matrix),
-    ];
-  }
-
-  return [
-    domeWorldPoint(innerRowRadius, startAngle, radius, domeHeight, matrix),
-    domeWorldPoint(innerRowRadius, endAngle, radius, domeHeight, matrix),
-    domeWorldPoint(outerRowRadius, endAngle, radius, domeHeight, matrix),
-    domeWorldPoint(outerRowRadius, startAngle, radius, domeHeight, matrix),
-  ];
+  animation: RingRadarAnimationState,
+): Cesium.Entity[] {
+  const material = animatedScanBladeMaterial(options, animation);
+  return createRingRadarScanBladeFaces(options, 0).map((_face, index) =>
+    viewer.entities.add({
+      id: `${id}-scan-blade-${index}`,
+      name: "FastX Ring Radar Scan Blade",
+      show: options.show,
+      polygon: {
+        hierarchy: new Cesium.CallbackProperty(() => {
+          const angle = calcRingRadarScanAngle(options, animation);
+          return new Cesium.PolygonHierarchy(createRingRadarScanBladeFaces(options, angle)[index]?.positions ?? []);
+        }, false),
+        material,
+        perPositionHeight: true,
+      },
+    }),
+  );
 }
 
-function domeCirclePositions(
-  radius: number,
-  domeHeight: number,
-  currentRadius: number,
+function animatedScanBladeMaterial(
   options: RingRadarResolvedOptions,
-  matrix: Cesium.Matrix4,
-): Cesium.Cartesian3[] {
-  const positions: Cesium.Cartesian3[] = [];
-  for (let i = 0; i <= options.horizontalSegments; i += 1) {
-    positions.push(
-      domeWorldPoint(currentRadius, (360 * i) / options.horizontalSegments, radius, domeHeight, matrix),
-    );
-  }
-  return positions;
-}
-
-function scanBladePositions(
-  radius: number,
-  domeHeight: number,
-  angle: number,
-  options: RingRadarResolvedOptions,
-  matrix: Cesium.Matrix4,
-): Cesium.Cartesian3[] {
-  const radialSegments = Math.max(8, Math.ceil(options.horizontalSegments / 6));
-  const halfAngle = options.activeScanBladeAngle / 2;
-  const positions: Cesium.Cartesian3[] = [];
-
-  for (let i = 0; i <= radialSegments; i += 1) {
-    const r = (radius * i) / radialSegments;
-    positions.push(circlePoint(r, angle - halfAngle, 0, matrix));
-  }
-
-  for (let i = radialSegments; i >= 0; i -= 1) {
-    const r = (radius * i) / radialSegments;
-    positions.push(domeWorldPoint(r, angle + halfAngle, radius, domeHeight, matrix));
-  }
-
-  return positions;
-}
-
-function domeWorldPoint(
-  radius: number,
-  angle: number,
-  maxRadius: number,
-  domeHeight: number,
-  matrix: Cesium.Matrix4,
-): Cesium.Cartesian3 {
-  return circlePoint(radius, angle, domeHeightAtRadius(radius, maxRadius, domeHeight), matrix);
-}
-
-function domeHeightAtRadius(radius: number, maxRadius: number, domeHeight: number): number {
-  const t = clamp(radius / Math.max(1, maxRadius), 0, 1);
-  const crown = Math.sin(Math.PI * t) * domeHeight * 0.74;
-  const shoulder = Math.sin(Math.PI * Math.min(t, 0.5)) * domeHeight * 0.24;
-  return Math.max(0, crown + shoulder);
-}
-
-function circlePoint(
-  radius: number,
-  angle: number,
-  z: number,
-  matrix: Cesium.Matrix4,
-): Cesium.Cartesian3 {
-  const rad = Cesium.Math.toRadians(angle);
-  const point: LocalPoint = [Math.cos(rad) * radius, Math.sin(rad) * radius, z];
-  return localToWorld(point, matrix);
-}
-
-function animatedColorMaterial(
-  color: Cesium.Color,
-  blink: boolean,
   animation: RingRadarAnimationState,
 ): Cesium.ColorMaterialProperty {
   return new Cesium.ColorMaterialProperty(
     new Cesium.CallbackProperty((_time, result) => {
-      const out = Cesium.Color.clone(color, result);
-      if (blink) {
-        const seconds = secondsFrom(animation);
-        out.alpha *= 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(seconds * Math.PI * 3));
-      }
+      const out = Cesium.Color.clone(options.scanBladeColor, result);
+      out.alpha = calcRingRadarScanAlpha(options.scanBladeAlpha, options.scanBlink, animation);
       return out;
     }, false),
   );
-}
-
-function scanAngle(options: RingRadarResolvedOptions, animation: RingRadarAnimationState): number {
-  return normalizeAngle(secondsFrom(animation) * options.scanSpeed);
-}
-
-function secondsFrom(animation: RingRadarAnimationState): number {
-  return Math.max(0, (Date.now() - animation.startTime) / 1000);
 }
 
 function colorWithAlpha(
@@ -736,8 +488,4 @@ function clamp01(value: number | undefined): number | undefined {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
-}
-
-function normalizeAngle(angle: number): number {
-  return ((angle % 360) + 360) % 360;
 }

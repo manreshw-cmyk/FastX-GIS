@@ -579,7 +579,7 @@
     "title": "抛物面雷达",
     "fileName": "sfx-parabola-radar",
     "componentPath": "./sfx-parabola-radar.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/抛物面雷达.png"
   },
   {
     "key": "special-effects-19",
@@ -604,17 +604,10 @@
   },
   {
     "key": "special-effects-22",
-    "title": "扩散雷达扇形",
-    "fileName": "sfx-sector-diffusion-radar",
-    "componentPath": "./sfx-sector-diffusion-radar.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "special-effects-23",
-    "title": "扩散雷达圆形",
-    "fileName": "sfx-circle-diffusion-radar",
-    "componentPath": "./sfx-circle-diffusion-radar.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "title": "扩散雷达",
+    "fileName": "sfx-diffusion-radar",
+    "componentPath": "./sfx-diffusion-radar.vue",
+    "imageUrl": "../../assets/images/扩散雷达.png"
   },
   {
     "key": "meteorology-hydrology-1",

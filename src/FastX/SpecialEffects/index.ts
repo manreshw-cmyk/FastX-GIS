@@ -23,10 +23,8 @@ import AirRadar from "./AirRadar";
 import AirRadarCollection from "./AirRadar/AirRadarCollection";
 import SectorArcRadarScan from "./SectorArcRadarScan";
 import SectorArcRadarScanCollection from "./SectorArcRadarScan/SectorArcRadarScanCollection";
-import SectorDiffusionRadar from "./SectorDiffusionRadar";
-import SectorDiffusionRadarCollection from "./SectorDiffusionRadar/SectorDiffusionRadarCollection";
-import CircleDiffusionRadar from "./CircleDiffusionRadar";
-import CircleDiffusionRadarCollection from "./CircleDiffusionRadar/CircleDiffusionRadarCollection";
+import DiffusionRadar from "./DiffusionRadar";
+import DiffusionRadarCollection from "./DiffusionRadar/DiffusionRadarCollection";
 import AimEffect from "./AimEffect";
 import AimEffectCollection from "./AimEffect/AimEffectCollection";
 import ConeEffect from "./ConeEffect";
@@ -100,13 +98,9 @@ export { default as SectorArcRadarScan } from "./SectorArcRadarScan";
 export { default as SectorArcRadarScanCollection } from "./SectorArcRadarScan/SectorArcRadarScanCollection";
 export type { SectorArcRadarScanAddOptions, SectorArcRadarScanUpdateOptions } from "./SectorArcRadarScan";
 
-export { default as SectorDiffusionRadar } from "./SectorDiffusionRadar";
-export { default as SectorDiffusionRadarCollection } from "./SectorDiffusionRadar/SectorDiffusionRadarCollection";
-export type { SectorDiffusionRadarAddOptions, SectorDiffusionRadarUpdateOptions } from "./SectorDiffusionRadar";
-
-export { default as CircleDiffusionRadar } from "./CircleDiffusionRadar";
-export { default as CircleDiffusionRadarCollection } from "./CircleDiffusionRadar/CircleDiffusionRadarCollection";
-export type { CircleDiffusionRadarAddOptions, CircleDiffusionRadarUpdateOptions } from "./CircleDiffusionRadar";
+export { default as DiffusionRadar } from "./DiffusionRadar";
+export { default as DiffusionRadarCollection } from "./DiffusionRadar/DiffusionRadarCollection";
+export type { DiffusionRadarAddOptions, DiffusionRadarUpdateOptions } from "./DiffusionRadar";
 
 export { default as AimEffect } from "./AimEffect";
 export { default as AimEffectCollection } from "./AimEffect/AimEffectCollection";
@@ -195,10 +189,8 @@ export const SpecialEffects = {
   AirRadarCollection,
   SectorArcRadarScan,
   SectorArcRadarScanCollection,
-  SectorDiffusionRadar,
-  SectorDiffusionRadarCollection,
-  CircleDiffusionRadar,
-  CircleDiffusionRadarCollection,
+  DiffusionRadar,
+  DiffusionRadarCollection,
   AimEffect,
   AimEffectCollection,
   ConeEffect,
