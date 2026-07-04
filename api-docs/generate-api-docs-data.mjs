@@ -98,10 +98,8 @@ const preferredOrder = {
     'AirRadarCollection',
     'SectorArcRadarScan',
     'SectorArcRadarScanCollection',
-    'SectorDiffusionRadar',
-    'SectorDiffusionRadarCollection',
-    'CircleDiffusionRadar',
-    'CircleDiffusionRadarCollection',
+    'DiffusionRadar',
+    'DiffusionRadarCollection',
     'AimEffect',
     'AimEffectCollection',
     'ConeEffect',
@@ -278,10 +276,8 @@ const effectCnMap = {
   AirRadarCollection: '批量空中扫描雷达',
   SectorArcRadarScan: '扇弧形雷达扫描',
   SectorArcRadarScanCollection: '批量扇弧形雷达扫描',
-  SectorDiffusionRadar: '扩散雷达扇形',
-  SectorDiffusionRadarCollection: '批量扩散雷达扇形',
-  CircleDiffusionRadar: '扩散雷达圆形',
-  CircleDiffusionRadarCollection: '批量扩散雷达圆形',
+  DiffusionRadar: '扩散雷达',
+  DiffusionRadarCollection: '批量扩散雷达',
   AimEffect: '瞄准特效',
   AimEffectCollection: '批量瞄准特效',
   ConeEffect: '圆锥扫描特效',
@@ -824,7 +820,7 @@ const parameterDescriptions = {
   outerGridAlpha: '外环网格线透明度，范围 0 到 1。',
   scanBladeColor: '扫描叶片颜色。',
   scanBladeAlpha: '扫描叶片透明度，范围 0 到 1。',
-  scanBladeAngle: '扫描叶片角宽，单位为度；0 表示使用内置推荐角宽。',
+  scanBladeAngle: '扫描叶片角宽，单位为度。',
   scanSpeed: '扫描旋转速度，单位为度/秒。',
   scanBlink: '是否启用扫描叶片闪烁。',
   gridLineWidth: '网格线宽度，单位为像素。',
@@ -1489,8 +1485,14 @@ function usageFor(name, groupId) {
     if (baseName === 'ConeEffect') {
       options = "{ position: [120.3, 23.5, 1000], height: 500000, baseRadius: 100000, scanRadius: 70000, segments: 280, coneLineColor: 'rgba(255,0,0,1)', scanLineColor: 'rgba(0,255,0,1)', coneFillColor: 'rgba(0,255,255,0.25)', showConeFill: false, showCone: true, showScan: true }"
     }
+    if (baseName === 'ParabolaRadar') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 66000, domeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, scanBladeCount: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, surfaceColor: '#00ff48', surfaceAlpha: 0.34, gridColor: '#00ff48', gridAlpha: 0.78, scanBladeColor: '#ff0000', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
+    }
+    if (baseName === 'DiffusionRadar') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 400000, startAngle: 0, endAngle: 360, waveCount: 4, duration: 2200, segments: 128, lineWidth: 2, color: '#00d6ff', colorAlpha: 0.22, lineColor: '#00ffff', lineAlpha: 0.85, show: true }"
+    }
     if (baseName === 'RingRadar') {
-      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
     }
     if (baseName === 'RingRadar' && isCollection) {
       return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}()\nconst options = ${options}\neffect.addRadars(viewer, [options])`

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-01T12:31:12.362Z",
+  "generatedAt": "2026-07-04T03:00:20.101Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -17,8 +17,6 @@
     "CircleCollection",
     "CircleDiffusion",
     "CircleDiffusionCollection",
-    "CircleDiffusionRadar",
-    "CircleDiffusionRadarCollection",
     "ConeEffect",
     "ConeEffectCollection",
     "ConicalScanner",
@@ -32,6 +30,8 @@
     "DEFAULT_HEATMAP_STYLE",
     "DEFAULT_PLANE_VIDEO",
     "DEFAULT_POINT_AGGREGATION_STYLE",
+    "DiffusionRadar",
+    "DiffusionRadarCollection",
     "DoubleViewFrustum",
     "DoubleViewFrustumCollection",
     "ElectronicFence",
@@ -97,8 +97,6 @@
     "SectorArcRadarScan",
     "SectorArcRadarScanCollection",
     "SectorCollection",
-    "SectorDiffusionRadar",
-    "SectorDiffusionRadarCollection",
     "SingleViewFrustum",
     "SingleViewFrustumCollection",
     "SpecialEffects",
@@ -14023,8 +14021,6 @@
             "CircleCollectionUpdateEntry",
             "CircleCollectionUpdateOptions",
             "CircleDiffusionAddOptions",
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions",
             "CircleDiffusionUpdateOptions",
             "CircleSnapshot",
             "CircleStyleOptions",
@@ -15251,8 +15247,6 @@
             "CircleCollectionUpdateEntry",
             "CircleCollectionUpdateOptions",
             "CircleDiffusionAddOptions",
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions",
             "CircleDiffusionUpdateOptions",
             "CircleSnapshot",
             "CircleStyleOptions",
@@ -17410,8 +17404,6 @@
             "SectorCollectionEntry",
             "SectorCollectionSnapshot",
             "SectorCollectionStoredData",
-            "SectorDiffusionRadarAddOptions",
-            "SectorDiffusionRadarUpdateOptions",
             "SectorSnapshot",
             "SectorStyleOptions",
             "UpdateSectorProperties"
@@ -18748,8 +18740,6 @@
             "SectorCollectionEntry",
             "SectorCollectionSnapshot",
             "SectorCollectionStoredData",
-            "SectorDiffusionRadarAddOptions",
-            "SectorDiffusionRadarUpdateOptions",
             "SectorSnapshot",
             "SectorStyleOptions",
             "UpdateSectorProperties"
@@ -40192,8 +40182,6 @@
           ],
           "types": [
             "CircleDiffusionAddOptions",
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions",
             "CircleDiffusionUpdateOptions"
           ],
           "params": [
@@ -40468,8 +40456,6 @@
           ],
           "types": [
             "CircleDiffusionAddOptions",
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions",
             "CircleDiffusionUpdateOptions"
           ],
           "params": [
@@ -46472,55 +46458,69 @@
           "generated": true
         },
         {
-          "id": "SectorDiffusionRadar",
+          "id": "DiffusionRadar",
           "kind": "api",
           "group": "effects",
-          "name": "SectorDiffusionRadar",
-          "cn": "扩散雷达扇形",
-          "title": "SectorDiffusionRadar（扩散雷达扇形）",
-          "description": "扩散雷达扇形 API，用于创建、更新、查询、显隐和清理单体特效。",
+          "name": "DiffusionRadar",
+          "cn": "扩散雷达",
+          "title": "DiffusionRadar（扩散雷达）",
+          "description": "扩散雷达 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SectorDiffusionRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增扇形扩散雷达 Entity，返回成功创建的 id。"
-            },
             {
               "name": "add",
               "params": [
                 {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
                   "name": "options",
-                  "type": "SectorDiffusionRadarAddOptions",
+                  "type": "DiffusionRadarAddOptions",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 }
               ],
               "returnType": "string | undefined",
-              "description": "新增扩散雷达扇形。"
+              "description": "新增扩散雷达。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "DiffusionRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增扩散雷达 Entity，并返回创建成功的 id。"
+            },
+            {
+              "name": "addRadars",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "DiffusionRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增扩散雷达 Entity，并返回创建成功的 id。"
             },
             {
               "name": "update",
@@ -46534,14 +46534,14 @@
                 },
                 {
                   "name": "options",
-                  "type": "SectorDiffusionRadarUpdateOptions",
+                  "type": "DiffusionRadarUpdateOptions",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定扩散雷达扇形。"
+              "description": "更新一个扩散雷达 Entity。"
             },
             {
               "name": "show",
@@ -46562,7 +46562,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定扩散雷达扇形显隐。"
+              "description": "设置一个扩散雷达 Entity 的显隐。"
             },
             {
               "name": "get",
@@ -46575,8 +46575,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定扩散雷达扇形实例。"
+              "returnType": "Cesium.Entity[] | undefined",
+              "description": "根据特效 id 获取 Entity 列表。"
             },
             {
               "name": "getAllIds",
@@ -46590,7 +46590,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "获取所有 id，可按 Viewer 过滤。"
             },
             {
               "name": "remove",
@@ -46604,7 +46604,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定扩散雷达扇形。"
+              "description": "移除一个扩散雷达 Entity。"
             },
             {
               "name": "clear",
@@ -46618,143 +46618,23 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
+              "description": "清空扩散雷达，可按 Viewer 过滤。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
+              "description": "销毁当前管理的全部扩散雷达。"
             }
           ],
           "types": [
-            "SectorDiffusionRadarAddOptions",
-            "SectorDiffusionRadarUpdateOptions"
+            "DiffusionRadarAddOptions",
+            "DiffusionRadarUpdateOptions"
           ],
           "params": [
             {
-              "name": "addRadars.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRadars.options",
-              "type": "SectorDiffusionRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRadars.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRadars.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "addRadars.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRadars.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扇形面颜色。默认 rgba(0,180,255,0.2)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,255,0.85)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "addRadars.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扇形角度，单位：度。默认 90。"
-            },
-            {
-              "name": "addRadars.options.waveCount",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
-            },
-            {
-              "name": "addRadars.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
               "name": "add.options",
-              "type": "SectorDiffusionRadarAddOptions",
+              "type": "DiffusionRadarAddOptions",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
@@ -46768,7 +46648,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "add.options.position.longitude",
@@ -46813,46 +46693,70 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "add.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "add.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "扇形面颜色。默认 rgba(0,180,255,0.2)。"
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "add.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,255,0.85)。"
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "add.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
             },
             {
               "name": "add.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
             },
             {
               "name": "add.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "add.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扇形角度，单位：度。默认 90。"
+              "description": "几何分段数。默认 128。"
             },
             {
               "name": "add.options.waveCount",
               "type": "number",
               "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "add.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
             },
             {
               "name": "add.options.show",
@@ -46861,219 +46765,143 @@
               "description": "是否显示。默认 true。"
             },
             {
-              "name": "update.id",
-              "type": "string",
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
               "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             },
             {
-              "name": "update.options",
-              "type": "SectorDiffusionRadarUpdateOptions",
+              "name": "addMany.options",
+              "type": "DiffusionRadarAddOptions[]",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
             {
-              "name": "show.id",
+              "name": "addMany.options.id",
               "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
             },
             {
-              "name": "show.visible",
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "addMany.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
+              "name": "addMany.options.color",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "addMany.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.lineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "addMany.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.lineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
+            },
+            {
+              "name": "addMany.options.segments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "几何分段数。默认 128。"
+            },
+            {
+              "name": "addMany.options.waveCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "addMany.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
+            },
+            {
+              "name": "addMany.options.show",
               "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
               "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+              "description": "是否显示。默认 true。"
             },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SectorDiffusionRadar(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { SectorDiffusionRadar } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "SectorDiffusionRadarCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "SectorDiffusionRadarCollection",
-          "cn": "批量扩散雷达扇形",
-          "title": "SectorDiffusionRadarCollection（批量扩散雷达扇形）",
-          "description": "批量扩散雷达扇形 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SectorDiffusionRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增扇形扩散雷达 Primitive，返回成功创建的 id。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SectorDiffusionRadarUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定扇形扩散雷达 Primitive。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SectorDiffusionRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量扩散雷达扇形。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定批量扩散雷达扇形显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量扩散雷达扇形实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定批量扩散雷达扇形。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "SectorDiffusionRadarAddOptions",
-            "SectorDiffusionRadarUpdateOptions"
-          ],
-          "params": [
             {
               "name": "addRadars.viewer",
               "type": "Cesium.Viewer",
@@ -47082,7 +46910,7 @@
             },
             {
               "name": "addRadars.options",
-              "type": "SectorDiffusionRadarAddOptions[]",
+              "type": "DiffusionRadarAddOptions[]",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
@@ -47096,7 +46924,7 @@
               "name": "addRadars.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "addRadars.options.position.longitude",
@@ -47141,46 +46969,70 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "addRadars.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "addRadars.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "addRadars.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
               "name": "addRadars.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "扇形面颜色。默认 rgba(0,180,255,0.2)。"
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "addRadars.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
             },
             {
               "name": "addRadars.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,255,0.85)。"
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "addRadars.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
             },
             {
               "name": "addRadars.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
             },
             {
               "name": "addRadars.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "addRadars.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扇形角度，单位：度。默认 90。"
+              "description": "几何分段数。默认 128。"
             },
             {
               "name": "addRadars.options.waveCount",
               "type": "number",
               "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "addRadars.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
             },
             {
               "name": "addRadars.options.show",
@@ -47196,123 +47048,9 @@
             },
             {
               "name": "update.options",
-              "type": "SectorDiffusionRadarUpdateOptions",
+              "type": "DiffusionRadarUpdateOptions",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "SectorDiffusionRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扇形面颜色。默认 rgba(0,180,255,0.2)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,255,0.85)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "add.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扇形角度，单位：度。默认 90。"
-            },
-            {
-              "name": "add.options.waveCount",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
             },
             {
               "name": "show.id",
@@ -47351,40 +47089,19 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SectorDiffusionRadarCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
-          "access": "import { SectorDiffusionRadarCollection } from 'fastx-sdk'",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DiffusionRadar(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 400000, startAngle: 0, endAngle: 360, waveCount: 4, duration: 2200, segments: 128, lineWidth: 2, color: '#00d6ff', colorAlpha: 0.22, lineColor: '#00ffff', lineAlpha: 0.85, show: true }\neffect.add(options)",
+          "access": "import { DiffusionRadar } from 'fastx-sdk'",
           "generated": true
         },
         {
-          "id": "CircleDiffusionRadar",
+          "id": "DiffusionRadarCollection",
           "kind": "api",
           "group": "effects",
-          "name": "CircleDiffusionRadar",
-          "cn": "扩散雷达圆形",
-          "title": "CircleDiffusionRadar（扩散雷达圆形）",
-          "description": "扩散雷达圆形 API，用于创建、更新、查询、显隐和清理单体特效。",
+          "name": "DiffusionRadarCollection",
+          "cn": "批量扩散雷达",
+          "title": "DiffusionRadarCollection（批量扩散雷达）",
+          "description": "批量扩散雷达 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
           "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "CircleDiffusionRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增圆形扩散雷达 Entity，返回成功创建的 id。"
-            },
             {
               "name": "add",
               "params": [
@@ -47397,403 +47114,36 @@
                 },
                 {
                   "name": "options",
-                  "type": "CircleDiffusionRadarAddOptions",
+                  "type": "DiffusionRadarAddOptions",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 }
               ],
               "returnType": "string | undefined",
-              "description": "新增扩散雷达圆形。"
+              "description": "新增一个扩散雷达 Primitive，并返回 id。"
             },
             {
-              "name": "update",
+              "name": "addMany",
               "params": [
                 {
-                  "name": "id",
-                  "type": "string",
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 },
                 {
                   "name": "options",
-                  "type": "CircleDiffusionRadarUpdateOptions",
+                  "type": "DiffusionRadarAddOptions[]",
                   "optional": false,
                   "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定扩散雷达圆形。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定扩散雷达圆形显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定扩散雷达圆形实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
                   "description": ""
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "批量新增扩散雷达 Primitive，并返回创建成功的 id。"
             },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定扩散雷达圆形。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addRadars.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRadars.options",
-              "type": "CircleDiffusionRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRadars.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRadars.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "addRadars.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRadars.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "圆形面颜色。默认 rgba(0,255,120,0.18)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,120,0.9)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 128。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "addRadars.options.waveCount",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
-            },
-            {
-              "name": "addRadars.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "CircleDiffusionRadarAddOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "圆形面颜色。默认 rgba(0,255,120,0.18)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,120,0.9)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 128。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "add.options.waveCount",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "CircleDiffusionRadarUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.CircleDiffusionRadar(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { CircleDiffusionRadar } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "CircleDiffusionRadarCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "CircleDiffusionRadarCollection",
-          "cn": "批量扩散雷达圆形",
-          "title": "CircleDiffusionRadarCollection（批量扩散雷达圆形）",
-          "description": "批量扩散雷达圆形 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
             {
               "name": "addRadars",
               "params": [
@@ -47806,14 +47156,14 @@
                 },
                 {
                   "name": "options",
-                  "type": "CircleDiffusionRadarAddOptions[]",
+                  "type": "DiffusionRadarAddOptions[]",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增圆形扩散雷达 Primitive，返回成功创建的 id。"
+              "description": "批量新增扩散雷达 Primitive，并返回创建成功的 id。"
             },
             {
               "name": "update",
@@ -47827,35 +47177,14 @@
                 },
                 {
                   "name": "options",
-                  "type": "CircleDiffusionRadarUpdateOptions",
+                  "type": "DiffusionRadarUpdateOptions",
                   "optional": false,
                   "defaultValue": "必填",
                   "description": ""
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定圆形扩散雷达 Primitive。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "CircleDiffusionRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量扩散雷达圆形。"
+              "description": "更新一个扩散雷达 Primitive。"
             },
             {
               "name": "show",
@@ -47876,7 +47205,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定批量扩散雷达圆形显隐。"
+              "description": "设置一个扩散雷达 Primitive 的显隐。"
             },
             {
               "name": "get",
@@ -47889,8 +47218,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量扩散雷达圆形实例。"
+              "returnType": "Cesium.Primitive[] | undefined",
+              "description": "根据特效 id 获取 Primitive 列表。"
             },
             {
               "name": "getAllIds",
@@ -47904,7 +47233,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "获取所有 id，可按 Viewer 过滤。"
             },
             {
               "name": "remove",
@@ -47918,7 +47247,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定批量扩散雷达圆形。"
+              "description": "移除一个扩散雷达 Primitive。"
             },
             {
               "name": "clear",
@@ -47932,140 +47261,20 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
+              "description": "清空扩散雷达 Primitive，可按 Viewer 过滤。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
+              "description": "销毁当前管理的全部扩散雷达 Primitive。"
             }
           ],
           "types": [
-            "CircleDiffusionRadarAddOptions",
-            "CircleDiffusionRadarUpdateOptions"
+            "DiffusionRadarAddOptions",
+            "DiffusionRadarUpdateOptions"
           ],
           "params": [
-            {
-              "name": "addRadars.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRadars.options",
-              "type": "CircleDiffusionRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRadars.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRadars.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "addRadars.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRadars.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "圆形面颜色。默认 rgba(0,255,120,0.18)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,120,0.9)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 128。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "addRadars.options.waveCount",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
-            },
-            {
-              "name": "addRadars.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "CircleDiffusionRadarUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
             {
               "name": "add.viewer",
               "type": "Cesium.Viewer",
@@ -48074,7 +47283,7 @@
             },
             {
               "name": "add.options",
-              "type": "CircleDiffusionRadarAddOptions[]",
+              "type": "DiffusionRadarAddOptions",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
@@ -48088,7 +47297,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "add.options.position.longitude",
@@ -48133,22 +47342,52 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "add.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "add.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "圆形面颜色。默认 rgba(0,255,120,0.18)。"
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "add.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "扩散波纹颜色。默认 rgba(0,255,120,0.9)。"
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "add.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
             },
             {
               "name": "add.options.lineWidth",
               "type": "number",
               "defaultValue": "-",
-              "description": "波纹线宽，单位：像素。默认 2。"
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
             },
             {
               "name": "add.options.segments",
@@ -48157,22 +47396,310 @@
               "description": "几何分段数。默认 128。"
             },
             {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大扩散半径，单位：米。默认 10000。"
-            },
-            {
               "name": "add.options.waveCount",
               "type": "number",
               "defaultValue": "-",
-              "description": "同时显示的波纹圈数量。默认 4。"
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "add.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
             },
             {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
               "description": "是否显示。默认 true。"
+            },
+            {
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addMany.options",
+              "type": "DiffusionRadarAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addMany.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "addMany.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
+              "name": "addMany.options.color",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "addMany.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.lineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "addMany.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.lineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
+            },
+            {
+              "name": "addMany.options.segments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "几何分段数。默认 128。"
+            },
+            {
+              "name": "addMany.options.waveCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "addMany.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
+            },
+            {
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
+            },
+            {
+              "name": "addRadars.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addRadars.options",
+              "type": "DiffusionRadarAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addRadars.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addRadars.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "addRadars.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addRadars.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addRadars.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addRadars.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addRadars.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addRadars.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addRadars.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addRadars.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散半径，单位：米。默认 400000。"
+            },
+            {
+              "name": "addRadars.options.startAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "起始角度，单位：度。默认 0。"
+            },
+            {
+              "name": "addRadars.options.endAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "结束角度，单位：度。默认 360；与起始角度形成 360 度范围时为圆形。"
+            },
+            {
+              "name": "addRadars.options.color",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扩散范围填充颜色。默认 rgba(0,214,255,0.22)。"
+            },
+            {
+              "name": "addRadars.options.colorAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扩散范围填充透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.lineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "波纹和边界线颜色。默认 rgba(0,255,255,0.85)。"
+            },
+            {
+              "name": "addRadars.options.lineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.lineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "波纹和边界线宽，单位：像素。默认 2。"
+            },
+            {
+              "name": "addRadars.options.segments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "几何分段数。默认 128。"
+            },
+            {
+              "name": "addRadars.options.waveCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "同时显示的波纹数量。默认 4。"
+            },
+            {
+              "name": "addRadars.options.duration",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单条波纹扩散一轮的时长，单位：毫秒。默认 2200。"
+            },
+            {
+              "name": "addRadars.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
+            },
+            {
+              "name": "update.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "update.options",
+              "type": "DiffusionRadarUpdateOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
             },
             {
               "name": "show.id",
@@ -48211,8 +47738,8 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.CircleDiffusionRadarCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
-          "access": "import { CircleDiffusionRadarCollection } from 'fastx-sdk'",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DiffusionRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 400000, startAngle: 0, endAngle: 360, waveCount: 4, duration: 2200, segments: 128, lineWidth: 2, color: '#00d6ff', colorAlpha: 0.22, lineColor: '#00ffff', lineAlpha: 0.85, show: true }\neffect.add(viewer, options)",
+          "access": "import { DiffusionRadarCollection } from 'fastx-sdk'",
           "generated": true
         },
         {
@@ -51857,6 +51384,41 @@
           "description": "抛物面雷达 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
             {
+              "name": "add",
+              "params": [
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarAddOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string | undefined",
+              "description": "新增抛物面雷达。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增抛物面雷达 Entity，并返回创建成功的 id。"
+            },
+            {
               "name": "addRadars",
               "params": [
                 {
@@ -51875,28 +51437,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增抛物面雷达 Entity，返回成功创建的 id。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ParabolaRadarAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增抛物面雷达。"
+              "description": "批量新增抛物面雷达 Entity，并返回创建成功的 id。"
             },
             {
               "name": "update",
@@ -51917,7 +51458,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定抛物面雷达。"
+              "description": "更新一个抛物面雷达 Entity。"
             },
             {
               "name": "show",
@@ -51938,7 +51479,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定抛物面雷达显隐。"
+              "description": "设置一个抛物面雷达 Entity 的显隐。"
             },
             {
               "name": "get",
@@ -51951,8 +51492,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定抛物面雷达实例。"
+              "returnType": "Cesium.Entity[] | undefined",
+              "description": "根据特效 id 获取 Entity 列表。"
             },
             {
               "name": "getAllIds",
@@ -51966,7 +51507,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "获取所有 id，可按 Viewer 过滤。"
             },
             {
               "name": "remove",
@@ -51980,7 +51521,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定抛物面雷达。"
+              "description": "移除一个抛物面雷达 Entity。"
             },
             {
               "name": "clear",
@@ -51994,13 +51535,13 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
+              "description": "清空抛物面雷达，可按 Viewer 过滤。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
+              "description": "销毁当前管理的全部抛物面雷达。"
             }
           ],
           "types": [
@@ -52008,6 +51549,324 @@
             "ParabolaRadarUpdateOptions"
           ],
           "params": [
+            {
+              "name": "add.options",
+              "type": "ParabolaRadarAddOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "add.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "add.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "add.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "add.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "add.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "add.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "add.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "add.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面半径，单位：米。默认 66000。"
+            },
+            {
+              "name": "add.options.domeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "add.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "add.options.surfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "add.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "add.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "add.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "add.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "add.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "add.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用叶片闪烁。默认 false。"
+            },
+            {
+              "name": "add.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数。默认 96。"
+            },
+            {
+              "name": "add.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
+            },
+            {
+              "name": "add.options.show",
+              "type": "boolean",
+              "defaultValue": "true",
+              "description": "是否显示。默认 true。"
+            },
+            {
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addMany.options",
+              "type": "ParabolaRadarAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addMany.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面半径，单位：米。默认 66000。"
+            },
+            {
+              "name": "addMany.options.domeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addMany.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "addMany.options.surfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addMany.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "addMany.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addMany.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addMany.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数。默认 96。"
+            },
+            {
+              "name": "addMany.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
+            },
+            {
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
+            },
             {
               "name": "addRadars.viewer",
               "type": "Cesium.Viewer",
@@ -52030,7 +51889,7 @@
               "name": "addRadars.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "addRadars.options.position.longitude",
@@ -52075,46 +51934,94 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "抛物面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
               "name": "addRadars.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "弧面半径，单位：米。默认 66000。"
             },
             {
-              "name": "addRadars.options.height",
+              "name": "addRadars.options.domeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "抛物面高度，单位：米。默认 500000。"
+              "description": "弧面高度，单位：米。默认 18000。"
             },
             {
-              "name": "addRadars.options.radialSegments",
+              "name": "addRadars.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "addRadars.options.surfaceAlpha",
               "type": "number",
               "defaultValue": "-",
-              "description": "径向分段数。默认 32。"
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addRadars.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addRadars.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addRadars.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数。默认 96。"
+            },
+            {
+              "name": "addRadars.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
             },
             {
               "name": "addRadars.options.show",
@@ -52122,6 +52029,241 @@
               "defaultValue": "-",
               "description": "是否显示。默认 true。"
             },
+            {
+              "name": "update.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "update.options",
+              "type": "ParabolaRadarUpdateOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "show.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "show.visible",
+              "type": "boolean",
+              "defaultValue": "必填",
+              "description": "是否显示当前特效。"
+            },
+            {
+              "name": "get.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "getAllIds.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "remove.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "clear.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ParabolaRadar(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 66000, domeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, scanBladeCount: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, surfaceColor: '#00ff48', surfaceAlpha: 0.34, gridColor: '#00ff48', gridAlpha: 0.78, scanBladeColor: '#ff0000', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.add(options)",
+          "access": "import { ParabolaRadar } from 'fastx-sdk'",
+          "generated": true
+        },
+        {
+          "id": "ParabolaRadarCollection",
+          "kind": "api",
+          "group": "effects",
+          "name": "ParabolaRadarCollection",
+          "cn": "批量抛物面雷达",
+          "title": "ParabolaRadarCollection（批量抛物面雷达）",
+          "description": "批量抛物面雷达 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
+          "methods": [
+            {
+              "name": "add",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarAddOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string | undefined",
+              "description": "新增一个抛物面雷达 Primitive，并返回 id。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增抛物面雷达 Primitive，并返回创建成功的 id。"
+            },
+            {
+              "name": "addRadars",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增抛物面雷达 Primitive，并返回创建成功的 id。"
+            },
+            {
+              "name": "update",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "ParabolaRadarUpdateOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "更新一个抛物面雷达 Primitive。"
+            },
+            {
+              "name": "show",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "visible",
+                  "type": "boolean",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "设置一个抛物面雷达 Primitive 的显隐。"
+            },
+            {
+              "name": "get",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Cesium.Primitive[] | undefined",
+              "description": "根据特效 id 获取 Primitive 列表。"
+            },
+            {
+              "name": "getAllIds",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "获取所有 id，可按 Viewer 过滤。"
+            },
+            {
+              "name": "remove",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "移除一个抛物面雷达 Primitive。"
+            },
+            {
+              "name": "clear",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "void",
+              "description": "清空抛物面雷达 Primitive，可按 Viewer 过滤。"
+            },
+            {
+              "name": "destroy",
+              "params": [],
+              "returnType": "void",
+              "description": "销毁当前管理的全部抛物面雷达 Primitive。"
+            }
+          ],
+          "types": [
+            "ParabolaRadarAddOptions",
+            "ParabolaRadarUpdateOptions"
+          ],
+          "params": [
             {
               "name": "add.viewer",
               "type": "Cesium.Viewer",
@@ -52144,7 +52286,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "add.options.position.longitude",
@@ -52189,46 +52331,94 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "抛物面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
               "name": "add.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "弧面半径，单位：米。默认 66000。"
             },
             {
-              "name": "add.options.height",
+              "name": "add.options.domeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "抛物面高度，单位：米。默认 500000。"
+              "description": "弧面高度，单位：米。默认 18000。"
             },
             {
-              "name": "add.options.radialSegments",
+              "name": "add.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "add.options.surfaceAlpha",
               "type": "number",
               "defaultValue": "-",
-              "description": "径向分段数。默认 32。"
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "add.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "add.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "add.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "add.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "add.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "add.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用叶片闪烁。默认 false。"
+            },
+            {
+              "name": "add.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数。默认 96。"
+            },
+            {
+              "name": "add.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
             },
             {
               "name": "add.options.show",
@@ -52237,219 +52427,167 @@
               "description": "是否显示。默认 true。"
             },
             {
-              "name": "update.id",
-              "type": "string",
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
               "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             },
             {
-              "name": "update.options",
-              "type": "ParabolaRadarUpdateOptions",
+              "name": "addMany.options",
+              "type": "ParabolaRadarAddOptions[]",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
             },
             {
-              "name": "show.id",
+              "name": "addMany.options.id",
               "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
             },
             {
-              "name": "show.visible",
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "雷达中心点位置。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度。默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放。默认 1。"
+            },
+            {
+              "name": "addMany.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面半径，单位：米。默认 66000。"
+            },
+            {
+              "name": "addMany.options.domeHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面高度，单位：米。默认 18000。"
+            },
+            {
+              "name": "addMany.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "addMany.options.surfaceAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addMany.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "addMany.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "addMany.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addMany.options.scanBlink",
               "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
               "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+              "description": "是否启用叶片闪烁。默认 false。"
             },
             {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
+              "name": "addMany.options.horizontalSegments",
+              "type": "number",
               "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ParabolaRadar(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { ParabolaRadar } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "ParabolaRadarCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "ParabolaRadarCollection",
-          "cn": "批量抛物面雷达",
-          "title": "ParabolaRadarCollection（批量抛物面雷达）",
-          "description": "批量抛物面雷达 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ParabolaRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增抛物面雷达 Primitive，返回成功创建的 id。"
+              "description": "水平插值点数。默认 96。"
             },
             {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ParabolaRadarUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定抛物面雷达 Primitive。"
+              "name": "addMany.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
             },
             {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ParabolaRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量抛物面雷达。"
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示。默认 true。"
             },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定批量抛物面雷达显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量抛物面雷达实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定批量抛物面雷达。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "ParabolaRadarAddOptions",
-            "ParabolaRadarUpdateOptions"
-          ],
-          "params": [
             {
               "name": "addRadars.viewer",
               "type": "Cesium.Viewer",
@@ -52472,7 +52610,7 @@
               "name": "addRadars.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "雷达中心点。"
+              "description": "雷达中心点位置。"
             },
             {
               "name": "addRadars.options.position.longitude",
@@ -52517,46 +52655,94 @@
               "description": "整体缩放。默认 1。"
             },
             {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "抛物面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
               "name": "addRadars.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
+              "description": "弧面半径，单位：米。默认 66000。"
             },
             {
-              "name": "addRadars.options.height",
+              "name": "addRadars.options.domeHeight",
               "type": "number",
               "defaultValue": "-",
-              "description": "抛物面高度，单位：米。默认 500000。"
+              "description": "弧面高度，单位：米。默认 18000。"
             },
             {
-              "name": "addRadars.options.radialSegments",
+              "name": "addRadars.options.surfaceColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "弧面颜色。默认 rgba(0,255,72,0.34)。"
+            },
+            {
+              "name": "addRadars.options.surfaceAlpha",
               "type": "number",
               "defaultValue": "-",
-              "description": "径向分段数。默认 32。"
+              "description": "弧面透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "网格线颜色。默认 rgba(0,255,72,0.78)。"
+            },
+            {
+              "name": "addRadars.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格线宽，单位：像素。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "扫描叶片颜色。默认 rgba(255,0,0,0.48)。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片角宽，单位：度。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanBladeCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描叶片数量。默认 1。"
+            },
+            {
+              "name": "addRadars.options.scanSpeed",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "扫描旋转速度，单位：度/秒。默认 45。"
+            },
+            {
+              "name": "addRadars.options.scanBlink",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用叶片闪烁。默认 false。"
+            },
+            {
+              "name": "addRadars.options.horizontalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平插值点数。默认 96。"
+            },
+            {
+              "name": "addRadars.options.verticalSegments",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直插值点数。默认 10。"
             },
             {
               "name": "addRadars.options.show",
@@ -52575,120 +52761,6 @@
               "type": "ParabolaRadarUpdateOptions",
               "defaultValue": "必填",
               "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "ParabolaRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "抛物面颜色。默认 rgba(0,255,55,0.3)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(0,255,55,0.75)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "底部半径，单位：米。默认 100000。"
-            },
-            {
-              "name": "add.options.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "抛物面高度，单位：米。默认 500000。"
-            },
-            {
-              "name": "add.options.radialSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "径向分段数。默认 32。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
             },
             {
               "name": "show.id",
@@ -52727,7 +52799,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ParabolaRadarCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ParabolaRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 66000, domeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, scanBladeCount: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, surfaceColor: '#00ff48', surfaceAlpha: 0.34, gridColor: '#00ff48', gridAlpha: 0.78, scanBladeColor: '#ff0000', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.add(viewer, options)",
           "access": "import { ParabolaRadarCollection } from 'fastx-sdk'",
           "generated": true
         },
@@ -53938,7 +54010,7 @@
               "name": "add.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "add.options.scanSpeed",
@@ -54130,7 +54202,7 @@
               "name": "addMany.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "addMany.options.scanSpeed",
@@ -54322,7 +54394,7 @@
               "name": "addRadars.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "addRadars.options.scanSpeed",
@@ -54409,7 +54481,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadar(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadar(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.add(options)",
           "access": "import { RingRadar } from 'fastx-sdk'",
           "generated": true
         },
@@ -54441,7 +54513,7 @@
                 }
               ],
               "returnType": "string | undefined",
-              "description": "新增一个环形雷达扫描，返回特效 id。"
+              "description": "新增一个环形雷达扫描 Primitive，返回特效 id。"
             },
             {
               "name": "addMany",
@@ -54462,7 +54534,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增环形雷达扫描，返回成功创建的 id。"
+              "description": "批量新增环形雷达扫描 Primitive，返回成功创建的 id。"
             },
             {
               "name": "addRadars",
@@ -54483,7 +54555,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增环形雷达扫描，返回成功创建的 id。"
+              "description": "批量新增环形雷达扫描 Primitive，返回成功创建的 id。"
             },
             {
               "name": "update",
@@ -54504,7 +54576,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定环形雷达扫描。"
+              "description": "更新指定环形雷达扫描 Primitive。"
             },
             {
               "name": "show",
@@ -54525,7 +54597,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定环形雷达扫描显隐。"
+              "description": "设置指定环形雷达扫描 Primitive 显隐。"
             },
             {
               "name": "get",
@@ -54538,8 +54610,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | undefined",
-              "description": "获取指定特效对应的 Entity 集合。"
+              "returnType": "Cesium.Primitive[] | undefined",
+              "description": "获取指定特效对应的 Primitive 集合。"
             },
             {
               "name": "getAllIds",
@@ -54567,7 +54639,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定环形雷达扫描。"
+              "description": "删除指定环形雷达扫描 Primitive。"
             },
             {
               "name": "clear",
@@ -54581,13 +54653,13 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空全部环形雷达扫描；传入 viewer 时只清空该 Viewer 下的特效。"
+              "description": "清空全部环形雷达扫描 Primitive；传入 viewer 时只清空该 Viewer 下的特效。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前管理器中的全部环形雷达扫描。"
+              "description": "销毁当前管理器中的全部环形雷达扫描 Primitive。"
             }
           ],
           "types": [
@@ -54749,7 +54821,7 @@
               "name": "add.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "add.options.scanSpeed",
@@ -54941,7 +55013,7 @@
               "name": "addMany.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "addMany.options.scanSpeed",
@@ -55133,7 +55205,7 @@
               "name": "addRadars.options.scanBladeAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "扫描叶片角宽，单位：度。默认 0 表示使用内置推荐角宽 32 度。"
+              "description": "扫描叶片角宽，单位：度。默认 1。"
             },
             {
               "name": "addRadars.options.scanSpeed",
@@ -55220,7 +55292,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 0, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.addRadars(viewer, [options])",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.addRadars(viewer, [options])",
           "access": "import { RingRadarCollection } from 'fastx-sdk'",
           "generated": true
         },
