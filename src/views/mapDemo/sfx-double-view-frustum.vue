@@ -20,8 +20,11 @@ interface DoubleViewFrustumForm extends SfxSpatialEffectForm {
   aspectRatio: number
   color: string
   colorAlpha: number
+  fillColor: string
+  fillAlpha: number
   lineColor: string
   lineAlpha: number
+  lineWidth: number
 }
 
 function createDefaultForm(): DoubleViewFrustumForm {
@@ -29,7 +32,7 @@ function createDefaultForm(): DoubleViewFrustumForm {
     id: '',
     longitude: 120.95,
     latitude: 23.75,
-    height: 10000,
+    height: 500000,
     heading: 0,
     pitch: 0,
     roll: 0,
@@ -40,8 +43,11 @@ function createDefaultForm(): DoubleViewFrustumForm {
     aspectRatio: 2,
     color: '#00ffff',
     colorAlpha: 0.25,
+    fillColor: '#00ffff',
+    fillAlpha: 0.15,
     lineColor: '#ffffff',
     lineAlpha: 1,
+    lineWidth: 1,
     show: true,
   }
 }
@@ -60,14 +66,17 @@ function buildOptions(raw: SfxSpatialEffectForm): DoubleViewFrustumAddOptions {
     fov: Number(form.fov),
     aspectRatio: Number(form.aspectRatio),
     color: rgbaCss(form.color, Number(form.colorAlpha)),
+    fillColor: form.fillColor,
+    fillAlpha: Number(form.fillAlpha),
     lineColor: rgbaCss(form.lineColor, Number(form.lineAlpha)),
-    lineWidth: 1,
+    lineWidth: Number(form.lineWidth),
     show: Boolean(form.show),
   }
 }
 
 const config: SfxSpatialDemoConfig<DoubleViewFrustumAddOptions> = {
   title: '双面视锥体',
+  preserveHeightOnPick: true,
   fields: [
     ...positionFields,
     ...attitudeFields,
@@ -77,8 +86,11 @@ const config: SfxSpatialDemoConfig<DoubleViewFrustumAddOptions> = {
     { key: 'aspectRatio', label: '宽高比', control: 'number', min: 0.1, step: 0.1 },
     { key: 'color', label: '面填充色', control: 'color', fallback: '#00ffff' },
     { key: 'colorAlpha', label: '面透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
+    { key: 'fillColor', label: '背景填充色', control: 'color', fallback: '#00ffff' },
+    { key: 'fillAlpha', label: '背景透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
     { key: 'lineColor', label: '轮廓颜色', control: 'color', fallback: '#ffffff' },
     { key: 'lineAlpha', label: '轮廓透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
+    { key: 'lineWidth', label: '轮廓粗细(px)', control: 'number', min: 1, step: 1 },
     showField,
   ],
   createDefaultForm,

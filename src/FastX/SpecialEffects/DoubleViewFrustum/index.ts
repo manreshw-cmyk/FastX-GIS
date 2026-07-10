@@ -3,10 +3,14 @@
  * Entity 类用于单体绘制，DoubleViewFrustumCollection 用于 Primitive 批量绘制。
  */
 import * as Cesium from "cesium";
-import type { SpecialEffectsColorInput, SpecialEffectsPositionInput } from "../shared";
+import { toCesiumColor, type SpecialEffectsColorInput, type SpecialEffectsPositionInput } from "../shared";
 import { RenderableEntityEffect } from "../common/renderable-effect";
 import { resolveSpatialOptions, type ResolvedSpatialEffectOptions } from "../common/effect-geometry";
 import { buildDoubleFrustumSpec } from "../common/radar-builders";
+
+const DEFAULT_FACE_COLOR = Cesium.Color.fromCssColorString("rgba(0,255,255,0.25)")!;
+const DEFAULT_LINE_COLOR = Cesium.Color.CYAN;
+const DEFAULT_FILL_ALPHA_RATIO = 0.6;
 
 /** 双面视锥体新增参数。 */
 export interface DoubleViewFrustumAddOptions {
@@ -24,6 +28,10 @@ export interface DoubleViewFrustumAddOptions {
   scale?: number;
   /** 面填充色。默认 rgba(0,255,255,0.25)。 */
   color?: SpecialEffectsColorInput;
+  /** 整个视锥体的背景填充色；不传时使用面填充色并降低透明度。 */
+  fillColor?: SpecialEffectsColorInput;
+  /** 背景填充透明度，范围 0-1；不传时默认取面透明度的 60%。 */
+  fillAlpha?: number;
   /** 轮廓线颜色。默认 white。 */
   lineColor?: SpecialEffectsColorInput;
   /** 线宽，单位：像素。默认 1。 */
@@ -46,7 +54,7 @@ export type DoubleViewFrustumUpdateOptions = Partial<Omit<DoubleViewFrustumAddOp
 /** 双面视锥体解析参数。 */
 export type DoubleViewFrustumResolvedOptions = Omit<
   DoubleViewFrustumAddOptions,
-  "position" | "color" | "lineColor"
+  "position" | "color" | "fillColor" | "fillAlpha" | "lineColor"
 > &
   ResolvedSpatialEffectOptions & {
     id: string;
@@ -54,6 +62,7 @@ export type DoubleViewFrustumResolvedOptions = Omit<
     far: number;
     fov: number;
     aspectRatio: number;
+    fillColor: Cesium.Color;
   };
 
 /** 双面视锥体 Entity 单体绘制类。 */
@@ -75,11 +84,9 @@ export default class DoubleViewFrustum extends RenderableEntityEffect<
 export function resolveDoubleViewFrustumOptions(
   options: DoubleViewFrustumAddOptions & { id: string },
 ): DoubleViewFrustumResolvedOptions {
-  const spatial = resolveSpatialOptions(
-    options,
-    Cesium.Color.fromCssColorString("rgba(0,255,255,0.25)")!,
-    Cesium.Color.CYAN,
-  );
+  const spatial = resolveSpatialOptions(options, DEFAULT_FACE_COLOR, DEFAULT_LINE_COLOR);
+  const fillColor = resolveDoubleViewFrustumFillColor(options, spatial.color);
+
   return {
     ...options,
     ...spatial,
@@ -88,5 +95,21 @@ export function resolveDoubleViewFrustumOptions(
     far: options.far ?? 1000000,
     fov: options.fov ?? 30,
     aspectRatio: options.aspectRatio ?? 2,
+    fillColor,
   };
+}
+
+/** 解析背景填充色：默认沿用面色，但透明度更低，避免改变原有视觉主色。 */
+function resolveDoubleViewFrustumFillColor(
+  options: DoubleViewFrustumAddOptions,
+  faceColor: Cesium.Color,
+): Cesium.Color {
+  const fallback = Cesium.Color.clone(faceColor);
+  fallback.alpha = Cesium.Math.clamp(faceColor.alpha * DEFAULT_FILL_ALPHA_RATIO, 0, 1);
+
+  const fillColor = toCesiumColor(options.fillColor, fallback);
+  if (typeof options.fillAlpha === "number") {
+    fillColor.alpha = Cesium.Math.clamp(options.fillAlpha, 0, 1);
+  }
+  return fillColor;
 }

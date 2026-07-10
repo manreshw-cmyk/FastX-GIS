@@ -31,8 +31,6 @@ export {
   GlobalRain,
   GlobalSnow,
   GlobalFog,
-  SingleViewFrustum,
-  SingleViewFrustumCollection,
   AirRadar,
   AirRadarCollection,
   SectorArcRadarScan,

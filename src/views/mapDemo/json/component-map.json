@@ -499,111 +499,104 @@
   },
   {
     "key": "special-effects-7",
-    "title": "单视椎体",
-    "fileName": "sfx-single-view-frustum",
-    "componentPath": "./sfx-single-view-frustum.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "special-effects-8",
     "title": "雷达发射波",
     "fileName": "sfx-radar-emission-wave",
     "componentPath": "./sfx-radar-emission-wave.vue",
     "imageUrl": "../../assets/images/雷达发射波.png"
   },
   {
-    "key": "special-effects-9",
+    "key": "special-effects-8",
     "title": "半球雷达扫描",
     "fileName": "sfx-hemisphere-radar-scan",
     "componentPath": "./sfx-hemisphere-radar-scan.vue",
     "imageUrl": "../../assets/images/半球雷达扫描.png"
   },
   {
-    "key": "special-effects-10",
+    "key": "special-effects-9",
     "title": "空中扫描雷达",
     "fileName": "sfx-air-radar",
     "componentPath": "./sfx-air-radar.vue",
     "imageUrl": "../../assets/images/空中扫描雷达.png"
   },
   {
-    "key": "special-effects-11",
+    "key": "special-effects-10",
     "title": "扇弧形雷达扫描",
     "fileName": "sfx-sector-arc-radar-scan",
     "componentPath": "./sfx-sector-arc-radar-scan.vue",
     "imageUrl": "../../assets/images/扇弧形雷达扫描.png"
   },
   {
-    "key": "special-effects-12",
+    "key": "special-effects-11",
     "title": "瞄准特效",
     "fileName": "sfx-aim-effect",
     "componentPath": "./sfx-aim-effect.vue",
     "imageUrl": "../../assets/images/瞄准特效.png"
   },
   {
-    "key": "special-effects-13",
+    "key": "special-effects-12",
     "title": "锥体扫描",
     "fileName": "sfx-conical-scanner",
     "componentPath": "./sfx-conical-scanner.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
-    "key": "special-effects-14",
+    "key": "special-effects-13",
     "title": "双面视锥体",
     "fileName": "sfx-double-view-frustum",
     "componentPath": "./sfx-double-view-frustum.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/双面视锥体.png"
   },
   {
-    "key": "special-effects-15",
+    "key": "special-effects-14",
     "title": "双圆锥环面扫描体",
     "fileName": "sfx-ring-cone-scanner",
     "componentPath": "./sfx-ring-cone-scanner.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
-    "key": "special-effects-16",
-    "title": "四方锥体扫描",
+    "key": "special-effects-15",
+    "title": "四方视椎体",
     "fileName": "sfx-square-cone-scanner",
     "componentPath": "./sfx-square-cone-scanner.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/四方视椎体.png"
   },
   {
-    "key": "special-effects-17",
+    "key": "special-effects-16",
     "title": "圆锥扫描特效",
     "fileName": "sfx-cone-effect",
     "componentPath": "./sfx-cone-effect.vue",
     "imageUrl": "../../assets/images/圆锥扫描特效.png"
   },
   {
-    "key": "special-effects-18",
+    "key": "special-effects-17",
     "title": "抛物面雷达",
     "fileName": "sfx-parabola-radar",
     "componentPath": "./sfx-parabola-radar.vue",
     "imageUrl": "../../assets/images/抛物面雷达.png"
   },
   {
-    "key": "special-effects-19",
+    "key": "special-effects-18",
     "title": "扫描雷达",
     "fileName": "sfx-scan-radar",
     "componentPath": "./sfx-scan-radar.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
   },
   {
-    "key": "special-effects-20",
+    "key": "special-effects-19",
     "title": "环形雷达扫描",
     "fileName": "sfx-ring-radar",
     "componentPath": "./sfx-ring-radar.vue",
     "imageUrl": "../../assets/images/环形雷达扫描.png"
   },
   {
-    "key": "special-effects-21",
+    "key": "special-effects-20",
     "title": "火力范围",
     "fileName": "sfx-fire-range-effect",
     "componentPath": "./sfx-fire-range-effect.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/火力范围.png"
   },
   {
-    "key": "special-effects-22",
+    "key": "special-effects-21",
     "title": "扩散雷达",
     "fileName": "sfx-diffusion-radar",
     "componentPath": "./sfx-diffusion-radar.vue",

@@ -21,6 +21,11 @@ interface SquareConeScannerForm extends SfxSpatialEffectForm {
   colorAlpha: number
   lineColor: string
   lineAlpha: number
+  lineWidth: number
+  bottomOutlineVisible: boolean
+  bottomOutlineColor: string
+  bottomOutlineAlpha: number
+  bottomOutlineWidth: number
 }
 
 function createDefaultForm(): SquareConeScannerForm {
@@ -28,7 +33,7 @@ function createDefaultForm(): SquareConeScannerForm {
     id: '',
     longitude: 120.95,
     latitude: 23.75,
-    height: 10000,
+    height: 500000,
     heading: 0,
     pitch: 0,
     roll: 0,
@@ -40,6 +45,11 @@ function createDefaultForm(): SquareConeScannerForm {
     colorAlpha: 0.55,
     lineColor: '#59ff9b',
     lineAlpha: 1,
+    lineWidth: 1,
+    bottomOutlineVisible: true,
+    bottomOutlineColor: '#ffff00',
+    bottomOutlineAlpha: 1,
+    bottomOutlineWidth: 1,
     show: true,
   }
 }
@@ -58,13 +68,18 @@ function buildOptions(raw: SfxSpatialEffectForm): SquareConeScannerAddOptions {
     vertAngle: Number(form.vertAngle),
     color: rgbaCss(form.color, Number(form.colorAlpha)),
     lineColor: rgbaCss(form.lineColor, Number(form.lineAlpha)),
-    lineWidth: 1,
+    lineWidth: Number(form.lineWidth),
+    bottomOutlineVisible: Boolean(form.bottomOutlineVisible),
+    bottomOutlineColor: form.bottomOutlineColor,
+    bottomOutlineAlpha: Number(form.bottomOutlineAlpha),
+    bottomOutlineWidth: Number(form.bottomOutlineWidth),
     show: Boolean(form.show),
   }
 }
 
 const config: SfxSpatialDemoConfig<SquareConeScannerAddOptions> = {
-  title: '四方锥体扫描',
+  title: '四方视椎体',
+  preserveHeightOnPick: true,
   fields: [
     ...positionFields,
     ...attitudeFields,
@@ -73,8 +88,13 @@ const config: SfxSpatialDemoConfig<SquareConeScannerAddOptions> = {
     { key: 'vertAngle', label: '垂直张角(度)', control: 'number', min: 1, max: 179 },
     { key: 'color', label: '锥体面颜色', control: 'color', fallback: '#59ff9b' },
     { key: 'colorAlpha', label: '面透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
-    { key: 'lineColor', label: '轮廓颜色', control: 'color', fallback: '#59ff9b' },
-    { key: 'lineAlpha', label: '轮廓透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
+    { key: 'lineColor', label: '边线颜色', control: 'color', fallback: '#59ff9b' },
+    { key: 'lineAlpha', label: '边线透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
+    { key: 'lineWidth', label: '边线粗细(px)', control: 'number', min: 1, step: 1 },
+    { key: 'bottomOutlineVisible', label: '底面外框', control: 'switch' },
+    { key: 'bottomOutlineColor', label: '底面外框颜色', control: 'color', fallback: '#ffff00' },
+    { key: 'bottomOutlineAlpha', label: '底面外框透明度', control: 'slider', min: 0, max: 1, step: 0.05 },
+    { key: 'bottomOutlineWidth', label: '底面外框粗细(px)', control: 'number', min: 1, step: 1 },
     showField,
   ],
   createDefaultForm,

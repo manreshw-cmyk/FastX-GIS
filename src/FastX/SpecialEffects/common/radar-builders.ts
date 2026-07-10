@@ -85,6 +85,8 @@ export interface DoubleFrustumSpecOptions extends ResolvedSpatialEffectOptions {
   fov: number;
   /** 宽高比。 */
   aspectRatio: number;
+  /** 视锥体外壳背景填充色。 */
+  fillColor: Cesium.Color;
 }
 
 /** 抛物面雷达参数。 */
@@ -129,7 +131,7 @@ export interface SphericalSectorSpecOptions extends ResolvedSpatialEffectOptions
   scanColor?: Cesium.Color;
 }
 
-/** 四方锥体扫描参数。 */
+/** 四方视椎体参数。 */
 export interface SquareConeSpecOptions extends ResolvedSpatialEffectOptions {
   /** 锥体高度，单位：米。 */
   height: number;
@@ -137,6 +139,12 @@ export interface SquareConeSpecOptions extends ResolvedSpatialEffectOptions {
   horiAngle: number;
   /** 垂直张角，单位：度。 */
   vertAngle: number;
+  /** 是否显示远端底面外框线。 */
+  bottomOutlineVisible?: boolean;
+  /** 远端底面外框线颜色。 */
+  bottomOutlineColor?: Cesium.Color;
+  /** 远端底面外框线宽度，单位：像素。 */
+  bottomOutlineWidth?: number;
 }
 
 /** 创建空中雷达或圆锥线框/面片。 */
@@ -328,10 +336,14 @@ export function buildDoubleFrustumSpec(options: DoubleFrustumSpecOptions): Effec
   const near = localPointsToWorld(createRectangleLocalPoints(nearWidth, nearHeight, -options.near), matrix);
   const far = localPointsToWorld(createRectangleLocalPoints(farWidth, farHeight, -options.far), matrix);
   const origin = localToWorld([0, 0, 0], matrix);
+  const sideFaces = far.map((point, index) => ({
+    positions: [origin, point, far[(index + 1) % far.length]!],
+    color: options.fillColor,
+  }));
   const faces = [
     { positions: near, color: options.color },
     { positions: far, color: options.color },
-    ...near.map((point, index) => ({ positions: [origin, point, far[index]!], color: options.color })),
+    ...sideFaces,
   ];
   const lines = [
     { positions: closeLine([...near]), color: options.lineColor, width: options.lineWidth },
@@ -428,7 +440,7 @@ export function buildSphericalSectorSpec(options: SphericalSectorSpecOptions): E
   return { faces, lines };
 }
 
-/** 创建四方锥体扫描规格。 */
+/** 创建四方视椎体规格。 */
 export function buildSquareConeSpec(options: SquareConeSpecOptions): EffectRenderSpec {
   const matrix = createLocalFrame(options);
   const halfWidth = Math.tan(Cesium.Math.toRadians(options.horiAngle) / 2) * options.height;
@@ -449,7 +461,15 @@ export function buildSquareConeSpec(options: SquareConeSpecOptions): EffectRende
       ...far.map((point, index) => ({ positions: [origin, point, far[(index + 1) % far.length]!], color: options.color })),
     ],
     lines: [
-      { positions: closeLine([...far]), color: options.lineColor, width: options.lineWidth },
+      ...(options.bottomOutlineVisible !== false
+        ? [
+            {
+              positions: closeLine([...far]),
+              color: options.bottomOutlineColor ?? options.lineColor,
+              width: options.bottomOutlineWidth ?? options.lineWidth,
+            },
+          ]
+        : []),
       ...far.map((point) => ({ positions: [origin, point], color: options.lineColor, width: options.lineWidth })),
     ],
   };

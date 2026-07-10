@@ -17,8 +17,6 @@ import HemisphereRadarScanCollection from "./HemisphereRadarScan/HemisphereRadar
 import GlobalRain from "./GlobalRain";
 import GlobalSnow from "./GlobalSnow";
 import GlobalFog from "./GlobalFog";
-import SingleViewFrustum from "./SingleViewFrustum";
-import SingleViewFrustumCollection from "./SingleViewFrustum/SingleViewFrustumCollection";
 import AirRadar from "./AirRadar";
 import AirRadarCollection from "./AirRadar/AirRadarCollection";
 import SectorArcRadarScan from "./SectorArcRadarScan";
@@ -85,10 +83,6 @@ export type { GlobalSnowOptions } from "./GlobalSnow";
 
 export { default as GlobalFog } from "./GlobalFog";
 export type { GlobalFogOptions } from "./GlobalFog";
-
-export { default as SingleViewFrustum } from "./SingleViewFrustum";
-export { default as SingleViewFrustumCollection } from "./SingleViewFrustum/SingleViewFrustumCollection";
-export type { SingleViewFrustumAddOptions, SingleViewFrustumUpdateOptions } from "./SingleViewFrustum";
 
 export { default as AirRadar } from "./AirRadar";
 export { default as AirRadarCollection } from "./AirRadar/AirRadarCollection";
@@ -183,8 +177,6 @@ export const SpecialEffects = {
   GlobalRain,
   GlobalSnow,
   GlobalFog,
-  SingleViewFrustum,
-  SingleViewFrustumCollection,
   AirRadar,
   AirRadarCollection,
   SectorArcRadarScan,
