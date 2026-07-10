@@ -92,8 +92,6 @@ const preferredOrder = {
     'RadarEmissionWaveCollection',
     'HemisphereRadarScan',
     'HemisphereRadarScanCollection',
-    'SingleViewFrustum',
-    'SingleViewFrustumCollection',
     'AirRadar',
     'AirRadarCollection',
     'SectorArcRadarScan',
@@ -270,8 +268,6 @@ const effectCnMap = {
   RadarEmissionWaveCollection: '批量雷达发射波',
   HemisphereRadarScan: '半球雷达扫描',
   HemisphereRadarScanCollection: '批量半球雷达扫描',
-  SingleViewFrustum: '单视椎体',
-  SingleViewFrustumCollection: '批量单视椎体',
   AirRadar: '空中扫描雷达',
   AirRadarCollection: '批量空中扫描雷达',
   SectorArcRadarScan: '扇弧形雷达扫描',
@@ -294,8 +290,8 @@ const effectCnMap = {
   RingRadarCollection: '批量环形雷达扫描',
   ScanRadar: '扫描雷达',
   ScanRadarCollection: '批量扫描雷达',
-  SquareConeScanner: '四方锥体扫描',
-  SquareConeScannerCollection: '批量四方锥体扫描',
+  SquareConeScanner: '四方视椎体',
+  SquareConeScannerCollection: '批量四方视椎体',
   FireRangeEffect: '火力范围特效',
   FireRangeEffectCollection: '批量火力范围特效',
   ParticleSystemEffect: '粒子系统特效',
@@ -1485,6 +1481,9 @@ function usageFor(name, groupId) {
     if (baseName === 'ConeEffect') {
       options = "{ position: [120.3, 23.5, 1000], height: 500000, baseRadius: 100000, scanRadius: 70000, segments: 280, coneLineColor: 'rgba(255,0,0,1)', scanLineColor: 'rgba(0,255,0,1)', coneFillColor: 'rgba(0,255,255,0.25)', showConeFill: false, showCone: true, showScan: true }"
     }
+    if (baseName === 'DoubleViewFrustum') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, near: 50000, far: 500000, fov: 30, aspectRatio: 2, color: 'rgba(0,255,255,0.25)', fillColor: '#00ffff', fillAlpha: 0.15, lineColor: 'rgba(255,255,255,1)', lineWidth: 1, show: true }"
+    }
     if (baseName === 'ParabolaRadar') {
       options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 66000, domeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, scanBladeCount: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, surfaceColor: '#00ff48', surfaceAlpha: 0.34, gridColor: '#00ff48', gridAlpha: 0.78, scanBladeColor: '#ff0000', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
     }
@@ -1493,6 +1492,12 @@ function usageFor(name, groupId) {
     }
     if (baseName === 'RingRadar') {
       options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
+    }
+    if (baseName === 'SquareConeScanner') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, horiAngle: 30, vertAngle: 30, color: 'rgba(89,255,155,0.55)', lineColor: 'rgba(89,255,155,1)', lineWidth: 1, bottomOutlineVisible: true, bottomOutlineColor: '#ffff00', bottomOutlineAlpha: 1, bottomOutlineWidth: 1, show: true }"
+    }
+    if (baseName === 'FireRangeEffect') {
+      options = "{ position: { longitude: 108, latitude: 39, height: 2000 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 10000, minHoriAngle: -30, maxHoriAngle: 30, minVertAngle: 80, maxVertAngle: 100, horiPointNum: 360, vertPointNum: 180, radialPointNum: 48, gridHoriStep: 1, gridVertStep: 1, apexColor: 'rgba(20,40,255,0.58)', middleColor: 'rgba(210,215,35,0.42)', farColor: 'rgba(255,140,0,0.58)', fillAlpha: 1, fillVisible: true, gridColor: '#ff5600', gridAlpha: 0.95, gridLineWidth: 1, gridVisible: true, outlineColor: '#ff0000', outlineAlpha: 0.9, outlineLineWidth: 1, outlineVisible: true, show: true }"
     }
     if (baseName === 'RingRadar' && isCollection) {
       return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}()\nconst options = ${options}\neffect.addRadars(viewer, [options])`

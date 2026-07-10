@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-04T03:00:20.101Z",
+  "generatedAt": "2026-07-10T00:58:22.653Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -97,8 +97,6 @@
     "SectorArcRadarScan",
     "SectorArcRadarScanCollection",
     "SectorCollection",
-    "SingleViewFrustum",
-    "SingleViewFrustumCollection",
     "SpecialEffects",
     "SquareConeScanner",
     "SquareConeScannerCollection",
@@ -43690,744 +43688,6 @@
           "generated": true
         },
         {
-          "id": "SingleViewFrustum",
-          "kind": "api",
-          "group": "effects",
-          "name": "SingleViewFrustum",
-          "cn": "单视椎体",
-          "title": "SingleViewFrustum（单视椎体）",
-          "description": "单视椎体 API，用于创建、更新、查询、显隐和清理单体特效。",
-          "methods": [
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "options",
-                  "type": "SingleViewFrustumAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增单视椎体。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SingleViewFrustumUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定单视锥体。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定单视锥体显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "{ faces: Cesium.Entity[]; lines: Cesium.Entity[] } | undefined",
-              "description": "获取指定单视锥体的 Entity 集合。"
-            },
-            {
-              "name": "getVertices",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Cartesian3[]",
-              "description": "获取指定单视锥体轮廓顶点。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部单视锥体 id；传入 viewer 时只返回该 Viewer 下的 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定单视椎体。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空所有单视锥体；传入 viewer 时只清空该地图。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的所有单视锥体。"
-            }
-          ],
-          "types": [
-            "SingleViewFrustumAddOptions",
-            "SingleViewFrustumUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "add.options",
-              "type": "SingleViewFrustumAddOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "视锥体相机位置。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 180。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.fov",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直视场角，单位：度。默认 30。"
-            },
-            {
-              "name": "add.options.near",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "近裁剪面距离，单位：米。默认 10。"
-            },
-            {
-              "name": "add.options.far",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "远裁剪面距离，单位：米。默认 3000。"
-            },
-            {
-              "name": "add.options.aspectRatio",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "宽高比。默认 1.4。"
-            },
-            {
-              "name": "add.options.fillColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "面填充色。默认 aqua，透明度 0.3。"
-            },
-            {
-              "name": "add.options.outlineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 white。"
-            },
-            {
-              "name": "add.options.outlineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "轮廓线宽度。默认 1。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "SingleViewFrustumUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getVertices.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SingleViewFrustum(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { SingleViewFrustum } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "SingleViewFrustumCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "SingleViewFrustumCollection",
-          "cn": "批量单视椎体",
-          "title": "SingleViewFrustumCollection（批量单视椎体）",
-          "description": "批量单视椎体 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addFrustums",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SingleViewFrustumAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增单视锥体，返回成功创建的 id。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SingleViewFrustumAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增一个单视锥体 Primitive，返回效果 id。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "SingleViewFrustumUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定单视锥体 Primitive。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定单视锥体 Primitive 显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "{ fillPrimitive: Cesium.Primitive; outlinePrimitive: Cesium.Primitive } | undefined",
-              "description": "获取指定单视锥体 Primitive。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定单视锥体 Primitive。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空所有单视锥体 Primitive；传入 viewer 时只清空该地图。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的所有单视锥体 Primitive。"
-            }
-          ],
-          "types": [
-            "SingleViewFrustumAddOptions",
-            "SingleViewFrustumUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addFrustums.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addFrustums.options",
-              "type": "SingleViewFrustumAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addFrustums.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addFrustums.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "视锥体相机位置。"
-            },
-            {
-              "name": "addFrustums.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addFrustums.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addFrustums.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addFrustums.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addFrustums.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 180。"
-            },
-            {
-              "name": "addFrustums.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addFrustums.options.fov",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直视场角，单位：度。默认 30。"
-            },
-            {
-              "name": "addFrustums.options.near",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "近裁剪面距离，单位：米。默认 10。"
-            },
-            {
-              "name": "addFrustums.options.far",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "远裁剪面距离，单位：米。默认 3000。"
-            },
-            {
-              "name": "addFrustums.options.aspectRatio",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "宽高比。默认 1.4。"
-            },
-            {
-              "name": "addFrustums.options.fillColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "面填充色。默认 aqua，透明度 0.3。"
-            },
-            {
-              "name": "addFrustums.options.outlineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 white。"
-            },
-            {
-              "name": "addFrustums.options.outlineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "轮廓线宽度。默认 1。"
-            },
-            {
-              "name": "addFrustums.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "SingleViewFrustumAddOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "视锥体相机位置。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 180。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.fov",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直视场角，单位：度。默认 30。"
-            },
-            {
-              "name": "add.options.near",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "近裁剪面距离，单位：米。默认 10。"
-            },
-            {
-              "name": "add.options.far",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "远裁剪面距离，单位：米。默认 3000。"
-            },
-            {
-              "name": "add.options.aspectRatio",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "宽高比。默认 1.4。"
-            },
-            {
-              "name": "add.options.fillColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "面填充色。默认 aqua，透明度 0.3。"
-            },
-            {
-              "name": "add.options.outlineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 white。"
-            },
-            {
-              "name": "add.options.outlineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "轮廓线宽度。默认 1。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "SingleViewFrustumUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SingleViewFrustumCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
-          "access": "import { SingleViewFrustumCollection } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
           "id": "AirRadar",
           "kind": "api",
           "group": "effects",
@@ -50724,6 +49984,18 @@
               "description": "面填充色。默认 rgba(0,255,255,0.25)。"
             },
             {
+              "name": "addFrustums.options.fillColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "整个视锥体的背景填充色；不传时使用面填充色并降低透明度。"
+            },
+            {
+              "name": "addFrustums.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "背景填充透明度，范围 0-1；不传时默认取面透明度的 60%。"
+            },
+            {
               "name": "addFrustums.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
@@ -50838,6 +50110,18 @@
               "description": "面填充色。默认 rgba(0,255,255,0.25)。"
             },
             {
+              "name": "add.options.fillColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "整个视锥体的背景填充色；不传时使用面填充色并降低透明度。"
+            },
+            {
+              "name": "add.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "背景填充透明度，范围 0-1；不传时默认取面透明度的 60%。"
+            },
+            {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
@@ -50928,7 +50212,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DoubleViewFrustum(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DoubleViewFrustum(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, near: 50000, far: 500000, fov: 30, aspectRatio: 2, color: 'rgba(0,255,255,0.25)', fillColor: '#00ffff', fillAlpha: 0.15, lineColor: 'rgba(255,255,255,1)', lineWidth: 1, show: true }\neffect.add(options)",
           "access": "import { DoubleViewFrustum } from 'fastx-sdk'",
           "generated": true
         },
@@ -51166,6 +50450,18 @@
               "description": "面填充色。默认 rgba(0,255,255,0.25)。"
             },
             {
+              "name": "addFrustums.options.fillColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "整个视锥体的背景填充色；不传时使用面填充色并降低透明度。"
+            },
+            {
+              "name": "addFrustums.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "背景填充透明度，范围 0-1；不传时默认取面透明度的 60%。"
+            },
+            {
               "name": "addFrustums.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
@@ -51292,6 +50588,18 @@
               "description": "面填充色。默认 rgba(0,255,255,0.25)。"
             },
             {
+              "name": "add.options.fillColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "整个视锥体的背景填充色；不传时使用面填充色并降低透明度。"
+            },
+            {
+              "name": "add.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "背景填充透明度，范围 0-1；不传时默认取面透明度的 60%。"
+            },
+            {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
@@ -51370,7 +50678,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DoubleViewFrustumCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.DoubleViewFrustumCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, near: 50000, far: 500000, fov: 30, aspectRatio: 2, color: 'rgba(0,255,255,0.25)', fillColor: '#00ffff', fillAlpha: 0.15, lineColor: 'rgba(255,255,255,1)', lineWidth: 1, show: true }\neffect.add(viewer, options)",
           "access": "import { DoubleViewFrustumCollection } from 'fastx-sdk'",
           "generated": true
         },
@@ -56305,9 +55613,9 @@
           "kind": "api",
           "group": "effects",
           "name": "SquareConeScanner",
-          "cn": "四方锥体扫描",
-          "title": "SquareConeScanner（四方锥体扫描）",
-          "description": "四方锥体扫描 API，用于创建、更新、查询、显隐和清理单体特效。",
+          "cn": "四方视椎体",
+          "title": "SquareConeScanner（四方视椎体）",
+          "description": "四方视椎体 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
             {
               "name": "addScanners",
@@ -56328,7 +55636,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增四方锥体扫描 Entity，返回成功创建的 id。"
+              "description": "批量新增四方视椎体 Entity，返回成功创建的 id。"
             },
             {
               "name": "add",
@@ -56349,7 +55657,7 @@
                 }
               ],
               "returnType": "string | undefined",
-              "description": "新增四方锥体扫描。"
+              "description": "新增四方视椎体。"
             },
             {
               "name": "update",
@@ -56370,7 +55678,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定四方锥体扫描。"
+              "description": "更新指定四方视椎体。"
             },
             {
               "name": "show",
@@ -56391,7 +55699,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定四方锥体扫描显隐。"
+              "description": "设置指定四方视椎体显隐。"
             },
             {
               "name": "get",
@@ -56405,7 +55713,7 @@
                 }
               ],
               "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定四方锥体扫描实例。"
+              "description": "获取指定四方视椎体实例。"
             },
             {
               "name": "getAllIds",
@@ -56433,7 +55741,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定四方锥体扫描。"
+              "description": "删除指定四方视椎体。"
             },
             {
               "name": "clear",
@@ -56562,6 +55870,30 @@
               "type": "number",
               "defaultValue": "-",
               "description": "垂直张角，单位：度。默认 30。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示远端底面外框线。默认 true。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端底面外框线颜色。默认 yellow。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线透明度，范围 0-1。默认 1。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线宽度，单位：像素。默认 1。"
             },
             {
               "name": "addScanners.options.show",
@@ -56672,6 +56004,30 @@
               "description": "垂直张角，单位：度。默认 30。"
             },
             {
+              "name": "add.options.bottomOutlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示远端底面外框线。默认 true。"
+            },
+            {
+              "name": "add.options.bottomOutlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端底面外框线颜色。默认 yellow。"
+            },
+            {
+              "name": "add.options.bottomOutlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线透明度，范围 0-1。默认 1。"
+            },
+            {
+              "name": "add.options.bottomOutlineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线宽度，单位：像素。默认 1。"
+            },
+            {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
@@ -56726,7 +56082,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SquareConeScanner(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SquareConeScanner(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, horiAngle: 30, vertAngle: 30, color: 'rgba(89,255,155,0.55)', lineColor: 'rgba(89,255,155,1)', lineWidth: 1, bottomOutlineVisible: true, bottomOutlineColor: '#ffff00', bottomOutlineAlpha: 1, bottomOutlineWidth: 1, show: true }\neffect.add(options)",
           "access": "import { SquareConeScanner } from 'fastx-sdk'",
           "generated": true
         },
@@ -56735,9 +56091,9 @@
           "kind": "api",
           "group": "effects",
           "name": "SquareConeScannerCollection",
-          "cn": "批量四方锥体扫描",
-          "title": "SquareConeScannerCollection（批量四方锥体扫描）",
-          "description": "批量四方锥体扫描 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
+          "cn": "批量四方视椎体",
+          "title": "SquareConeScannerCollection（批量四方视椎体）",
+          "description": "批量四方视椎体 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
           "methods": [
             {
               "name": "addScanners",
@@ -56758,7 +56114,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增四方锥体扫描 Primitive，返回成功创建的 id。"
+              "description": "批量新增四方视椎体 Primitive，返回成功创建的 id。"
             },
             {
               "name": "update",
@@ -56779,7 +56135,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定四方锥体扫描 Primitive。"
+              "description": "更新指定四方视椎体 Primitive。"
             },
             {
               "name": "add",
@@ -56800,7 +56156,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "新增批量四方锥体扫描。"
+              "description": "新增批量四方视椎体。"
             },
             {
               "name": "show",
@@ -56821,7 +56177,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定批量四方锥体扫描显隐。"
+              "description": "设置指定批量四方视椎体显隐。"
             },
             {
               "name": "get",
@@ -56835,7 +56191,7 @@
                 }
               ],
               "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量四方锥体扫描实例。"
+              "description": "获取指定批量四方视椎体实例。"
             },
             {
               "name": "getAllIds",
@@ -56863,7 +56219,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定批量四方锥体扫描。"
+              "description": "删除指定批量四方视椎体。"
             },
             {
               "name": "clear",
@@ -56994,6 +56350,30 @@
               "description": "垂直张角，单位：度。默认 30。"
             },
             {
+              "name": "addScanners.options.bottomOutlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示远端底面外框线。默认 true。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端底面外框线颜色。默认 yellow。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线透明度，范围 0-1。默认 1。"
+            },
+            {
+              "name": "addScanners.options.bottomOutlineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线宽度，单位：像素。默认 1。"
+            },
+            {
               "name": "addScanners.options.show",
               "type": "boolean",
               "defaultValue": "-",
@@ -57114,6 +56494,30 @@
               "description": "垂直张角，单位：度。默认 30。"
             },
             {
+              "name": "add.options.bottomOutlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示远端底面外框线。默认 true。"
+            },
+            {
+              "name": "add.options.bottomOutlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端底面外框线颜色。默认 yellow。"
+            },
+            {
+              "name": "add.options.bottomOutlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线透明度，范围 0-1。默认 1。"
+            },
+            {
+              "name": "add.options.bottomOutlineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端底面外框线宽度，单位：像素。默认 1。"
+            },
+            {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
@@ -57156,7 +56560,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SquareConeScannerCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.SquareConeScannerCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, horiAngle: 30, vertAngle: 30, color: 'rgba(89,255,155,0.55)', lineColor: 'rgba(89,255,155,1)', lineWidth: 1, bottomOutlineVisible: true, bottomOutlineColor: '#ffff00', bottomOutlineAlpha: 1, bottomOutlineWidth: 1, show: true }\neffect.add(viewer, options)",
           "access": "import { SquareConeScannerCollection } from 'fastx-sdk'",
           "generated": true
         },
@@ -57169,6 +56573,41 @@
           "title": "FireRangeEffect（火力范围特效）",
           "description": "火力范围特效 API，用于创建、更新、查询、显隐和清理单体特效。",
           "methods": [
+            {
+              "name": "add",
+              "params": [
+                {
+                  "name": "options",
+                  "type": "FireRangeEffectAddOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string | undefined",
+              "description": "新增火力范围特效。"
+            },
+            {
+              "name": "addMany",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "FireRangeEffectAddOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "批量新增火力范围 Entity，并返回创建成功的 id。"
+            },
             {
               "name": "addRanges",
               "params": [
@@ -57188,28 +56627,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "批量新增火力范围 Entity，返回成功创建的 id。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "FireRangeEffectAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增火力范围特效。"
+              "description": "批量新增火力范围 Entity，并返回创建成功的 id。"
             },
             {
               "name": "update",
@@ -57230,7 +56648,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "更新指定火力范围特效。"
+              "description": "更新一个火力范围 Entity，内部会按新参数重建几何。"
             },
             {
               "name": "show",
@@ -57251,7 +56669,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "设置指定火力范围特效显隐。"
+              "description": "设置指定火力范围 Entity 显隐。"
             },
             {
               "name": "get",
@@ -57264,8 +56682,8 @@
                   "description": ""
                 }
               ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定火力范围特效实例。"
+              "returnType": "Cesium.Entity[] | undefined",
+              "description": "获取指定火力范围对应的 Entity 集合。"
             },
             {
               "name": "getAllIds",
@@ -57279,7 +56697,7 @@
                 }
               ],
               "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
+              "description": "获取当前管理的全部 id；传入 viewer 时只返回该 Viewer 下的 id。"
             },
             {
               "name": "remove",
@@ -57293,7 +56711,7 @@
                 }
               ],
               "returnType": "boolean",
-              "description": "删除指定火力范围特效。"
+              "description": "删除指定火力范围 Entity。"
             },
             {
               "name": "clear",
@@ -57307,13 +56725,13 @@
                 }
               ],
               "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
+              "description": "清空火力范围；传入 viewer 时只清空该 Viewer 下的效果。"
             },
             {
               "name": "destroy",
               "params": [],
               "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
+              "description": "销毁当前管理器中的全部火力范围。"
             }
           ],
           "types": [
@@ -57321,156 +56739,6 @@
             "FireRangeEffectUpdateOptions"
           ],
           "params": [
-            {
-              "name": "addRanges.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRanges.options",
-              "type": "FireRangeEffectAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRanges.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRanges.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "火力范围中心点。"
-            },
-            {
-              "name": "addRanges.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRanges.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRanges.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRanges.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRanges.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRanges.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRanges.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRanges.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "范围面颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "addRanges.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 red。"
-            },
-            {
-              "name": "addRanges.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "addRanges.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRanges.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "火力范围半径，单位：米。默认 10000。"
-            },
-            {
-              "name": "addRanges.options.minHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -30。"
-            },
-            {
-              "name": "addRanges.options.maxHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 30。"
-            },
-            {
-              "name": "addRanges.options.minVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 80。"
-            },
-            {
-              "name": "addRanges.options.maxVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 100。"
-            },
-            {
-              "name": "addRanges.options.horiSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
-            },
-            {
-              "name": "addRanges.options.vertSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
-            },
-            {
-              "name": "addRanges.options.scanVisible",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
-            },
-            {
-              "name": "addRanges.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
             {
               "name": "add.options",
               "type": "FireRangeEffectAddOptions",
@@ -57487,7 +56755,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "火力范围中心点。"
+              "description": "火力范围顶点位置，支持经纬高数组、经纬高对象或 Cartesian3。"
             },
             {
               "name": "add.options.position.longitude",
@@ -57511,103 +56779,589 @@
               "name": "add.options.heading",
               "type": "number",
               "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
+              "description": "航向角，单位：度，默认 0。"
             },
             {
               "name": "add.options.pitch",
               "type": "number",
               "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
+              "description": "俯仰角，单位：度，默认 0。"
             },
             {
               "name": "add.options.roll",
               "type": "number",
               "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
+              "description": "翻滚角，单位：度，默认 0。"
             },
             {
               "name": "add.options.scale",
               "type": "number",
               "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "范围面颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 red。"
-            },
-            {
-              "name": "add.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
+              "description": "整体缩放，默认 1。"
             },
             {
               "name": "add.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "火力范围半径，单位：米。默认 10000。"
+              "description": "火力范围半径，单位：米，默认 10000。"
             },
             {
               "name": "add.options.minHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -30。"
+              "description": "最小水平角，单位：度，默认 -30。"
             },
             {
               "name": "add.options.maxHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 30。"
+              "description": "最大水平角，单位：度，默认 30。"
             },
             {
               "name": "add.options.minVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 80。"
+              "description": "最小垂直角，单位：度，默认 80；90 表示水平向前。"
             },
             {
               "name": "add.options.maxVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 100。"
+              "description": "最大垂直角，单位：度，默认 100；90 表示水平向前。"
             },
             {
-              "name": "add.options.horiSegments",
+              "name": "add.options.horiPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
+              "description": "水平方向插值点数，数值越大远端弧墙越平滑，默认 360。"
             },
             {
-              "name": "add.options.vertSegments",
+              "name": "add.options.vertPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
+              "description": "垂直方向插值点数，数值越大远端竖墙越平滑，默认 180。"
             },
             {
-              "name": "add.options.scanVisible",
+              "name": "add.options.radialPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "顶点到远端之间的径向插值点数，影响填充面细腻程度，默认 48。"
+            },
+            {
+              "name": "add.options.gridHoriStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格水平方向抽样步长，1 表示每个水平插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "add.options.gridVertStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格垂直方向抽样步长，1 表示每个垂直插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "add.options.apexColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "顶点处渐变颜色，批量 Primitive 使用；默认 rgba(20,40,255,0.58)。"
+            },
+            {
+              "name": "add.options.middleColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "单体 Entity 填充色，也是批量 Primitive 渐变中间色；默认 rgba(210,215,35,0.42)。"
+            },
+            {
+              "name": "add.options.farColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧墙渐变颜色，批量 Primitive 使用；默认 rgba(255,140,0,0.58)。"
+            },
+            {
+              "name": "add.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "填充整体透明度倍率，范围 0 到 1，默认 1。"
+            },
+            {
+              "name": "add.options.fillVisible",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
+              "description": "是否绘制填充面，默认 true。"
+            },
+            {
+              "name": "add.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线颜色，默认 rgba(255,86,0,0.95)。"
+            },
+            {
+              "name": "add.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "add.options.gridVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制远端弧形竖墙网格，默认 true。"
+            },
+            {
+              "name": "add.options.outlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外轮廓线颜色，默认 rgba(255,0,0,0.9)。"
+            },
+            {
+              "name": "add.options.outlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outlineLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "add.options.outlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制外轮廓线，默认 true。"
             },
             {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示，默认 true。"
+            },
+            {
+              "name": "addMany.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addMany.options",
+              "type": "FireRangeEffectAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addMany.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addMany.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "火力范围顶点位置，支持经纬高数组、经纬高对象或 Cartesian3。"
+            },
+            {
+              "name": "addMany.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addMany.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addMany.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度，默认 0。"
+            },
+            {
+              "name": "addMany.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度，默认 0。"
+            },
+            {
+              "name": "addMany.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度，默认 0。"
+            },
+            {
+              "name": "addMany.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放，默认 1。"
+            },
+            {
+              "name": "addMany.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "火力范围半径，单位：米，默认 10000。"
+            },
+            {
+              "name": "addMany.options.minHoriAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最小水平角，单位：度，默认 -30。"
+            },
+            {
+              "name": "addMany.options.maxHoriAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大水平角，单位：度，默认 30。"
+            },
+            {
+              "name": "addMany.options.minVertAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最小垂直角，单位：度，默认 80；90 表示水平向前。"
+            },
+            {
+              "name": "addMany.options.maxVertAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大垂直角，单位：度，默认 100；90 表示水平向前。"
+            },
+            {
+              "name": "addMany.options.horiPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平方向插值点数，数值越大远端弧墙越平滑，默认 360。"
+            },
+            {
+              "name": "addMany.options.vertPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直方向插值点数，数值越大远端竖墙越平滑，默认 180。"
+            },
+            {
+              "name": "addMany.options.radialPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "顶点到远端之间的径向插值点数，影响填充面细腻程度，默认 48。"
+            },
+            {
+              "name": "addMany.options.gridHoriStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格水平方向抽样步长，1 表示每个水平插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addMany.options.gridVertStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格垂直方向抽样步长，1 表示每个垂直插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addMany.options.apexColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "顶点处渐变颜色，批量 Primitive 使用；默认 rgba(20,40,255,0.58)。"
+            },
+            {
+              "name": "addMany.options.middleColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "单体 Entity 填充色，也是批量 Primitive 渐变中间色；默认 rgba(210,215,35,0.42)。"
+            },
+            {
+              "name": "addMany.options.farColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧墙渐变颜色，批量 Primitive 使用；默认 rgba(255,140,0,0.58)。"
+            },
+            {
+              "name": "addMany.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "填充整体透明度倍率，范围 0 到 1，默认 1。"
+            },
+            {
+              "name": "addMany.options.fillVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制填充面，默认 true。"
+            },
+            {
+              "name": "addMany.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线颜色，默认 rgba(255,86,0,0.95)。"
+            },
+            {
+              "name": "addMany.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addMany.options.gridVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制远端弧形竖墙网格，默认 true。"
+            },
+            {
+              "name": "addMany.options.outlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外轮廓线颜色，默认 rgba(255,0,0,0.9)。"
+            },
+            {
+              "name": "addMany.options.outlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addMany.options.outlineLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addMany.options.outlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制外轮廓线，默认 true。"
+            },
+            {
+              "name": "addMany.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示，默认 true。"
+            },
+            {
+              "name": "addRanges.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addRanges.options",
+              "type": "FireRangeEffectAddOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addRanges.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addRanges.options.position",
+              "type": "SpecialEffectsPositionInput",
+              "defaultValue": "必填",
+              "description": "火力范围顶点位置，支持经纬高数组、经纬高对象或 Cartesian3。"
+            },
+            {
+              "name": "addRanges.options.position.longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度，单位：度。"
+            },
+            {
+              "name": "addRanges.options.position.latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度，单位：度。"
+            },
+            {
+              "name": "addRanges.options.position.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "高度，单位：米。"
+            },
+            {
+              "name": "addRanges.options.heading",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "航向角，单位：度，默认 0。"
+            },
+            {
+              "name": "addRanges.options.pitch",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "俯仰角，单位：度，默认 0。"
+            },
+            {
+              "name": "addRanges.options.roll",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "翻滚角，单位：度，默认 0。"
+            },
+            {
+              "name": "addRanges.options.scale",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "整体缩放，默认 1。"
+            },
+            {
+              "name": "addRanges.options.radius",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "火力范围半径，单位：米，默认 10000。"
+            },
+            {
+              "name": "addRanges.options.minHoriAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最小水平角，单位：度，默认 -30。"
+            },
+            {
+              "name": "addRanges.options.maxHoriAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大水平角，单位：度，默认 30。"
+            },
+            {
+              "name": "addRanges.options.minVertAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最小垂直角，单位：度，默认 80；90 表示水平向前。"
+            },
+            {
+              "name": "addRanges.options.maxVertAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大垂直角，单位：度，默认 100；90 表示水平向前。"
+            },
+            {
+              "name": "addRanges.options.horiPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水平方向插值点数，数值越大远端弧墙越平滑，默认 360。"
+            },
+            {
+              "name": "addRanges.options.vertPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "垂直方向插值点数，数值越大远端竖墙越平滑，默认 180。"
+            },
+            {
+              "name": "addRanges.options.radialPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "顶点到远端之间的径向插值点数，影响填充面细腻程度，默认 48。"
+            },
+            {
+              "name": "addRanges.options.gridHoriStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格水平方向抽样步长，1 表示每个水平插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addRanges.options.gridVertStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格垂直方向抽样步长，1 表示每个垂直插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addRanges.options.apexColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "顶点处渐变颜色，批量 Primitive 使用；默认 rgba(20,40,255,0.58)。"
+            },
+            {
+              "name": "addRanges.options.middleColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "单体 Entity 填充色，也是批量 Primitive 渐变中间色；默认 rgba(210,215,35,0.42)。"
+            },
+            {
+              "name": "addRanges.options.farColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧墙渐变颜色，批量 Primitive 使用；默认 rgba(255,140,0,0.58)。"
+            },
+            {
+              "name": "addRanges.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "填充整体透明度倍率，范围 0 到 1，默认 1。"
+            },
+            {
+              "name": "addRanges.options.fillVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制填充面，默认 true。"
+            },
+            {
+              "name": "addRanges.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线颜色，默认 rgba(255,86,0,0.95)。"
+            },
+            {
+              "name": "addRanges.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRanges.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addRanges.options.gridVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制远端弧形竖墙网格，默认 true。"
+            },
+            {
+              "name": "addRanges.options.outlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外轮廓线颜色，默认 rgba(255,0,0,0.9)。"
+            },
+            {
+              "name": "addRanges.options.outlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRanges.options.outlineLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addRanges.options.outlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制外轮廓线，默认 true。"
+            },
+            {
+              "name": "addRanges.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示，默认 true。"
             },
             {
               "name": "update.id",
@@ -57658,7 +57412,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.FireRangeEffect(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.FireRangeEffect(viewer)\nconst options = { position: { longitude: 108, latitude: 39, height: 2000 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 10000, minHoriAngle: -30, maxHoriAngle: 30, minVertAngle: 80, maxVertAngle: 100, horiPointNum: 360, vertPointNum: 180, radialPointNum: 48, gridHoriStep: 1, gridVertStep: 1, apexColor: 'rgba(20,40,255,0.58)', middleColor: 'rgba(210,215,35,0.42)', farColor: 'rgba(255,140,0,0.58)', fillAlpha: 1, fillVisible: true, gridColor: '#ff5600', gridAlpha: 0.95, gridLineWidth: 1, gridVisible: true, outlineColor: '#ff0000', outlineAlpha: 0.9, outlineLineWidth: 1, outlineVisible: true, show: true }\neffect.add(options)",
           "access": "import { FireRangeEffect } from 'fastx-sdk'",
           "generated": true
         },
@@ -57845,7 +57599,7 @@
               "name": "addRanges.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "火力范围中心点。"
+              "description": "火力范围顶点位置，支持经纬高数组、经纬高对象或 Cartesian3。"
             },
             {
               "name": "addRanges.options.position.longitude",
@@ -57869,103 +57623,169 @@
               "name": "addRanges.options.heading",
               "type": "number",
               "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
+              "description": "航向角，单位：度，默认 0。"
             },
             {
               "name": "addRanges.options.pitch",
               "type": "number",
               "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
+              "description": "俯仰角，单位：度，默认 0。"
             },
             {
               "name": "addRanges.options.roll",
               "type": "number",
               "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
+              "description": "翻滚角，单位：度，默认 0。"
             },
             {
               "name": "addRanges.options.scale",
               "type": "number",
               "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRanges.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "范围面颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "addRanges.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 red。"
-            },
-            {
-              "name": "addRanges.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "addRanges.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
+              "description": "整体缩放，默认 1。"
             },
             {
               "name": "addRanges.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "火力范围半径，单位：米。默认 10000。"
+              "description": "火力范围半径，单位：米，默认 10000。"
             },
             {
               "name": "addRanges.options.minHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -30。"
+              "description": "最小水平角，单位：度，默认 -30。"
             },
             {
               "name": "addRanges.options.maxHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 30。"
+              "description": "最大水平角，单位：度，默认 30。"
             },
             {
               "name": "addRanges.options.minVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 80。"
+              "description": "最小垂直角，单位：度，默认 80；90 表示水平向前。"
             },
             {
               "name": "addRanges.options.maxVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 100。"
+              "description": "最大垂直角，单位：度，默认 100；90 表示水平向前。"
             },
             {
-              "name": "addRanges.options.horiSegments",
+              "name": "addRanges.options.horiPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
+              "description": "水平方向插值点数，数值越大远端弧墙越平滑，默认 360。"
             },
             {
-              "name": "addRanges.options.vertSegments",
+              "name": "addRanges.options.vertPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
+              "description": "垂直方向插值点数，数值越大远端竖墙越平滑，默认 180。"
             },
             {
-              "name": "addRanges.options.scanVisible",
+              "name": "addRanges.options.radialPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "顶点到远端之间的径向插值点数，影响填充面细腻程度，默认 48。"
+            },
+            {
+              "name": "addRanges.options.gridHoriStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格水平方向抽样步长，1 表示每个水平插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addRanges.options.gridVertStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格垂直方向抽样步长，1 表示每个垂直插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "addRanges.options.apexColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "顶点处渐变颜色，批量 Primitive 使用；默认 rgba(20,40,255,0.58)。"
+            },
+            {
+              "name": "addRanges.options.middleColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "单体 Entity 填充色，也是批量 Primitive 渐变中间色；默认 rgba(210,215,35,0.42)。"
+            },
+            {
+              "name": "addRanges.options.farColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧墙渐变颜色，批量 Primitive 使用；默认 rgba(255,140,0,0.58)。"
+            },
+            {
+              "name": "addRanges.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "填充整体透明度倍率，范围 0 到 1，默认 1。"
+            },
+            {
+              "name": "addRanges.options.fillVisible",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
+              "description": "是否绘制填充面，默认 true。"
+            },
+            {
+              "name": "addRanges.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线颜色，默认 rgba(255,86,0,0.95)。"
+            },
+            {
+              "name": "addRanges.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRanges.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addRanges.options.gridVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制远端弧形竖墙网格，默认 true。"
+            },
+            {
+              "name": "addRanges.options.outlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外轮廓线颜色，默认 rgba(255,0,0,0.9)。"
+            },
+            {
+              "name": "addRanges.options.outlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "addRanges.options.outlineLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "addRanges.options.outlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制外轮廓线，默认 true。"
             },
             {
               "name": "addRanges.options.show",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示，默认 true。"
             },
             {
               "name": "update.id",
@@ -58001,7 +57821,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "火力范围中心点。"
+              "description": "火力范围顶点位置，支持经纬高数组、经纬高对象或 Cartesian3。"
             },
             {
               "name": "add.options.position.longitude",
@@ -58025,103 +57845,169 @@
               "name": "add.options.heading",
               "type": "number",
               "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
+              "description": "航向角，单位：度，默认 0。"
             },
             {
               "name": "add.options.pitch",
               "type": "number",
               "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
+              "description": "俯仰角，单位：度，默认 0。"
             },
             {
               "name": "add.options.roll",
               "type": "number",
               "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
+              "description": "翻滚角，单位：度，默认 0。"
             },
             {
               "name": "add.options.scale",
               "type": "number",
               "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "范围面颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 red。"
-            },
-            {
-              "name": "add.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
+              "description": "整体缩放，默认 1。"
             },
             {
               "name": "add.options.radius",
               "type": "number",
               "defaultValue": "-",
-              "description": "火力范围半径，单位：米。默认 10000。"
+              "description": "火力范围半径，单位：米，默认 10000。"
             },
             {
               "name": "add.options.minHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -30。"
+              "description": "最小水平角，单位：度，默认 -30。"
             },
             {
               "name": "add.options.maxHoriAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 30。"
+              "description": "最大水平角，单位：度，默认 30。"
             },
             {
               "name": "add.options.minVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 80。"
+              "description": "最小垂直角，单位：度，默认 80；90 表示水平向前。"
             },
             {
               "name": "add.options.maxVertAngle",
               "type": "number",
               "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 100。"
+              "description": "最大垂直角，单位：度，默认 100；90 表示水平向前。"
             },
             {
-              "name": "add.options.horiSegments",
+              "name": "add.options.horiPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
+              "description": "水平方向插值点数，数值越大远端弧墙越平滑，默认 360。"
             },
             {
-              "name": "add.options.vertSegments",
+              "name": "add.options.vertPointNum",
               "type": "number",
               "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
+              "description": "垂直方向插值点数，数值越大远端竖墙越平滑，默认 180。"
             },
             {
-              "name": "add.options.scanVisible",
+              "name": "add.options.radialPointNum",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "顶点到远端之间的径向插值点数，影响填充面细腻程度，默认 48。"
+            },
+            {
+              "name": "add.options.gridHoriStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格水平方向抽样步长，1 表示每个水平插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "add.options.gridVertStep",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端网格垂直方向抽样步长，1 表示每个垂直插值点都绘制网格线，默认 1。"
+            },
+            {
+              "name": "add.options.apexColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "顶点处渐变颜色，批量 Primitive 使用；默认 rgba(20,40,255,0.58)。"
+            },
+            {
+              "name": "add.options.middleColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "单体 Entity 填充色，也是批量 Primitive 渐变中间色；默认 rgba(210,215,35,0.42)。"
+            },
+            {
+              "name": "add.options.farColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧墙渐变颜色，批量 Primitive 使用；默认 rgba(255,140,0,0.58)。"
+            },
+            {
+              "name": "add.options.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "填充整体透明度倍率，范围 0 到 1，默认 1。"
+            },
+            {
+              "name": "add.options.fillVisible",
               "type": "boolean",
               "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
+              "description": "是否绘制填充面，默认 true。"
+            },
+            {
+              "name": "add.options.gridColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线颜色，默认 rgba(255,86,0,0.95)。"
+            },
+            {
+              "name": "add.options.gridAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.gridLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "远端弧形竖墙网格线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "add.options.gridVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制远端弧形竖墙网格，默认 true。"
+            },
+            {
+              "name": "add.options.outlineColor",
+              "type": "SpecialEffectsColorInput",
+              "defaultValue": "-",
+              "description": "外轮廓线颜色，默认 rgba(255,0,0,0.9)。"
+            },
+            {
+              "name": "add.options.outlineAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线透明度，范围 0 到 1。"
+            },
+            {
+              "name": "add.options.outlineLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "外轮廓线宽，单位：像素，默认 1。"
+            },
+            {
+              "name": "add.options.outlineVisible",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制外轮廓线，默认 true。"
             },
             {
               "name": "add.options.show",
               "type": "boolean",
               "defaultValue": "true",
-              "description": "是否显示。默认 true。"
+              "description": "是否显示，默认 true。"
             },
             {
               "name": "show.id",
@@ -58160,7 +58046,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.FireRangeEffectCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.FireRangeEffectCollection()\nconst options = { position: { longitude: 108, latitude: 39, height: 2000 }, heading: 0, pitch: 0, roll: 0, scale: 1, radius: 10000, minHoriAngle: -30, maxHoriAngle: 30, minVertAngle: 80, maxVertAngle: 100, horiPointNum: 360, vertPointNum: 180, radialPointNum: 48, gridHoriStep: 1, gridVertStep: 1, apexColor: 'rgba(20,40,255,0.58)', middleColor: 'rgba(210,215,35,0.42)', farColor: 'rgba(255,140,0,0.58)', fillAlpha: 1, fillVisible: true, gridColor: '#ff5600', gridAlpha: 0.95, gridLineWidth: 1, gridVisible: true, outlineColor: '#ff0000', outlineAlpha: 0.9, outlineLineWidth: 1, outlineVisible: true, show: true }\neffect.add(viewer, options)",
           "access": "import { FireRangeEffectCollection } from 'fastx-sdk'",
           "generated": true
         },
