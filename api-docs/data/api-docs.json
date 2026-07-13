@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-10T00:58:22.653Z",
+  "generatedAt": "2026-07-13T07:02:54.733Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -52294,7 +52294,7 @@
               "name": "addScanners.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "扫描体中心点。"
+              "description": "扫描体顶点位置。"
             },
             {
               "name": "addScanners.options.position.longitude",
@@ -52339,16 +52339,46 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "addScanners.options.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "锥体高度，单位：米。默认 500000。"
+            },
+            {
+              "name": "addScanners.options.minGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最小张开角，单位：度。默认 80。角度越小，外圈半径越大。"
+            },
+            {
+              "name": "addScanners.options.maxGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最大张开角，单位：度。默认 85。角度越大，内圈半径越小。"
+            },
+            {
+              "name": "addScanners.options.frontExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "前侧排除角，单位：度。默认 70。"
+            },
+            {
+              "name": "addScanners.options.backExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "后侧排除角，单位：度。默认 70。"
+            },
+            {
               "name": "addScanners.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(89,255,155,0.55)。"
+              "description": "环面填充色。默认 rgba(255,55,125,0.85)。"
             },
             {
               "name": "addScanners.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
+              "description": "轮廓线颜色。默认 yellow。"
             },
             {
               "name": "addScanners.options.lineWidth",
@@ -52360,25 +52390,7 @@
               "name": "addScanners.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "addScanners.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 500000。"
-            },
-            {
-              "name": "addScanners.options.minElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 45。"
-            },
-            {
-              "name": "addScanners.options.maxElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 60。"
+              "description": "环向插值点数。默认 96。"
             },
             {
               "name": "addScanners.options.show",
@@ -52408,7 +52420,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "扫描体中心点。"
+              "description": "扫描体顶点位置。"
             },
             {
               "name": "add.options.position.longitude",
@@ -52453,16 +52465,46 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "add.options.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "锥体高度，单位：米。默认 500000。"
+            },
+            {
+              "name": "add.options.minGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最小张开角，单位：度。默认 80。角度越小，外圈半径越大。"
+            },
+            {
+              "name": "add.options.maxGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最大张开角，单位：度。默认 85。角度越大，内圈半径越小。"
+            },
+            {
+              "name": "add.options.frontExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "前侧排除角，单位：度。默认 70。"
+            },
+            {
+              "name": "add.options.backExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "后侧排除角，单位：度。默认 70。"
+            },
+            {
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(89,255,155,0.55)。"
+              "description": "环面填充色。默认 rgba(255,55,125,0.85)。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
+              "description": "轮廓线颜色。默认 yellow。"
             },
             {
               "name": "add.options.lineWidth",
@@ -52474,25 +52516,7 @@
               "name": "add.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 500000。"
-            },
-            {
-              "name": "add.options.minElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.maxElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 60。"
+              "description": "环向插值点数。默认 96。"
             },
             {
               "name": "add.options.show",
@@ -52549,7 +52573,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingConeScanner(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingConeScanner(viewer)\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, minGroundOpenAngle: 80, maxGroundOpenAngle: 85, frontExcludeAngle: 70, backExcludeAngle: 70, segments: 160, color: 'rgba(255,55,125,0.85)', lineColor: 'rgba(255,255,0,1)', lineWidth: 1, show: true }\neffect.add(options)",
           "access": "import { RingConeScanner } from 'fastx-sdk'",
           "generated": true
         },
@@ -52736,7 +52760,7 @@
               "name": "addScanners.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "扫描体中心点。"
+              "description": "扫描体顶点位置。"
             },
             {
               "name": "addScanners.options.position.longitude",
@@ -52781,16 +52805,46 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "addScanners.options.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "锥体高度，单位：米。默认 500000。"
+            },
+            {
+              "name": "addScanners.options.minGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最小张开角，单位：度。默认 80。角度越小，外圈半径越大。"
+            },
+            {
+              "name": "addScanners.options.maxGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最大张开角，单位：度。默认 85。角度越大，内圈半径越小。"
+            },
+            {
+              "name": "addScanners.options.frontExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "前侧排除角，单位：度。默认 70。"
+            },
+            {
+              "name": "addScanners.options.backExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "后侧排除角，单位：度。默认 70。"
+            },
+            {
               "name": "addScanners.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(89,255,155,0.55)。"
+              "description": "环面填充色。默认 rgba(255,55,125,0.85)。"
             },
             {
               "name": "addScanners.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
+              "description": "轮廓线颜色。默认 yellow。"
             },
             {
               "name": "addScanners.options.lineWidth",
@@ -52802,25 +52856,7 @@
               "name": "addScanners.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "addScanners.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 500000。"
-            },
-            {
-              "name": "addScanners.options.minElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 45。"
-            },
-            {
-              "name": "addScanners.options.maxElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 60。"
+              "description": "环向插值点数。默认 96。"
             },
             {
               "name": "addScanners.options.show",
@@ -52862,7 +52898,7 @@
               "name": "add.options.position",
               "type": "SpecialEffectsPositionInput",
               "defaultValue": "必填",
-              "description": "扫描体中心点。"
+              "description": "扫描体顶点位置。"
             },
             {
               "name": "add.options.position.longitude",
@@ -52907,16 +52943,46 @@
               "description": "整体缩放。默认 1。"
             },
             {
+              "name": "add.options.height",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "锥体高度，单位：米。默认 500000。"
+            },
+            {
+              "name": "add.options.minGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最小张开角，单位：度。默认 80。角度越小，外圈半径越大。"
+            },
+            {
+              "name": "add.options.maxGroundOpenAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "与地面的最大张开角，单位：度。默认 85。角度越大，内圈半径越小。"
+            },
+            {
+              "name": "add.options.frontExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "前侧排除角，单位：度。默认 70。"
+            },
+            {
+              "name": "add.options.backExcludeAngle",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "后侧排除角，单位：度。默认 70。"
+            },
+            {
               "name": "add.options.color",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "环面颜色。默认 rgba(89,255,155,0.55)。"
+              "description": "环面填充色。默认 rgba(255,55,125,0.85)。"
             },
             {
               "name": "add.options.lineColor",
               "type": "SpecialEffectsColorInput",
               "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
+              "description": "轮廓线颜色。默认 yellow。"
             },
             {
               "name": "add.options.lineWidth",
@@ -52928,25 +52994,7 @@
               "name": "add.options.segments",
               "type": "number",
               "defaultValue": "-",
-              "description": "环向分段数。默认 96。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 500000。"
-            },
-            {
-              "name": "add.options.minElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小仰角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.maxElevationAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大仰角，单位：度。默认 60。"
+              "description": "环向插值点数。默认 96。"
             },
             {
               "name": "add.options.show",
@@ -52991,7 +53039,7 @@
               "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
             }
           ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingConeScannerCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
+          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingConeScannerCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, minGroundOpenAngle: 80, maxGroundOpenAngle: 85, frontExcludeAngle: 70, backExcludeAngle: 70, segments: 160, color: 'rgba(255,55,125,0.85)', lineColor: 'rgba(255,255,0,1)', lineWidth: 1, show: true }\neffect.add(viewer, options)",
           "access": "import { RingConeScannerCollection } from 'fastx-sdk'",
           "generated": true
         },
