@@ -1,16 +1,15 @@
 /**
  * 双圆锥环面扫描体 Primitive 批量绘制类。
- * 使用 Primitive 批量绘制多个双圆锥环面扫描体。
+ * 复用单体 Entity 的几何构建逻辑，保证单个绘制和批量绘制效果一致。
  */
 import * as Cesium from "cesium";
 import { RenderablePrimitiveEffect } from "../common/renderable-effect";
-import { buildRingConeSpec } from "../common/radar-builders";
 import type {
   RingConeScannerAddOptions,
   RingConeScannerResolvedOptions,
   RingConeScannerUpdateOptions,
 } from ".";
-import { resolveRingConeScannerOptions } from ".";
+import { buildRingConeScannerSpec, resolveRingConeScannerOptions } from ".";
 
 /** 双圆锥环面扫描体 Primitive 批量绘制类。 */
 export default class RingConeScannerCollection extends RenderablePrimitiveEffect<
@@ -18,7 +17,7 @@ export default class RingConeScannerCollection extends RenderablePrimitiveEffect
   RingConeScannerResolvedOptions
 > {
   constructor() {
-    super("ring-cone-scanner", buildRingConeSpec, resolveRingConeScannerOptions);
+    super("ring-cone-scanner", buildRingConeScannerSpec, resolveRingConeScannerOptions);
   }
 
   /** 批量新增双圆锥环面扫描体 Primitive，返回成功创建的 id。 */

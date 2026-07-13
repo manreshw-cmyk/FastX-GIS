@@ -1493,6 +1493,9 @@ function usageFor(name, groupId) {
     if (baseName === 'RingRadar') {
       options = "{ position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }"
     }
+    if (baseName === 'RingConeScanner') {
+      options = "{ position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, minGroundOpenAngle: 80, maxGroundOpenAngle: 85, frontExcludeAngle: 70, backExcludeAngle: 70, segments: 160, color: 'rgba(255,55,125,0.85)', lineColor: 'rgba(255,255,0,1)', lineWidth: 1, show: true }"
+    }
     if (baseName === 'SquareConeScanner') {
       options = "{ position: { longitude: 120.95, latitude: 23.75, height: 500000 }, heading: 0, pitch: 0, roll: 0, scale: 1, height: 500000, horiAngle: 30, vertAngle: 30, color: 'rgba(89,255,155,0.55)', lineColor: 'rgba(89,255,155,1)', lineWidth: 1, bottomOutlineVisible: true, bottomOutlineColor: '#ffff00', bottomOutlineAlpha: 1, bottomOutlineWidth: 1, show: true }"
     }

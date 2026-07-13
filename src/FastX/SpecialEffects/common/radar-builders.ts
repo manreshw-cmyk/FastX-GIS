@@ -99,14 +99,10 @@ export interface ParabolaRadarSpecOptions extends ResolvedSpatialEffectOptions {
   radialSegments: number;
 }
 
-/** 环锥扫描体参数。 */
-export interface RingConeSpecOptions extends ResolvedSpatialEffectOptions {
-  /** 探测半径，单位：米。 */
+/** 半径环带类几何参数。 */
+export interface RadiusBandSpecOptions extends ResolvedSpatialEffectOptions {
+  /** 外侧半径，单位：米。 */
   radius: number;
-  /** 最小仰角，单位：度。 */
-  minElevationAngle: number;
-  /** 最大仰角，单位：度。 */
-  maxElevationAngle: number;
 }
 
 /** 扫描雷达/火力范围球面扇区参数。 */
@@ -365,26 +361,8 @@ export function buildParabolaRadarSpec(options: ParabolaRadarSpecOptions): Effec
   };
 }
 
-/** 创建双圆锥环面扫描体规格。 */
-export function buildRingConeSpec(options: RingConeSpecOptions): EffectRenderSpec {
-  const grid = createSphericalGrid(
-    options.radius,
-    0,
-    360,
-    options.minElevationAngle,
-    options.maxElevationAngle,
-    options.segments,
-    8,
-    createLocalFrame(options),
-  );
-  return {
-    faces: gridToFaces(grid, options.color),
-    lines: gridToLines(grid, options.lineColor, options.lineWidth, 1, Math.max(1, Math.floor(options.segments / 16))),
-  };
-}
-
 /** 创建环形雷达规格。 */
-export function buildRingRadarSpec(options: RingConeSpecOptions & { innerRadius: number }): EffectRenderSpec {
+export function buildRingRadarSpec(options: RadiusBandSpecOptions & { innerRadius: number }): EffectRenderSpec {
   const matrix = createLocalFrame(options);
   const outer = localPointsToWorld(createCircleLocalPoints(options.radius, options.segments, 0), matrix);
   const inner = localPointsToWorld(createCircleLocalPoints(options.innerRadius, options.segments, 0), matrix);
