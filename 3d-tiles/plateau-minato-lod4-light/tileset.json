@@ -1,0 +1,844 @@
+{
+    "asset":  {
+                  "version":  "1.0"
+              },
+    "properties":  {
+                       "meshcode":  {
+
+                                    },
+                       "feature_type":  {
+
+                                        },
+                       "city_code":  {
+
+                                     },
+                       "city_name":  {
+
+                                     },
+                       "gml_id":  {
+
+                                  },
+                       "attributes":  {
+
+                                      },
+                       "gml:name":  {
+
+                                    },
+                       "bldg:class":  {
+
+                                      },
+                       "bldg:usage":  {
+
+                                      },
+                       "bldg:measuredHeight":  {
+                                                   "minimum":  0.6000000000000001,
+                                                   "maximum":  332.12
+                                               },
+                       "bldg:storeysAboveGround":  {
+                                                       "minimum":  0,
+                                                       "maximum":  64
+                                                   },
+                       "bldg:storeysBelowGround":  {
+                                                       "minimum":  0,
+                                                       "maximum":  6
+                                                   },
+                       "bldg:address":  {
+
+                                        },
+                       "uro:BuildingIDAttribute_uro:buildingID":  {
+
+                                                                  },
+                       "uro:BuildingIDAttribute_uro:prefecture":  {
+
+                                                                  },
+                       "uro:BuildingIDAttribute_uro:city":  {
+
+                                                            },
+                       "uro:BuildingDetailAttribute_uro:buildingRoofEdgeArea":  {
+                                                                                    "minimum":  0.21164000000000002,
+                                                                                    "maximum":  20286.52946
+                                                                                },
+                       "uro:BuildingDetailAttribute_uro:fireproofStructureType":  {
+
+                                                                                  },
+                       "uro:BuildingDetailAttribute_uro:urbanPlanType":  {
+
+                                                                         },
+                       "uro:BuildingDetailAttribute_uro:areaClassificationType":  {
+
+                                                                                  },
+                       "uro:BuildingDetailAttribute_uro:districtsAndZonesType":  {
+
+                                                                                 },
+                       "uro:BuildingDetailAttribute_uro:landUseType":  {
+
+                                                                       },
+                       "uro:BuildingDetailAttribute_uro:specifiedBuildingCoverageRate":  {
+                                                                                             "minimum":  0.6000000000000001,
+                                                                                             "maximum":  0.8
+                                                                                         },
+                       "uro:BuildingDetailAttribute_uro:specifiedFloorAreaRate":  {
+                                                                                      "minimum":  1.5,
+                                                                                      "maximum":  10
+                                                                                  },
+                       "uro:BuildingDetailAttribute_uro:surveyYear":  {
+                                                                          "minimum":  1,
+                                                                          "maximum":  2021
+                                                                      },
+                       "uro:BuildingDataQualityAttribute_uro:lod1HeightType":  {
+
+                                                                               },
+                       "uro:RealEstateIDAttribute_uro:realEstateIDOfBuilding":  {
+
+                                                                                },
+                       "uro:RealEstateIDAttribute_uro:matchingScore":  {
+                                                                           "minimum":  50,
+                                                                           "maximum":  98
+                                                                       },
+                       "延べ面積換算係数":  {
+
+                                    },
+                       "大字・町コード":  {
+
+                                   },
+                       "町・丁目コード":  {
+
+                                   },
+                       "13+区市町村コード+大字・町コード+町・丁目コード":  {
+
+                                                      },
+                       "説明注記":  {
+
+                                },
+                       "再開発等促進区を定める地区計画":  {
+
+                                           },
+                       "地区計画":  {
+
+                                },
+                       "隅田川・新河岸川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランク":  {
+
+                                                                 },
+                       "隅田川・新河岸川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランクコード":  {
+                                                                        "minimum":  1,
+                                                                        "maximum":  2
+                                                                    },
+                       "隅田川・新河岸川流域（都道府県管理区間）_L2（想定最大規模）_浸水深":  {
+                                                                   "minimum":  0.01,
+                                                                   "maximum":  2.809
+                                                               },
+                       "城南地区河川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランク":  {
+
+                                                               },
+                       "城南地区河川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランクコード":  {
+                                                                      "minimum":  1,
+                                                                      "maximum":  4
+                                                                  },
+                       "城南地区河川流域（都道府県管理区間）_L2（想定最大規模）_浸水深":  {
+                                                                 "minimum":  0.001,
+                                                                 "maximum":  6.117
+                                                             },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L1（計画規模）_浸水ランク":  {
+
+                                                                               },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L1（計画規模）_浸水ランクコード":  {
+                                                                                      "minimum":  1,
+                                                                                      "maximum":  4
+                                                                                  },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L1（計画規模）_浸水深":  {
+                                                                                 "minimum":  0.001,
+                                                                                 "maximum":  5.491
+                                                                             },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L2（想定最大規模）_浸水ランク":  {
+
+                                                                                 },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L2（想定最大規模）_浸水ランクコード":  {
+                                                                                        "minimum":  1,
+                                                                                        "maximum":  4
+                                                                                    },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L2（想定最大規模）_浸水深":  {
+                                                                                   "minimum":  0.001,
+                                                                                   "maximum":  6.117
+                                                                               },
+                       "古川水系渋谷川・古川・目黒川水系目黒川・呑川水系呑川（都道府県管理区間）_L2（想定最大規模）_浸水継続時間":  {
+                                                                                      "minimum":  0.033,
+                                                                                      "maximum":  26.7
+                                                                                  },
+                       "江東内部河川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランク":  {
+
+                                                               },
+                       "江東内部河川流域（都道府県管理区間）_L2（想定最大規模）_浸水ランクコード":  {
+                                                                      "minimum":  1,
+                                                                      "maximum":  2
+                                                                  },
+                       "江東内部河川流域（都道府県管理区間）_L2（想定最大規模）_浸水深":  {
+                                                                 "minimum":  0.01,
+                                                                 "maximum":  0.71
+                                                             },
+                       "高潮浸水想定_東京都高潮浸水想定（平成30年3月）_浸水ランク":  {
+
+                                                           },
+                       "高潮浸水想定_東京都高潮浸水想定（平成30年3月）_浸水ランクコード":  {
+                                                                  "minimum":  1,
+                                                                  "maximum":  4
+                                                              },
+                       "高潮浸水想定_東京都高潮浸水想定（平成30年3月）_浸水深":  {
+                                                             "minimum":  0.009000000000000001,
+                                                             "maximum":  5.579
+                                                         },
+                       "土砂災害リスク_急傾斜地の崩落_区域区分":  {
+
+                                                },
+                       "土砂災害リスク_急傾斜地の崩落_区域区分コード":  {
+                                                       "minimum":  1,
+                                                       "maximum":  2
+                                                   },
+                       "_lod":  {
+                                    "minimum":  1,
+                                    "maximum":  4
+                                },
+                       "_lod_type":  {
+
+                                     },
+                       "_x":  {
+                                  "minimum":  139.70901170368035,
+                                  "maximum":  139.78234062137187
+                              },
+                       "_y":  {
+                                  "minimum":  35.619007960215555,
+                                  "maximum":  35.68241259243424
+                              },
+                       "_xmin":  {
+                                     "minimum":  139.70884936351112,
+                                     "maximum":  139.7822396685457
+                                 },
+                       "_xmax":  {
+                                     "minimum":  139.70917404384957,
+                                     "maximum":  139.78244157419803
+                                 },
+                       "_ymin":  {
+                                     "minimum":  35.61883335939172,
+                                     "maximum":  35.68240732392692
+                                 },
+                       "_ymax":  {
+                                     "minimum":  35.61903405701254,
+                                     "maximum":  35.6824526374774
+                                 },
+                       "_zmin":  {
+                                     "minimum":  -8.516,
+                                     "maximum":  206.57323708067202
+                                 },
+                       "_zmax":  {
+                                     "minimum":  -2.306,
+                                     "maximum":  350.514
+                                 },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:facilityId":  {
+
+                                                                                 },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:parkCode":  {
+
+                                                                               },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:parkName":  {
+
+                                                                               },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:parkType":  {
+
+                                                                               },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:facilityName":  {
+
+                                                                                   },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:facilityNameOptional":  {
+
+                                                                                           },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:specificFacilityName":  {
+
+                                                                                           },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:NumberOfFacilities_uro:quantity":  {
+
+                                                                                                      },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:NumberOfFacilities_uro:quantityUnit":  {
+
+                                                                                                          },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:size":  {
+
+                                                                           },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:mainMaterial":  {
+
+                                                                                   },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:mainMaterialOptional":  {
+
+                                                                                           },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:installationYear":  {
+
+                                                                                       },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:disposalLimitPeriod":  {
+
+                                                                                          },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:expectedUsagePeriod":  {
+
+                                                                                          },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:RepairsBeforeParkHealthAssessment_uro:repair":  {
+
+                                                                                                                   },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:RepairsBeforeParkHealthAssessment_uro:repairFiscalYear":  {
+
+                                                                                                                             },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:ParkHealthAssessment_uro:assessmentFiscalYear":  {
+
+                                                                                                                    },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:ParkHealthAssessment_uro:deteriorationStatus":  {
+
+                                                                                                                   },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:ParkHealthAssessment_uro:condition":  {
+
+                                                                                                         },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:ParkHealthAssessment_urgency":  {
+
+                                                                                                   },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:managementType":  {
+
+                                                                                     },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:expectedRenewalYearWithMeasures":  {
+
+                                                                                                      },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:LongevityMeasures_uro:fiscalYearForCountermeasures":  {
+
+                                                                                                                         },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:LongevityMeasures_uro:CountermeasuresCost_uro:cost":  {
+
+                                                                                                                         },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:LongevityMeasures_uro:CountermeasuresCost_uro:costUnit":  {
+
+                                                                                                                             },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:LongevityMeasures_uro:description":  {
+
+                                                                                                        },
+                       "uro:ParkFacilityLongevityPlanAttribute_uro:noteForLongevity":  {
+
+                                                                                       }
+                   },
+    "geometricError":  453.67759451537285,
+    "root":  {
+                 "boundingVolume":  {
+                                        "region":  [
+                                                       2.438379415566053,
+                                                       0.6216659178405782,
+                                                       2.439663841946361,
+                                                       0.6227762837109151,
+                                                       37.697916351719584,
+                                                       387.108542566589
+                                                   ]
+                                    },
+                 "geometricError":  453.67759451537285,
+                 "refine":  "REPLACE",
+                 "content":  {
+                                 "boundingVolume":  {
+                                                        "region":  [
+                                                                       2.4387129828365777,
+                                                                       0.6217848597644948,
+                                                                       2.4395326478501023,
+                                                                       0.622533553194911,
+                                                                       37.697916351719584,
+                                                                       387.108542566589
+                                                                   ]
+                                                    },
+                                 "uri":  "data/7/data602.b3dm"
+                             },
+                 "children":  [
+                                  {
+                                      "boundingVolume":  {
+                                                             "region":  [
+                                                                            2.439021628756207,
+                                                                            0.6222211007757468,
+                                                                            2.439663841946361,
+                                                                            0.6227762837109151,
+                                                                            36.35656786338285,
+                                                                            308.42517944802415
+                                                                        ]
+                                                         },
+                                      "geometricError":  408.38922348542326,
+                                      "refine":  "REPLACE",
+                                      "content":  {
+                                                      "boundingVolume":  {
+                                                                             "region":  [
+                                                                                            2.4390293234336693,
+                                                                                            0.6222503284009447,
+                                                                                            2.4393461706712527,
+                                                                                            0.6225298351129556,
+                                                                                            36.35656786338285,
+                                                                                            308.42517944802415
+                                                                                        ]
+                                                                         },
+                                                      "uri":  "data/3/data470.b3dm"
+                                                  },
+                                      "children":  [
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439021628756207,
+                                                                                                 0.62249192660302,
+                                                                                                 2.439342735351284,
+                                                                                                 0.6227762837109151,
+                                                                                                 39.1096225330395,
+                                                                                                 308.42517944802415
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  264.9984976628682,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4390293234336693,
+                                                                                                                 0.62249192660302,
+                                                                                                                 2.439234335778101,
+                                                                                                                 0.622566578596935,
+                                                                                                                 39.1096225330395,
+                                                                                                                 308.42517944802415
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/0/data123.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439021628756207,
+                                                                                                 0.6222211007757468,
+                                                                                                 2.4393461706712527,
+                                                                                                 0.622498692243331,
+                                                                                                 34.298585188704564,
+                                                                                                 264.83219331250245
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  408.3889532959488,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4390544831426766,
+                                                                                                                 0.6222325044335946,
+                                                                                                                 2.4393461706712527,
+                                                                                                                 0.6224960412069804,
+                                                                                                                 34.298585188704564,
+                                                                                                                 264.83219331250245
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/3/data469.b3dm"
+                                                                       }
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "boundingVolume":  {
+                                                             "region":  [
+                                                                            2.438379415566053,
+                                                                            0.6222211007757468,
+                                                                            2.43903973662197,
+                                                                            0.6227762837109151,
+                                                                            41.54715095487173,
+                                                                            387.108542566589
+                                                                        ]
+                                                         },
+                                      "geometricError":  332.1271180668637,
+                                      "refine":  "REPLACE",
+                                      "content":  {
+                                                      "boundingVolume":  {
+                                                                             "region":  [
+                                                                                            2.4385328503697132,
+                                                                                            0.6222497912552774,
+                                                                                            2.43903973662197,
+                                                                                            0.6227157387551807,
+                                                                                            41.54715095487173,
+                                                                                            387.108542566589
+                                                                                        ]
+                                                                         },
+                                                      "uri":  "data/5/data569.b3dm"
+                                                  },
+                                      "children":  [
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.43870052216113,
+                                                                                                 0.622496597075173,
+                                                                                                 2.43903973662197,
+                                                                                                 0.6227762837109151,
+                                                                                                 43.00970115196064,
+                                                                                                 255.0706419216517
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  216.75144951232724,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.438710842365738,
+                                                                                                                 0.622496597075173,
+                                                                                                                 2.43903973662197,
+                                                                                                                 0.6227462846903239,
+                                                                                                                 43.00970115196064,
+                                                                                                                 255.0706419216517
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/3/data883.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.438379415566053,
+                                                                                                 0.622498692243331,
+                                                                                                 2.43870052216113,
+                                                                                                 0.6227762837109151,
+                                                                                                 62.1595814765077,
+                                                                                                 238.76597811761312
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  177.53617267918827,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.43849399405351,
+                                                                                                                 0.6224999368622416,
+                                                                                                                 2.4386928834128465,
+                                                                                                                 0.6227157387551807,
+                                                                                                                 62.1595814765077,
+                                                                                                                 238.76597811761312
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/4/data119.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.438694815524355,
+                                                                                                 0.6222211007757468,
+                                                                                                 2.439030691605774,
+                                                                                                 0.6225047679437994,
+                                                                                                 41.54715095487173,
+                                                                                                 387.108542566589
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  332.1271180668637,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.438694815524355,
+                                                                                                                 0.6222484762301291,
+                                                                                                                 2.439030691605774,
+                                                                                                                 0.6225047679437994,
+                                                                                                                 41.54715095487173,
+                                                                                                                 387.108542566589
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/4/data950.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.438379415566053,
+                                                                                                 0.6222211007757468,
+                                                                                                 2.43870052216113,
+                                                                                                 0.622498692243331,
+                                                                                                 49.77044703294791,
+                                                                                                 138.2709391928448
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  156.8392052225481,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4384136587690604,
+                                                                                                                 0.6222405987971241,
+                                                                                                                 2.438700217796706,
+                                                                                                                 0.6224979282083404,
+                                                                                                                 49.77044703294791,
+                                                                                                                 138.2709391928448
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/5/data568.b3dm"
+                                                                       }
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "boundingVolume":  {
+                                                             "region":  [
+                                                                            2.439021628756207,
+                                                                            0.6216659178405782,
+                                                                            2.439663841946361,
+                                                                            0.6222211007757468,
+                                                                            36.67831123271553,
+                                                                            222.7287784754551
+                                                                        ]
+                                                         },
+                                      "geometricError":  235.8899143518459,
+                                      "refine":  "REPLACE",
+                                      "content":  {
+                                                      "boundingVolume":  {
+                                                                             "region":  [
+                                                                                            2.439029085230646,
+                                                                                            0.6216659178405782,
+                                                                                            2.4395695446987493,
+                                                                                            0.6222146432792791,
+                                                                                            36.67831123271553,
+                                                                                            222.7287784754551
+                                                                                        ]
+                                                                         },
+                                                      "uri":  "data/5/data985.b3dm"
+                                                  },
+                                      "children":  [
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439342735351284,
+                                                                                                 0.6219435093081624,
+                                                                                                 2.439663841946361,
+                                                                                                 0.6222211007757468,
+                                                                                                 38.66498076431836,
+                                                                                                 154.1957258521407
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  0,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.439540052279078,
+                                                                                                                 0.6219439115560332,
+                                                                                                                 2.4395747448214484,
+                                                                                                                 0.6219668846055241,
+                                                                                                                 38.66498076431836,
+                                                                                                                 154.1957258521407
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/5/data570.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439021628756207,
+                                                                                                 0.6219435093081624,
+                                                                                                 2.439342735351284,
+                                                                                                 0.6222211007757468,
+                                                                                                 35.08838075069346,
+                                                                                                 222.7287784754551
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  222.52030485186256,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.439029085230646,
+                                                                                                                 0.6219703735034603,
+                                                                                                                 2.4392749475349356,
+                                                                                                                 0.6222146432792791,
+                                                                                                                 35.08838075069346,
+                                                                                                                 222.7287784754551
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/5/data848.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439342735351284,
+                                                                                                 0.6216659178405782,
+                                                                                                 2.439663841946361,
+                                                                                                 0.6219435194195817,
+                                                                                                 37.70786646061528,
+                                                                                                 167.70139913599425
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  235.87823425359042,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4394393205196496,
+                                                                                                                 0.6216659178405782,
+                                                                                                                 2.439635813564741,
+                                                                                                                 0.6219435194195817,
+                                                                                                                 37.70786646061528,
+                                                                                                                 167.70139913599425
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/5/data892.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.439021628756207,
+                                                                                                 0.6216659178405782,
+                                                                                                 2.439342735351284,
+                                                                                                 0.6219486308052863,
+                                                                                                 38.59157416300346,
+                                                                                                 181.05196124918942
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  219.89912685709737,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4390476536798853,
+                                                                                                                 0.621797776141479,
+                                                                                                                 2.439250629289073,
+                                                                                                                 0.6219486308052863,
+                                                                                                                 38.59157416300346,
+                                                                                                                 181.05196124918942
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/5/data984.b3dm"
+                                                                       }
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "boundingVolume":  {
+                                                             "region":  [
+                                                                            2.438379415566053,
+                                                                            0.6216659178405782,
+                                                                            2.4390282506248053,
+                                                                            0.6222211007757468,
+                                                                            34.72009621147193,
+                                                                            252.2602801165162
+                                                                        ]
+                                                         },
+                                      "geometricError":  453.6769943963759,
+                                      "refine":  "REPLACE",
+                                      "content":  {
+                                                      "boundingVolume":  {
+                                                                             "region":  [
+                                                                                            2.438659925072074,
+                                                                                            0.6217709689962034,
+                                                                                            2.4390282506248053,
+                                                                                            0.622142947781873,
+                                                                                            34.72009621147193,
+                                                                                            252.2602801165162
+                                                                                        ]
+                                                                         },
+                                                      "uri":  "data/7/data601.b3dm"
+                                                  },
+                                      "children":  [
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.43870052216113,
+                                                                                                 0.6219434544278087,
+                                                                                                 2.4390282506248053,
+                                                                                                 0.6222211007757468,
+                                                                                                 37.47885988693625,
+                                                                                                 252.2602801165162
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  233.466186657849,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.438748009635494,
+                                                                                                                 0.6219434544278087,
+                                                                                                                 2.4390282506248053,
+                                                                                                                 0.622142947781873,
+                                                                                                                 37.47885988693625,
+                                                                                                                 252.2602801165162
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/6/data911.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.438379415566053,
+                                                                                                 0.6219435093081624,
+                                                                                                 2.4387061017209817,
+                                                                                                 0.6222277349106092,
+                                                                                                 44.489617010713175,
+                                                                                                 142.3986433226312
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  194.1918311667759,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.43860626256166,
+                                                                                                                 0.6219628168743746,
+                                                                                                                 2.4387061017209817,
+                                                                                                                 0.6222277349106092,
+                                                                                                                 44.489617010713175,
+                                                                                                                 142.3986433226312
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/7/data267.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.43870052216113,
+                                                                                                 0.6216659178405782,
+                                                                                                 2.439021628756207,
+                                                                                                 0.6219603215647382,
+                                                                                                 34.72009621147193,
+                                                                                                 195.91162982634233
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  453.67729444864506,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4387940114900375,
+                                                                                                                 0.6217659976029998,
+                                                                                                                 2.4390038022436924,
+                                                                                                                 0.6219603215647382,
+                                                                                                                 34.72009621147193,
+                                                                                                                 195.91162982634233
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/7/data589.b3dm"
+                                                                       }
+                                                       },
+                                                       {
+                                                           "boundingVolume":  {
+                                                                                  "region":  [
+                                                                                                 2.438379415566053,
+                                                                                                 0.6216659178405782,
+                                                                                                 2.438701816602685,
+                                                                                                 0.6219484845834682,
+                                                                                                 54.856603119708645,
+                                                                                                 95.97836795449045
+                                                                                             ]
+                                                                              },
+                                                           "geometricError":  75.04320260814897,
+                                                           "refine":  "REPLACE",
+                                                           "content":  {
+                                                                           "boundingVolume":  {
+                                                                                                  "region":  [
+                                                                                                                 2.4385732417889567,
+                                                                                                                 0.6218966971356675,
+                                                                                                                 2.438701816602685,
+                                                                                                                 0.6219484845834682,
+                                                                                                                 54.856603119708645,
+                                                                                                                 95.97836795449045
+                                                                                                             ]
+                                                                                              },
+                                                                           "uri":  "data/7/data600.b3dm"
+                                                                       }
+                                                       }
+                                                   ]
+                                  }
+                              ]
+             }
+}

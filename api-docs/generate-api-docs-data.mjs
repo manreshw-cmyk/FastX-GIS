@@ -73,6 +73,7 @@ const preferredOrder = {
     'Plane',
     'PlaneCollection',
     'Path',
+    'Tileset',
     'PolylineVolume',
     'PolylineVolumeCollection',
     'Overlay',
@@ -102,8 +103,6 @@ const preferredOrder = {
     'AimEffectCollection',
     'ConeEffect',
     'ConeEffectCollection',
-    'ConicalScanner',
-    'ConicalScannerCollection',
     'DoubleViewFrustum',
     'DoubleViewFrustumCollection',
     'ParabolaRadar',
@@ -112,8 +111,6 @@ const preferredOrder = {
     'RingConeScannerCollection',
     'RingRadar',
     'RingRadarCollection',
-    'ScanRadar',
-    'ScanRadarCollection',
     'SquareConeScanner',
     'SquareConeScannerCollection',
     'FireRangeEffect',
@@ -242,6 +239,7 @@ for (const name of preferredOrder.draw) {
     Plane: '平面',
     PlaneCollection: '批量平面',
     Path: '路径',
+    Tileset: '3D Tiles',
     PolylineVolume: '体线',
     PolylineVolumeCollection: '批量体线',
   }[name]
@@ -278,8 +276,6 @@ const effectCnMap = {
   AimEffectCollection: '批量瞄准特效',
   ConeEffect: '圆锥扫描特效',
   ConeEffectCollection: '批量圆锥扫描特效',
-  ConicalScanner: '锥体扫描',
-  ConicalScannerCollection: '批量锥体扫描',
   DoubleViewFrustum: '双面视锥体',
   DoubleViewFrustumCollection: '批量双面视锥体',
   ParabolaRadar: '抛物面雷达',
@@ -288,8 +284,6 @@ const effectCnMap = {
   RingConeScannerCollection: '批量双圆锥环面扫描体',
   RingRadar: '环形雷达扫描',
   RingRadarCollection: '批量环形雷达扫描',
-  ScanRadar: '扫描雷达',
-  ScanRadarCollection: '批量扫描雷达',
   SquareConeScanner: '四方视椎体',
   SquareConeScannerCollection: '批量四方视椎体',
   FireRangeEffect: '火力范围特效',
@@ -1455,7 +1449,8 @@ function usageFor(name, groupId) {
   if (name === 'Layer') return "const layer = new FastX.Layer()\nawait layer.initMap('map', { mapName: 'mapDemo' })"
   if (drawNames.has(name)) {
     const addMethod = name.endsWith('Collection') ? `add${name.replace('Collection', 's')}` : 'add'
-    return `const viewer = window.FastX.getLayer().viewer\nwindow.FastX.${name}.${addMethod}(viewer, options)`
+    const call = `window.FastX.${name}.${addMethod}(viewer, options)`
+    return `const viewer = window.FastX.getLayer().viewer\n${name === 'Tileset' ? `await ${call}` : call}`
   }
   if (groupId === 'effects') {
     const baseName = name.replace(/Collection$/, '')
