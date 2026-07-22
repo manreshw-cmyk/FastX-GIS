@@ -27,8 +27,6 @@ import AimEffect from "./AimEffect";
 import AimEffectCollection from "./AimEffect/AimEffectCollection";
 import ConeEffect from "./ConeEffect";
 import ConeEffectCollection from "./ConeEffect/ConeEffectCollection";
-import ConicalScanner from "./ConicalScanner";
-import ConicalScannerCollection from "./ConicalScanner/ConicalScannerCollection";
 import DoubleViewFrustum from "./DoubleViewFrustum";
 import DoubleViewFrustumCollection from "./DoubleViewFrustum/DoubleViewFrustumCollection";
 import ParabolaRadar from "./ParabolaRadar";
@@ -37,8 +35,6 @@ import RingConeScanner from "./RingConeScanner";
 import RingConeScannerCollection from "./RingConeScanner/RingConeScannerCollection";
 import RingRadar from "./RingRadar";
 import RingRadarCollection from "./RingRadar/RingRadarCollection";
-import ScanRadar from "./ScanRadar";
-import ScanRadarCollection from "./ScanRadar/ScanRadarCollection";
 import SquareConeScanner from "./SquareConeScanner";
 import SquareConeScannerCollection from "./SquareConeScanner/SquareConeScannerCollection";
 import FireRangeEffect from "./FireRangeEffect";
@@ -104,10 +100,6 @@ export { default as ConeEffect } from "./ConeEffect";
 export { default as ConeEffectCollection } from "./ConeEffect/ConeEffectCollection";
 export type { ConeEffectAddOptions, ConeEffectUpdateOptions } from "./ConeEffect";
 
-export { default as ConicalScanner } from "./ConicalScanner";
-export { default as ConicalScannerCollection } from "./ConicalScanner/ConicalScannerCollection";
-export type { ConicalScannerAddOptions, ConicalScannerUpdateOptions } from "./ConicalScanner";
-
 export { default as DoubleViewFrustum } from "./DoubleViewFrustum";
 export { default as DoubleViewFrustumCollection } from "./DoubleViewFrustum/DoubleViewFrustumCollection";
 export type { DoubleViewFrustumAddOptions, DoubleViewFrustumUpdateOptions } from "./DoubleViewFrustum";
@@ -123,10 +115,6 @@ export type { RingConeScannerAddOptions, RingConeScannerUpdateOptions } from "./
 export { default as RingRadar } from "./RingRadar";
 export { default as RingRadarCollection } from "./RingRadar/RingRadarCollection";
 export type { RingRadarAddOptions, RingRadarUpdateOptions } from "./RingRadar";
-
-export { default as ScanRadar } from "./ScanRadar";
-export { default as ScanRadarCollection } from "./ScanRadar/ScanRadarCollection";
-export type { ScanRadarAddOptions, ScanRadarUpdateOptions } from "./ScanRadar";
 
 export { default as SquareConeScanner } from "./SquareConeScanner";
 export { default as SquareConeScannerCollection } from "./SquareConeScanner/SquareConeScannerCollection";
@@ -187,8 +175,6 @@ export const SpecialEffects = {
   AimEffectCollection,
   ConeEffect,
   ConeEffectCollection,
-  ConicalScanner,
-  ConicalScannerCollection,
   DoubleViewFrustum,
   DoubleViewFrustumCollection,
   ParabolaRadar,
@@ -197,8 +183,6 @@ export const SpecialEffects = {
   RingConeScannerCollection,
   RingRadar,
   RingRadarCollection,
-  ScanRadar,
-  ScanRadarCollection,
   SquareConeScanner,
   SquareConeScannerCollection,
   FireRangeEffect,

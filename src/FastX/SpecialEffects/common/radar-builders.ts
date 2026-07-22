@@ -63,18 +63,6 @@ interface AimPlaneAxes {
   up: Cesium.Cartesian3;
 }
 
-/** 锥体扫描参数。 */
-export interface ConicalScannerSpecOptions extends ResolvedSpatialEffectOptions {
-  /** 扫描高度，单位：米。 */
-  height: number;
-  /** 内半径，单位：米。 */
-  innerRadius: number;
-  /** 外半径，单位：米。 */
-  outerRadius: number;
-  /** 扫描扇形角度，单位：度。 */
-  angle: number;
-}
-
 /** 双面视锥体参数。 */
 export interface DoubleFrustumSpecOptions extends ResolvedSpatialEffectOptions {
   /** 近平面距离，单位：米。 */
@@ -105,7 +93,7 @@ export interface RadiusBandSpecOptions extends ResolvedSpatialEffectOptions {
   radius: number;
 }
 
-/** 扫描雷达/火力范围球面扇区参数。 */
+/** 球面扇区参数。 */
 export interface SphericalSectorSpecOptions extends ResolvedSpatialEffectOptions {
   /** 探测半径，单位：米。 */
   radius: number;
@@ -304,24 +292,6 @@ function createAimPlanePoint(
   return Cesium.Cartesian3.add(target, Cesium.Cartesian3.add(xOffset, yOffset, new Cesium.Cartesian3()), new Cesium.Cartesian3());
 }
 
-/** 创建锥体扫描规格。 */
-export function buildConicalScannerSpec(options: ConicalScannerSpecOptions): EffectRenderSpec {
-  const matrix = createLocalFrame(options);
-  const outer = localPointsToWorld(createCircleLocalPoints(options.outerRadius, options.segments, 0, -options.angle / 2, options.angle / 2), matrix);
-  const inner = localPointsToWorld(createCircleLocalPoints(options.innerRadius, options.segments, options.height, -options.angle / 2, options.angle / 2), matrix);
-  const faces = [];
-  for (let i = 0; i < outer.length - 1; i += 1) {
-    faces.push({ positions: [inner[i]!, inner[i + 1]!, outer[i + 1]!, outer[i]!], color: options.color });
-  }
-  const lines = [
-    { positions: outer, color: options.lineColor, width: options.lineWidth },
-    { positions: inner, color: options.lineColor, width: options.lineWidth },
-    { positions: [inner[0]!, outer[0]!], color: options.lineColor, width: options.lineWidth },
-    { positions: [inner[inner.length - 1]!, outer[outer.length - 1]!], color: options.lineColor, width: options.lineWidth },
-  ];
-  return { faces, lines };
-}
-
 /** 创建双面视锥体规格。 */
 export function buildDoubleFrustumSpec(options: DoubleFrustumSpecOptions): EffectRenderSpec {
   const matrix = createLocalFrame(options);
@@ -381,7 +351,7 @@ export function buildRingRadarSpec(options: RadiusBandSpecOptions & { innerRadiu
   };
 }
 
-/** 创建扫描雷达或火力范围球面扇区规格。 */
+/** 创建球面扇区规格。 */
 export function buildSphericalSectorSpec(options: SphericalSectorSpecOptions): EffectRenderSpec {
   const grid = createSphericalGrid(
     options.radius,

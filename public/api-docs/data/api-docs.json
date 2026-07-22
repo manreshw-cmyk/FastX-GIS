@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-13T06:37:35.613Z",
+  "generatedAt": "2026-07-22T01:28:20.243Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -19,8 +19,6 @@
     "CircleDiffusionCollection",
     "ConeEffect",
     "ConeEffectCollection",
-    "ConicalScanner",
-    "ConicalScannerCollection",
     "Coordinates",
     "Corridor",
     "CorridorCollection",
@@ -91,8 +89,6 @@
     "RingRadarCollection",
     "Runway",
     "RunwayCollection",
-    "ScanRadar",
-    "ScanRadarCollection",
     "Sector",
     "SectorArcRadarScan",
     "SectorArcRadarScanCollection",
@@ -100,6 +96,7 @@
     "SpecialEffects",
     "SquareConeScanner",
     "SquareConeScannerCollection",
+    "Tileset",
     "Types",
     "Utils",
     "VENDOR_MANIFEST",
@@ -1076,6 +1073,33 @@
               "description": "重置为 Cesium Viewer 创建时的默认全局天空盒。 **输入**：无。**输出**：无。"
             },
             {
+              "name": "setCustomNearSkyBox",
+              "params": [
+                {
+                  "name": "baseUrl",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "LayerNearSkyBoxOptions",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "Promise<Cesium.SkyBox>",
+              "description": "设置自定义近景天空盒。 **输入**： - `baseUrl`：天空盒目录 URL，目录下必须包含固定六面图片； - `options.maxHeight`：相机离地高度小于等于该值时启用近景天空盒，单位：米，默认 `300000`。 **输出**：`Promise<Cesium.SkyBox>`。"
+            },
+            {
+              "name": "resetNearSkyBox",
+              "params": [],
+              "returnType": "void",
+              "description": "关闭近景天空盒，并恢复默认或当前全局天空盒。 **输入**：无。**输出**：无。"
+            },
+            {
               "name": "setGlobeLightingEnabled",
               "params": [
                 {
@@ -2018,6 +2042,18 @@
               "type": "string",
               "defaultValue": "必填",
               "description": "资源访问地址。"
+            },
+            {
+              "name": "setCustomNearSkyBox.baseUrl",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "资源访问地址。"
+            },
+            {
+              "name": "setCustomNearSkyBox.options",
+              "type": "LayerNearSkyBoxOptions",
+              "defaultValue": "-",
+              "description": "创建或配置对象时传入的参数对象。"
             },
             {
               "name": "setGlobeLightingEnabled.enabled",
@@ -34504,6 +34540,370 @@
           "generated": true
         },
         {
+          "id": "Tileset",
+          "kind": "api",
+          "group": "draw",
+          "name": "Tileset",
+          "cn": "3D Tiles",
+          "title": "Tileset（3D Tiles）",
+          "description": "3D Tiles API，用于创建、更新、查询、显隐和清理单体标绘对象。",
+          "methods": [
+            {
+              "name": "add",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "AddTilesetOptions",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Promise<string | undefined>",
+              "description": "新增 3D Tiles，并返回 id。"
+            },
+            {
+              "name": "addTilesets",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "options",
+                  "type": "AddTilesetOptions[]",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Promise<string[]>",
+              "description": "批量新增 3D Tiles，并返回成功创建的 id。"
+            },
+            {
+              "name": "update",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "properties",
+                  "type": "UpdateTilesetProperties",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Promise<boolean>",
+              "description": "更新 3D Tiles；传入新 url 时会重建 tileset。"
+            },
+            {
+              "name": "setVisible",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "visible",
+                  "type": "boolean",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "设置指定 3D Tiles 显隐。"
+            },
+            {
+              "name": "show",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                },
+                {
+                  "name": "visible",
+                  "type": "boolean",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "`setVisible` 的语义别名。"
+            },
+            {
+              "name": "get",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "Cesium.Cesium3DTileset | undefined",
+              "description": "获取指定 Cesium.Cesium3DTileset 实例。"
+            },
+            {
+              "name": "getAllIds",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "string[]",
+              "description": "获取当前管理的全部 id；传入 viewer 时只返回该 Viewer 下的 id。"
+            },
+            {
+              "name": "getSnapshot",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "TilesetSnapshot | undefined",
+              "description": "获取指定 3D Tiles 的参数快照。"
+            },
+            {
+              "name": "remove",
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "必填",
+                  "description": ""
+                }
+              ],
+              "returnType": "boolean",
+              "description": "删除指定 3D Tiles。"
+            },
+            {
+              "name": "clear",
+              "params": [
+                {
+                  "name": "viewer",
+                  "type": "Cesium.Viewer",
+                  "optional": true,
+                  "defaultValue": "-",
+                  "description": ""
+                }
+              ],
+              "returnType": "void",
+              "description": "清空全部 3D Tiles；传入 viewer 时只清空该 Viewer 下的对象。"
+            },
+            {
+              "name": "destroy",
+              "params": [],
+              "returnType": "void",
+              "description": "销毁当前管理器中的全部 3D Tiles。"
+            }
+          ],
+          "types": [
+            "AddTilesetOptions",
+            "TilesetSnapshot",
+            "UpdateTilesetProperties"
+          ],
+          "params": [
+            {
+              "name": "add.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "add.options",
+              "type": "AddTilesetOptions",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "add.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "add.options.url",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "tileset.json 地址，支持 public 本地地址或在线地址。"
+            },
+            {
+              "name": "add.options.show",
+              "type": "boolean",
+              "defaultValue": "true",
+              "description": "是否显示，默认 true。"
+            },
+            {
+              "name": "add.options.maximumScreenSpaceError",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大屏幕空间误差，值越小越清晰但加载压力越大，默认 2。"
+            },
+            {
+              "name": "add.options.dynamicScreenSpaceError",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用动态屏幕空间误差，默认 true。"
+            },
+            {
+              "name": "add.options.modelMatrix",
+              "type": "Cesium.Matrix4",
+              "defaultValue": "-",
+              "description": "可选模型矩阵，用于整体平移、旋转或缩放 tileset。"
+            },
+            {
+              "name": "addTilesets.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "必填",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "addTilesets.options",
+              "type": "AddTilesetOptions[]",
+              "defaultValue": "必填",
+              "description": "创建或配置对象时传入的参数对象。"
+            },
+            {
+              "name": "addTilesets.options.id",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "唯一 id，不传时 SDK 自动生成。"
+            },
+            {
+              "name": "addTilesets.options.url",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "tileset.json 地址，支持 public 本地地址或在线地址。"
+            },
+            {
+              "name": "addTilesets.options.show",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示，默认 true。"
+            },
+            {
+              "name": "addTilesets.options.maximumScreenSpaceError",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "最大屏幕空间误差，值越小越清晰但加载压力越大，默认 2。"
+            },
+            {
+              "name": "addTilesets.options.dynamicScreenSpaceError",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否启用动态屏幕空间误差，默认 true。"
+            },
+            {
+              "name": "addTilesets.options.modelMatrix",
+              "type": "Cesium.Matrix4",
+              "defaultValue": "-",
+              "description": "可选模型矩阵，用于整体平移、旋转或缩放 tileset。"
+            },
+            {
+              "name": "update.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "update.properties",
+              "type": "UpdateTilesetProperties",
+              "defaultValue": "必填",
+              "description": "需要写入或覆盖的业务属性数据。"
+            },
+            {
+              "name": "setVisible.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "setVisible.visible",
+              "type": "boolean",
+              "defaultValue": "必填",
+              "description": "是否显示当前特效。"
+            },
+            {
+              "name": "show.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "show.visible",
+              "type": "boolean",
+              "defaultValue": "必填",
+              "description": "是否显示当前特效。"
+            },
+            {
+              "name": "get.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "getAllIds.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            },
+            {
+              "name": "getSnapshot.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "remove.id",
+              "type": "string",
+              "defaultValue": "必填",
+              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
+            },
+            {
+              "name": "clear.viewer",
+              "type": "Cesium.Viewer",
+              "defaultValue": "-",
+              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getLayer().viewer\nawait window.FastX.Tileset.add(viewer, options)",
+          "access": "window.FastX.Tileset",
+          "generated": true
+        },
+        {
           "id": "PolylineVolume",
           "kind": "api",
           "group": "draw",
@@ -48843,914 +49243,6 @@
           "generated": true
         },
         {
-          "id": "ConicalScanner",
-          "kind": "api",
-          "group": "effects",
-          "name": "ConicalScanner",
-          "cn": "锥体扫描",
-          "title": "ConicalScanner（锥体扫描）",
-          "description": "锥体扫描 API，用于创建、更新、查询、显隐和清理单体特效。",
-          "methods": [
-            {
-              "name": "addScanners",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增锥体扫描 Entity，返回成功创建的 id。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增锥体扫描。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定锥体扫描。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定锥体扫描显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定锥体扫描实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定锥体扫描。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "ConicalScannerAddOptions",
-            "ConicalScannerUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addScanners.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addScanners.options",
-              "type": "ConicalScannerAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addScanners.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addScanners.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "锥体扫描中心点。"
-            },
-            {
-              "name": "addScanners.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addScanners.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addScanners.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addScanners.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addScanners.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(89,255,155,0.55)。"
-            },
-            {
-              "name": "addScanners.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
-            },
-            {
-              "name": "addScanners.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addScanners.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "addScanners.options.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描高度，单位：米。默认 500000。"
-            },
-            {
-              "name": "addScanners.options.innerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "内半径，单位：米。默认 20000。"
-            },
-            {
-              "name": "addScanners.options.outerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 60000。"
-            },
-            {
-              "name": "addScanners.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描扇形角度，单位：度。默认 60。"
-            },
-            {
-              "name": "addScanners.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "ConicalScannerAddOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "锥体扫描中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(89,255,155,0.55)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "add.options.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描高度，单位：米。默认 500000。"
-            },
-            {
-              "name": "add.options.innerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "内半径，单位：米。默认 20000。"
-            },
-            {
-              "name": "add.options.outerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 60000。"
-            },
-            {
-              "name": "add.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描扇形角度，单位：度。默认 60。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "ConicalScannerUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConicalScanner(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { ConicalScanner } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "ConicalScannerCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "ConicalScannerCollection",
-          "cn": "批量锥体扫描",
-          "title": "ConicalScannerCollection（批量锥体扫描）",
-          "description": "批量锥体扫描 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addScanners",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增锥体扫描 Primitive，返回成功创建的 id。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定锥体扫描 Primitive。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ConicalScannerAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量锥体扫描。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定批量锥体扫描显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量锥体扫描实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定批量锥体扫描。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "ConicalScannerAddOptions",
-            "ConicalScannerUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addScanners.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addScanners.options",
-              "type": "ConicalScannerAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addScanners.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addScanners.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "锥体扫描中心点。"
-            },
-            {
-              "name": "addScanners.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addScanners.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addScanners.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addScanners.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addScanners.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addScanners.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(89,255,155,0.55)。"
-            },
-            {
-              "name": "addScanners.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
-            },
-            {
-              "name": "addScanners.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addScanners.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "addScanners.options.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描高度，单位：米。默认 500000。"
-            },
-            {
-              "name": "addScanners.options.innerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "内半径，单位：米。默认 20000。"
-            },
-            {
-              "name": "addScanners.options.outerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 60000。"
-            },
-            {
-              "name": "addScanners.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描扇形角度，单位：度。默认 60。"
-            },
-            {
-              "name": "addScanners.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "ConicalScannerUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "ConicalScannerAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "锥体扫描中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(89,255,155,0.55)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "轮廓线颜色。默认 rgba(89,255,155,1)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.segments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "几何分段数。默认 96。"
-            },
-            {
-              "name": "add.options.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描高度，单位：米。默认 500000。"
-            },
-            {
-              "name": "add.options.innerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "内半径，单位：米。默认 20000。"
-            },
-            {
-              "name": "add.options.outerRadius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "外半径，单位：米。默认 60000。"
-            },
-            {
-              "name": "add.options.angle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "扫描扇形角度，单位：度。默认 60。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ConicalScannerCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
-          "access": "import { ConicalScannerCollection } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
           "id": "DoubleViewFrustum",
           "kind": "api",
           "group": "effects",
@@ -54650,1010 +54142,6 @@
           ],
           "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.RingRadarCollection()\nconst options = { position: { longitude: 120.95, latitude: 23.75, height: 0 }, heading: 0, pitch: 0, roll: 0, scale: 1, innerRadius: 33000, outerRadius: 66000, innerDomeHeight: 9000, outerDomeHeight: 18000, scanSpeed: 45, scanBladeAngle: 1, horizontalSegments: 96, verticalSegments: 10, gridLineWidth: 1, outerSurfaceColor: '#c8601f', outerSurfaceAlpha: 0.34, outerGridColor: '#c8601f', outerGridAlpha: 0.78, innerSurfaceColor: '#00ff48', innerSurfaceAlpha: 0.38, innerGridColor: '#00ff48', innerGridAlpha: 0.78, scanBladeColor: '#fff400', scanBladeAlpha: 0.48, scanBlink: false, show: true }\neffect.addRadars(viewer, [options])",
           "access": "import { RingRadarCollection } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "ScanRadar",
-          "kind": "api",
-          "group": "effects",
-          "name": "ScanRadar",
-          "cn": "扫描雷达",
-          "title": "ScanRadar（扫描雷达）",
-          "description": "扫描雷达 API，用于创建、更新、查询、显隐和清理单体特效。",
-          "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增扫描雷达 Entity，返回成功创建的 id。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarAddOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string | undefined",
-              "description": "新增扫描雷达。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定扫描雷达。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定扫描雷达显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定扫描雷达实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定扫描雷达。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "ScanRadarAddOptions",
-            "ScanRadarUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addRadars.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRadars.options",
-              "type": "ScanRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRadars.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRadars.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "addRadars.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRadars.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "雷达体颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(255,255,255,0.45)。"
-            },
-            {
-              "name": "addRadars.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.horiSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
-            },
-            {
-              "name": "addRadars.options.vertSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 1000000。"
-            },
-            {
-              "name": "addRadars.options.minHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -45。"
-            },
-            {
-              "name": "addRadars.options.maxHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 45。"
-            },
-            {
-              "name": "addRadars.options.minVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.maxVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 45。"
-            },
-            {
-              "name": "addRadars.options.scanVisible",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
-            },
-            {
-              "name": "addRadars.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "ScanRadarAddOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "雷达体颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(255,255,255,0.45)。"
-            },
-            {
-              "name": "add.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.horiSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
-            },
-            {
-              "name": "add.options.vertSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 1000000。"
-            },
-            {
-              "name": "add.options.minHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -45。"
-            },
-            {
-              "name": "add.options.maxHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.minVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.maxVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.scanVisible",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "ScanRadarUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ScanRadar(viewer)\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(options)",
-          "access": "import { ScanRadar } from 'fastx-sdk'",
-          "generated": true
-        },
-        {
-          "id": "ScanRadarCollection",
-          "kind": "api",
-          "group": "effects",
-          "name": "ScanRadarCollection",
-          "cn": "批量扫描雷达",
-          "title": "ScanRadarCollection（批量扫描雷达）",
-          "description": "批量扫描雷达 API，用于通过 Primitive 批量创建、更新、查询、显隐和清理对应特效。",
-          "methods": [
-            {
-              "name": "addRadars",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "批量新增扫描雷达 Primitive，返回成功创建的 id。"
-            },
-            {
-              "name": "update",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarUpdateOptions",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "更新指定扫描雷达 Primitive。"
-            },
-            {
-              "name": "add",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "options",
-                  "type": "ScanRadarAddOptions[]",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "新增批量扫描雷达。"
-            },
-            {
-              "name": "show",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                },
-                {
-                  "name": "visible",
-                  "type": "boolean",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "设置指定批量扫描雷达显隐。"
-            },
-            {
-              "name": "get",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "Cesium.Entity[] | Cesium.Primitive[] | Cesium.Entity | Cesium.ParticleSystem | undefined",
-              "description": "获取指定批量扫描雷达实例。"
-            },
-            {
-              "name": "getAllIds",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "string[]",
-              "description": "获取当前管理的全部特效 id。"
-            },
-            {
-              "name": "remove",
-              "params": [
-                {
-                  "name": "id",
-                  "type": "string",
-                  "optional": false,
-                  "defaultValue": "必填",
-                  "description": ""
-                }
-              ],
-              "returnType": "boolean",
-              "description": "删除指定批量扫描雷达。"
-            },
-            {
-              "name": "clear",
-              "params": [
-                {
-                  "name": "viewer",
-                  "type": "Cesium.Viewer",
-                  "optional": true,
-                  "defaultValue": "-",
-                  "description": ""
-                }
-              ],
-              "returnType": "void",
-              "description": "清空当前类管理的全部特效。"
-            },
-            {
-              "name": "destroy",
-              "params": [],
-              "returnType": "void",
-              "description": "销毁当前类管理的全部特效并释放资源。"
-            }
-          ],
-          "types": [
-            "ScanRadarAddOptions",
-            "ScanRadarUpdateOptions"
-          ],
-          "params": [
-            {
-              "name": "addRadars.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "addRadars.options",
-              "type": "ScanRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "addRadars.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "addRadars.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "addRadars.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "addRadars.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "addRadars.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "addRadars.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "雷达体颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "addRadars.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(255,255,255,0.45)。"
-            },
-            {
-              "name": "addRadars.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "addRadars.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "addRadars.options.horiSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
-            },
-            {
-              "name": "addRadars.options.vertSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
-            },
-            {
-              "name": "addRadars.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 1000000。"
-            },
-            {
-              "name": "addRadars.options.minHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -45。"
-            },
-            {
-              "name": "addRadars.options.maxHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 45。"
-            },
-            {
-              "name": "addRadars.options.minVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 0。"
-            },
-            {
-              "name": "addRadars.options.maxVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 45。"
-            },
-            {
-              "name": "addRadars.options.scanVisible",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
-            },
-            {
-              "name": "addRadars.options.show",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "update.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "update.options",
-              "type": "ScanRadarUpdateOptions",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "必填",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "add.options",
-              "type": "ScanRadarAddOptions[]",
-              "defaultValue": "必填",
-              "description": "创建或配置对象时传入的参数对象。"
-            },
-            {
-              "name": "add.options.id",
-              "type": "string",
-              "defaultValue": "-",
-              "description": "唯一 id，不传时 SDK 自动生成。"
-            },
-            {
-              "name": "add.options.position",
-              "type": "SpecialEffectsPositionInput",
-              "defaultValue": "必填",
-              "description": "雷达中心点。"
-            },
-            {
-              "name": "add.options.position.longitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "经度，单位：度。"
-            },
-            {
-              "name": "add.options.position.latitude",
-              "type": "number",
-              "defaultValue": "必填",
-              "description": "纬度，单位：度。"
-            },
-            {
-              "name": "add.options.position.height",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "高度，单位：米。"
-            },
-            {
-              "name": "add.options.heading",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "航向角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.pitch",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "俯仰角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.roll",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "翻滚角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.scale",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "整体缩放。默认 1。"
-            },
-            {
-              "name": "add.options.color",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "雷达体颜色。默认 rgba(255,255,0,0.5)。"
-            },
-            {
-              "name": "add.options.lineColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "网格线颜色。默认 rgba(255,255,255,0.45)。"
-            },
-            {
-              "name": "add.options.scanColor",
-              "type": "SpecialEffectsColorInput",
-              "defaultValue": "-",
-              "description": "扫描面颜色。默认 rgba(0,255,110,0.45)。"
-            },
-            {
-              "name": "add.options.lineWidth",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "线宽，单位：像素。默认 1。"
-            },
-            {
-              "name": "add.options.horiSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "水平方向分段数。默认 72。"
-            },
-            {
-              "name": "add.options.vertSegments",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "垂直方向分段数。默认 36。"
-            },
-            {
-              "name": "add.options.radius",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "探测半径，单位：米。默认 1000000。"
-            },
-            {
-              "name": "add.options.minHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小水平角，单位：度。默认 -45。"
-            },
-            {
-              "name": "add.options.maxHoriAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大水平角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.minVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最小垂直角，单位：度。默认 0。"
-            },
-            {
-              "name": "add.options.maxVertAngle",
-              "type": "number",
-              "defaultValue": "-",
-              "description": "最大垂直角，单位：度。默认 45。"
-            },
-            {
-              "name": "add.options.scanVisible",
-              "type": "boolean",
-              "defaultValue": "-",
-              "description": "是否显示扫描面。默认 true。"
-            },
-            {
-              "name": "add.options.show",
-              "type": "boolean",
-              "defaultValue": "true",
-              "description": "是否显示。默认 true。"
-            },
-            {
-              "name": "show.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "show.visible",
-              "type": "boolean",
-              "defaultValue": "必填",
-              "description": "是否显示当前特效。"
-            },
-            {
-              "name": "get.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "getAllIds.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            },
-            {
-              "name": "remove.id",
-              "type": "string",
-              "defaultValue": "必填",
-              "description": "唯一 id，用于查询、更新、显隐或删除指定对象。"
-            },
-            {
-              "name": "clear.viewer",
-              "type": "Cesium.Viewer",
-              "defaultValue": "-",
-              "description": "Cesium Viewer 实例，通常通过 window.FastX.getLayer().viewer 获取。"
-            }
-          ],
-          "usage": "const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.ScanRadarCollection()\nconst options = { position: { longitude: 116.391, latitude: 39.907, height: 120 } }\neffect.add(viewer, options)",
-          "access": "import { ScanRadarCollection } from 'fastx-sdk'",
           "generated": true
         },
         {

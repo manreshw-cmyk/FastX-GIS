@@ -1867,6 +1867,7 @@
       Box: `{\n  id: '${id}',\n  ${commonPosition},\n  dimensions: [400, 300, 200],\n  color: '#2f80ed',\n  outline: true,\n  outlineColor: '#ffffff'\n}`,
       Plane: `{\n  id: '${id}',\n  position: { longitude: 116.391, latitude: 39.907, height: 120 },\n  dimensions: { width: 600, height: 400 },\n  color: '#2f80ed',\n  alpha: 0.75\n}`,
       Path: `{\n  id: '${id}',\n  position: trajectory.getPositionProperty(),\n  width: 4,\n  color: '#2f80ed'\n}`,
+      Tileset: `{\n  id: '${id}',\n  url: '/3d-tiles/agi-headquarters/tileset.json',\n  maximumScreenSpaceError: 2,\n  dynamicScreenSpaceError: true,\n  show: true\n}`,
       PolylineVolume: `{\n  id: '${id}',\n  positions: [\n    [116.391, 39.907, 120],\n    [116.421, 39.917, 120],\n    [116.441, 39.897, 120]\n  ],\n  shapeType: 'circle',\n  color: '#2f80ed'\n}`,
     };
     return examples[base] || `{\n  id: '${id}'\n}`;
@@ -1882,6 +1883,7 @@
       Box: "{\n  dimensions: [500, 320, 240],\n  color: '#00d6a3'\n}",
       Plane: "{\n  dimensions: { width: 800, height: 450 },\n  color: '#00d6a3'\n}",
       Path: "{\n  width: 6,\n  color: '#00d6a3'\n}",
+      Tileset: "{\n  maximumScreenSpaceError: 4,\n  show: true\n}",
     };
     return examples[base] || "{\n  color: '#00d6a3',\n  show: true\n}";
   }
@@ -1977,12 +1979,10 @@
       DiffusionRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 400000,\n  startAngle: 0,\n  endAngle: 360,\n  waveCount: 4,\n  duration: 2200,\n  color: 'rgba(0,214,255,0.22)',\n  lineColor: 'rgba(0,255,255,0.85)'\n}`,
       AimEffect: `{\n  id: '${id}',\n  source: { longitude: 116.391, latitude: 39.907, height: 1500 },\n  target: { longitude: 116.421, latitude: 39.917, height: 200 },\n  color: '#ff4d4f'\n}`,
       ConeEffect: `{\n  id: '${id}',\n  position: [120.3, 23.5, 1000],\n  height: 500000,\n  baseRadius: 100000,\n  scanRadius: 70000,\n  segments: 280,\n  coneLineColor: 'rgba(255,0,0,1)',\n  scanLineColor: 'rgba(0,255,0,1)',\n  coneFillColor: 'rgba(0,255,255,0.25)',\n  showConeFill: false,\n  showCone: true,\n  showScan: true\n}`,
-      ConicalScanner: `{\n  id: '${id}',\n  ${position},\n  length: 4000,\n  angle: 35,\n  scanColor: '#00d6ff'\n}`,
       DoubleViewFrustum: `{\n  id: '${id}',\n  position: { longitude: 120.95, latitude: 23.75, height: 500000 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  near: 50000,\n  far: 500000,\n  fov: 30,\n  aspectRatio: 2,\n  color: 'rgba(0,255,255,0.25)',\n  fillColor: '#00ffff',\n  fillAlpha: 0.15,\n  lineColor: 'rgba(255,255,255,1)',\n  lineWidth: 1,\n  show: true\n}`,
       ParabolaRadar: `{\n  id: '${id}',\n  position: { longitude: 120.95, latitude: 23.75, height: 0 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  radius: 66000,\n  domeHeight: 18000,\n  scanSpeed: 45,\n  scanBladeAngle: 1,\n  scanBladeCount: 1,\n  horizontalSegments: 96,\n  verticalSegments: 10,\n  gridLineWidth: 1,\n  surfaceColor: '#00ff48',\n  surfaceAlpha: 0.34,\n  gridColor: '#00ff48',\n  gridAlpha: 0.78,\n  scanBladeColor: '#ff0000',\n  scanBladeAlpha: 0.48,\n  scanBlink: false,\n  show: true\n}`,
       RingConeScanner: `{\n  id: '${id}',\n  position: { longitude: 120.95, latitude: 23.75, height: 500000 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  height: 500000,\n  minGroundOpenAngle: 80,\n  maxGroundOpenAngle: 85,\n  frontExcludeAngle: 70,\n  backExcludeAngle: 70,\n  segments: 160,\n  color: 'rgba(255,55,125,0.85)',\n  lineColor: 'rgba(255,255,0,1)',\n  lineWidth: 1,\n  show: true\n}`,
       RingRadar: `{\n  id: '${id}',\n  position: { longitude: 120.95, latitude: 23.75, height: 0 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  innerRadius: 33000,\n  outerRadius: 66000,\n  innerDomeHeight: 9000,\n  outerDomeHeight: 18000,\n  scanSpeed: 45,\n  scanBladeAngle: 1,\n  horizontalSegments: 96,\n  verticalSegments: 10,\n  gridLineWidth: 1,\n  outerSurfaceColor: '#c8601f',\n  outerSurfaceAlpha: 0.34,\n  outerGridColor: '#c8601f',\n  outerGridAlpha: 0.78,\n  innerSurfaceColor: '#00ff48',\n  innerSurfaceAlpha: 0.38,\n  innerGridColor: '#00ff48',\n  innerGridAlpha: 0.78,\n  scanBladeColor: '#fff400',\n  scanBladeAlpha: 0.48,\n  scanBlink: false,\n  show: true\n}`,
-      ScanRadar: `{\n  id: '${id}',\n  ${position},\n  radius: 3200,\n  scanColor: '#00d6ff',\n  duration: 1800\n}`,
       SquareConeScanner: `{\n  id: '${id}',\n  position: { longitude: 120.95, latitude: 23.75, height: 500000 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  height: 500000,\n  horiAngle: 30,\n  vertAngle: 30,\n  color: 'rgba(89,255,155,0.55)',\n  lineColor: 'rgba(89,255,155,1)',\n  lineWidth: 1,\n  bottomOutlineVisible: true,\n  bottomOutlineColor: '#ffff00',\n  bottomOutlineAlpha: 1,\n  bottomOutlineWidth: 1,\n  show: true\n}`,
       FireRangeEffect: `{\n  id: '${id}',\n  position: { longitude: 108, latitude: 39, height: 2000 },\n  heading: 0,\n  pitch: 0,\n  roll: 0,\n  scale: 1,\n  radius: 10000,\n  minHoriAngle: -30,\n  maxHoriAngle: 30,\n  minVertAngle: 80,\n  maxVertAngle: 100,\n  horiPointNum: 360,\n  vertPointNum: 180,\n  radialPointNum: 48,\n  gridHoriStep: 1,\n  gridVertStep: 1,\n  apexColor: 'rgba(20,40,255,0.58)',\n  middleColor: 'rgba(210,215,35,0.42)',\n  farColor: 'rgba(255,140,0,0.58)',\n  fillAlpha: 1,\n  fillVisible: true,\n  gridColor: '#ff5600',\n  gridAlpha: 0.95,\n  gridLineWidth: 1,\n  gridVisible: true,\n  outlineColor: '#ff0000',\n  outlineAlpha: 0.9,\n  outlineLineWidth: 1,\n  outlineVisible: true,\n  show: true\n}`,
       ParticleSystemEffect: `{\n  id: '${id}',\n  ${position},\n  image: '/assets/images/special-effects/explosion/fire2.png',\n  emissionRate: 120,\n  emitter: { type: 'cone', angle: 35 },\n  lifetime: 3\n}`,
@@ -2069,7 +2069,8 @@
         const optionsValue = isArrayMethodParam(method)
           ? `[\n${indentCode(drawExampleObject(doc.name, 1), 2)},\n${indentCode(drawExampleObject(doc.name, 2), 2)}\n]`
           : drawExampleObject(doc.name);
-        return `const viewer = window.FastX.getViewer('mapDemo')\nconst ${optionsName} = ${optionsValue}\n\n${target}.${methodName}(viewer, ${optionsName})`;
+        const call = `${target}.${methodName}(viewer, ${optionsName})`;
+        return `const viewer = window.FastX.getViewer('mapDemo')\nconst ${optionsName} = ${optionsValue}\n\n${doc.name === "Tileset" ? `await ${call}` : call}`;
       }
       if (/^update/.test(methodName)) {
         const isBatchUpdate = /^update.+s$/.test(methodName) || isArrayMethodParam(method);
@@ -2079,7 +2080,8 @@
         if (isBatchUpdate) {
           return `const updates = ${properties}\n\n${target}.${methodName}(updates)`;
         }
-        return `const properties = ${properties}\n\n${target}.${methodName}('${drawBaseName(doc.name).toLowerCase()}-001', properties)`;
+        const call = `${target}.${methodName}('${drawBaseName(doc.name).toLowerCase()}-001', properties)`;
+        return `const properties = ${properties}\n\n${doc.name === "Tileset" ? `await ${call}` : call}`;
       }
       if (/^(getAll|getCount|getIds|getAllIds)$/.test(methodName)) return `const result = ${target}.${methodName}()`;
       if (/^get|^has/.test(methodName)) return `const result = ${target}.${methodName}('${doc.name.toLowerCase()}-001')`;

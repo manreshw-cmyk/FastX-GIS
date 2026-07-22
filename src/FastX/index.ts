@@ -38,6 +38,7 @@ import PolylineVolumeCollection from "./Draw/PolylineVolume/PolylineVolumeCollec
 import Plane from "./Draw/Plane";
 import PlaneCollection from "./Draw/Plane/PlaneCollection";
 import Path from "./Draw/Path";
+import Tileset from "./Draw/Tileset";
 import Heatmap from "./Draw/Heatmap";
 import PointAggregation from "./Draw/PointAggregation";
 import AreaManager from "./areaManager";
@@ -81,8 +82,6 @@ export {
   AimEffectCollection,
   ConeEffect,
   ConeEffectCollection,
-  ConicalScanner,
-  ConicalScannerCollection,
   DoubleViewFrustum,
   DoubleViewFrustumCollection,
   ParabolaRadar,
@@ -91,8 +90,6 @@ export {
   RingConeScannerCollection,
   RingRadar,
   RingRadarCollection,
-  ScanRadar,
-  ScanRadarCollection,
   SquareConeScanner,
   SquareConeScannerCollection,
   FireRangeEffect,
@@ -145,6 +142,12 @@ export {
 export { default as Plane } from "./Draw/Plane";
 export { default as PlaneCollection } from "./Draw/Plane/PlaneCollection";
 export { default as Path } from "./Draw/Path";
+export { default as Tileset } from "./Draw/Tileset";
+export type {
+  AddTilesetOptions,
+  TilesetSnapshot,
+  UpdateTilesetProperties,
+} from "./Draw/Tileset";
 export { default as Heatmap } from "./Draw/Heatmap";
 export type {
   HeatmapBounds,
@@ -546,6 +549,7 @@ const polylineVolumeCollectionApi = new PolylineVolumeCollection();
 const planeApi = new Plane();
 const planeCollectionApi = new PlaneCollection();
 const pathApi = new Path();
+const tilesetApi = new Tileset();
 const heatmapApi = new Heatmap();
 const pointAggregationApi = new PointAggregation();
 const quantitativeApi = new Quantitative({ removeOnTypeChange: false });
@@ -642,6 +646,7 @@ export const FastX = {
   Plane: planeApi,
   PlaneCollection: planeCollectionApi,
   Path: pathApi,
+  Tileset: tilesetApi,
   Heatmap: heatmapApi,
   PointAggregation: pointAggregationApi,
   Quantitative: quantitativeApi,

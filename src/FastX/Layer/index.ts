@@ -104,6 +104,12 @@ type SkyBoxSources = {
   negativeZ: string;
 };
 
+/** 近景天空盒配置。 */
+export interface LayerNearSkyBoxOptions {
+  /** 相机离地高度小于等于该值时启用近景天空盒，单位：米，默认 300000。 */
+  maxHeight?: number;
+}
+
 /**
  * 根据运行环境解析内置鼠标样式资源地址。
  *
@@ -182,6 +188,12 @@ export class Layer {
   private defaultSkyBox: Cesium.SkyBox | undefined;
   /** 当前由 `setCustomGlobalSkyBox` 创建的天空盒实例，替换或销毁 Viewer 时需要主动释放。 */
   private customSkyBox: Cesium.SkyBox | null = null;
+  /** 当前由 `setCustomNearSkyBox` 创建的近景天空盒实例。 */
+  private nearSkyBox: Cesium.SkyBox | null = null;
+  /** 近景天空盒按相机高度切换时注册的逐帧监听移除函数。 */
+  private nearSkyBoxRemoveListener: (() => void) | null = null;
+  /** 近景天空盒生效的最大相机离地高度，单位：米。 */
+  private nearSkyBoxMaxHeight = 300000;
   private overviewViewer: Cesium.Viewer | null = null;
   private overviewContainer: HTMLElement | null = null;
   private overviewPostRenderRemove: (() => void) | null = null;
@@ -312,6 +324,9 @@ export class Layer {
     // 记录 Viewer 初始化时的天空盒，方便自定义天空盒示例退出或重置时恢复默认效果。
     this.defaultSkyBox = viewer.scene.skyBox as Cesium.SkyBox | undefined;
     this.customSkyBox = null;
+    this.nearSkyBox = null;
+    this.nearSkyBoxRemoveListener = null;
+    this.nearSkyBoxMaxHeight = 300000;
 
     // Cesium Viewer 默认 LEFT_DOUBLE_CLICK → pickAndTrackObject（双击实体 zoomTo / trackedEntity），此处关闭。
     // viewer.screenSpaceEventHandler.setInputAction(pickAndTrackObject, LEFT_DOUBLE_CLICK)
@@ -1151,6 +1166,7 @@ export class Layer {
     const sources = this.buildSkyBoxSources(baseUrl);
     await this.ensureSkyBoxSourcesAvailable(sources);
 
+    this.disposeNearSkyBox(false);
     const nextSkyBox = new Cesium.SkyBox({ sources });
     const previousCustomSkyBox = this.customSkyBox;
     viewer.scene.skyBox = nextSkyBox;
@@ -1179,6 +1195,7 @@ export class Layer {
    */
   resetGlobalSkyBox(): void {
     const viewer = this.assertViewer();
+    this.disposeNearSkyBox(false);
     const previousCustomSkyBox = this.customSkyBox;
     viewer.scene.skyBox = this.defaultSkyBox;
     this.customSkyBox = null;
@@ -1186,6 +1203,56 @@ export class Layer {
       previousCustomSkyBox.destroy();
     }
     viewer.scene.requestRender();
+  }
+
+  /**
+   * 设置自定义近景天空盒。
+   *
+   * **输入**：
+   * - `baseUrl`：天空盒目录 URL，目录下必须包含固定六面图片；
+   * - `options.maxHeight`：相机离地高度小于等于该值时启用近景天空盒，单位：米，默认 `300000`。
+   * **输出**：`Promise<Cesium.SkyBox>`。
+   *
+   * @example
+   * ```ts
+   * await layer.setCustomNearSkyBox('/assets/images/skybox/skybox_1', { maxHeight: 300000 })
+   * ```
+   */
+  async setCustomNearSkyBox(
+    baseUrl: string,
+    options: LayerNearSkyBoxOptions = {},
+  ): Promise<Cesium.SkyBox> {
+    const viewer = this.assertViewer();
+    const sources = this.buildSkyBoxSources(baseUrl);
+    await this.ensureSkyBoxSourcesAvailable(sources);
+
+    this.disposeNearSkyBox(true);
+    this.nearSkyBox = new Cesium.SkyBox({ sources });
+    this.nearSkyBoxMaxHeight =
+      Number.isFinite(options.maxHeight) && (options.maxHeight ?? 0) > 0
+        ? Number(options.maxHeight)
+        : 300000;
+
+    this.nearSkyBoxRemoveListener = viewer.scene.preRender.addEventListener(() => {
+      this.updateNearSkyBoxByCamera(viewer);
+    });
+    this.updateNearSkyBoxByCamera(viewer);
+    viewer.scene.requestRender();
+    return this.nearSkyBox;
+  }
+
+  /**
+   * 关闭近景天空盒，并恢复默认或当前全局天空盒。
+   *
+   * **输入**：无。**输出**：无。
+   *
+   * @example
+   * ```ts
+   * layer.resetNearSkyBox()
+   * ```
+   */
+  resetNearSkyBox(): void {
+    this.disposeNearSkyBox(true);
   }
 
   /**
@@ -1872,6 +1939,47 @@ export class Layer {
     };
   }
 
+  /** 返回近景天空盒退出后应恢复的天空盒：优先当前全局自定义天空盒，其次 Viewer 初始天空盒。 */
+  private getSkyBoxFallback(): Cesium.SkyBox | undefined {
+    if (this.customSkyBox && !this.customSkyBox.isDestroyed()) {
+      return this.customSkyBox;
+    }
+    return this.defaultSkyBox;
+  }
+
+  /** 按当前相机高度切换近景天空盒和兜底天空盒。 */
+  private updateNearSkyBoxByCamera(viewer: Cesium.Viewer): void {
+    const nearSkyBox = this.nearSkyBox;
+    if (!nearSkyBox || nearSkyBox.isDestroyed() || viewer.isDestroyed()) return;
+    const cameraHeight = viewer.camera.positionCartographic.height;
+    const targetSkyBox =
+      Number.isFinite(cameraHeight) && cameraHeight <= this.nearSkyBoxMaxHeight
+        ? nearSkyBox
+        : this.getSkyBoxFallback();
+    if (viewer.scene.skyBox !== targetSkyBox) {
+      viewer.scene.skyBox = targetSkyBox;
+      viewer.scene.requestRender();
+    }
+  }
+
+  /** 移除近景天空盒监听并按需恢复兜底天空盒。 */
+  private disposeNearSkyBox(restoreFallback: boolean): void {
+    this.nearSkyBoxRemoveListener?.();
+    this.nearSkyBoxRemoveListener = null;
+
+    const previousNearSkyBox = this.nearSkyBox;
+    this.nearSkyBox = null;
+
+    const viewer = this.viewer;
+    if (restoreFallback && viewer && !viewer.isDestroyed()) {
+      viewer.scene.skyBox = this.getSkyBoxFallback();
+      viewer.scene.requestRender();
+    }
+    if (previousNearSkyBox && !previousNearSkyBox.isDestroyed()) {
+      previousNearSkyBox.destroy();
+    }
+  }
+
   /**
    * 规范化天空盒目录 URL，兼容 Windows 反斜杠并移除末尾斜杠。
    *
@@ -2171,9 +2279,12 @@ export class Layer {
     this.lonLatGrid = null;
     if (this.viewer && !this.viewer.isDestroyed()) {
       this.resetGlobalSkyBox();
-    } else if (this.customSkyBox && !this.customSkyBox.isDestroyed()) {
-      this.customSkyBox.destroy();
-      this.customSkyBox = null;
+    } else {
+      this.disposeNearSkyBox(false);
+      if (this.customSkyBox && !this.customSkyBox.isDestroyed()) {
+        this.customSkyBox.destroy();
+        this.customSkyBox = null;
+      }
     }
     this.defaultSkyBox = undefined;
 

@@ -3,6 +3,7 @@ import { DeleteOutlined, DownOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { TableColumnType } from 'ant-design-vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import * as Cesium from 'cesium'
 import type { Viewer } from 'cesium'
 import type { MouseEventListenOptions } from '../../FastX/MouseEvent'
 import { useMapLayerStore } from '../../stores/modules/mapLayer'
@@ -17,6 +18,8 @@ function getApi(): ExplosionEffect {
 }
 
 const title = '爆炸'
+const DEFAULT_EXPLOSION_HEIGHT = 1800
+const PICK_EXPLOSION_HEIGHT_OFFSET = 1200
 
 type MouseBinder = {
   listen(options: MouseEventListenOptions, rightDoubleClickMs?: number): void
@@ -52,9 +55,9 @@ function createDefaultForm(): ExplosionForm {
     id: '',
     longitude: 120.95,
     latitude: 23.75,
-    height: 0,
-    lifeTime: 6,
-    emissionRate: 380,
+    height: DEFAULT_EXPLOSION_HEIGHT,
+    lifeTime: 8,
+    emissionRate: 520,
     emitterType: 'cone',
     emitterAngle: 50,
     emitterRadius: 1,
@@ -88,6 +91,10 @@ function buildOptions(form: ExplosionForm) {
     emitter,
     startColor: rgbaCss(form.startColor, form.startAlpha),
     endColor: rgbaCss(form.endColor, form.endAlpha),
+    minImageSize: [44, 44] as const,
+    maxImageSize: [150, 150] as const,
+    minSpeed: 35,
+    maxSpeed: 75,
   }
 }
 
@@ -102,6 +109,7 @@ const tableShellRef = ref<HTMLElement | null>(null)
 const tableScrollY = ref(160)
 let tableResizeObserver: ResizeObserver | null = null
 let mouseBinder: MouseBinder | null = null
+let explosionImageReadyPromise: Promise<void> | null = null
 
 function updateTableScrollY(): void {
   const shell = tableShellRef.value
@@ -122,11 +130,91 @@ function resetFormToInitial(): void {
   hasMapPick.value = false
 }
 
+function createDemoForm(): ExplosionForm {
+  return {
+    ...createDefaultForm(),
+    height: 2600,
+    lifeTime: 12,
+    emissionRate: 1200,
+    emitterAngle: 62,
+    startAlpha: 0.95,
+    endAlpha: 0.05,
+  }
+}
+
+function ensureExplosionImageReady(): Promise<void> {
+  if (explosionImageReadyPromise) return explosionImageReadyPromise
+  explosionImageReadyPromise = new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve()
+    image.onerror = () => reject(new Error(`爆炸粒子贴图加载失败：${EXPLOSION_PARTICLE_IMAGE}`))
+    image.src = EXPLOSION_PARTICLE_IMAGE
+  })
+  return explosionImageReadyPromise
+}
+
+function flyToExplosion(viewer: Viewer, data: Pick<ExplosionForm, 'longitude' | 'latitude' | 'height'>): Promise<void> {
+  return new Promise((resolve) => {
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(
+        data.longitude,
+        data.latitude - 0.045,
+        data.height + 7200,
+      ),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-34),
+        roll: 0,
+      },
+      duration: 0.9,
+      complete: resolve,
+      cancel: resolve,
+    })
+  })
+}
+
+async function playDemoExplosion(silent = false): Promise<boolean> {
+  const viewer = mapStore.getViewer()
+  if (!viewer || viewer.isDestroyed()) {
+    if (!silent) message.error('地图未就绪')
+    return false
+  }
+
+  try {
+    await ensureExplosionImageReady()
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '爆炸粒子贴图加载失败')
+    return false
+  }
+
+  stopDraw()
+  selectedId.value = null
+  const demoForm = createDemoForm()
+  await flyToExplosion(viewer, demoForm)
+  const id = getApi().add(viewer, {
+    ...buildOptions(demoForm),
+    minImageSize: [64, 64] as const,
+    maxImageSize: [190, 190] as const,
+    minSpeed: 45,
+    maxSpeed: 90,
+    loop: false,
+  })
+  if (!id) {
+    if (!silent) message.error('示例爆炸创建失败')
+    return false
+  }
+
+  storedById.set(id, { ...demoForm, id })
+  refreshTable()
+  if (!silent) message.success('已播放示例爆炸')
+  return true
+}
+
 function syncFormFromPick(longitude: number, latitude: number, _height: number): void {
   if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return
   form.longitude = longitude
   form.latitude = latitude
-  form.height = 0
+  form.height = Math.max(0, Number.isFinite(_height) ? _height : 0) + PICK_EXPLOSION_HEIGHT_OFFSET
   hasMapPick.value = true
 }
 
@@ -418,6 +506,9 @@ onBeforeUnmount(() => {
                   <div class="hzd-actions-col">
                     <a-button type="primary" block class="map-tool-primary-btn hzd-primary-tall" @click="onPrimaryClick">
                       {{ primaryButtonText }}
+                    </a-button>
+                    <a-button block class="hzd-demo-btn" @click="playDemoExplosion(false)">
+                      播放示例爆炸
                     </a-button>
                     <a-button v-if="selectedId" type="link" size="small" class="hzd-cancel-select" @click="onCancelSelect">
                       取消选中
@@ -751,6 +842,23 @@ onBeforeUnmount(() => {
   padding: 0 14px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
+}
+
+.hzd-demo-btn.ant-btn {
+  height: 32px !important;
+  color: rgba(226, 238, 255, 0.9) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-radius: 7px !important;
+}
+
+.hzd-demo-btn.ant-btn:hover,
+.hzd-demo-btn.ant-btn:focus {
+  color: #fff !important;
+  background: rgba(64, 150, 255, 0.16) !important;
+  border-color: rgba(96, 177, 255, 0.42) !important;
 }
 
 .hzd-cancel-select {

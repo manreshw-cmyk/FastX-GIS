@@ -74,6 +74,7 @@ export function useLayerDemoCleanup() {
 
     sensorDispose?.()
     sensorDispose = undefined
+    layer.resetNearSkyBox()
     layer.resetGlobalSkyBox()
 
     for (const img of overlays) {

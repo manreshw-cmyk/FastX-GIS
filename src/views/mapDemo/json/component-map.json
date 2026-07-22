@@ -330,10 +330,10 @@
   },
   {
     "key": "draw-19",
-    "title": "绘制（Tileset）3D Tiles类（底层entity）",
+    "title": "绘制3D Tiles（Tileset）类",
     "fileName": "hzldc",
     "componentPath": "./hzldc.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
+    "imageUrl": "../../assets/images/绘制3D Tiles（Tileset）类.png"
   },
 
   {
@@ -404,6 +404,13 @@
     "title": "自定义全局地球天空盒",
     "fileName": "layer-skybox",
     "componentPath": "./layer-skybox.vue",
+    "imageUrl": "../../assets/images/自定义全局地球天空盒.png"
+  },
+  {
+    "key": "layer-9",
+    "title": "自定义近景天空盒",
+    "fileName": "layer-near-skybox",
+    "componentPath": "./layer-near-skybox.vue",
     "imageUrl": "../../assets/images/自定义全局地球天空盒.png"
   },
   {
@@ -534,69 +541,55 @@
   },
   {
     "key": "special-effects-12",
-    "title": "锥体扫描",
-    "fileName": "sfx-conical-scanner",
-    "componentPath": "./sfx-conical-scanner.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "special-effects-13",
     "title": "双面视锥体",
     "fileName": "sfx-double-view-frustum",
     "componentPath": "./sfx-double-view-frustum.vue",
     "imageUrl": "../../assets/images/双面视锥体.png"
   },
   {
-    "key": "special-effects-14",
+    "key": "special-effects-13",
     "title": "双圆锥环面扫描体",
     "fileName": "sfx-ring-cone-scanner",
     "componentPath": "./sfx-ring-cone-scanner.vue",
     "imageUrl": "../../assets/images/双圆锥环面扫描体.png"
   },
   {
-    "key": "special-effects-15",
+    "key": "special-effects-14",
     "title": "四方视椎体",
     "fileName": "sfx-square-cone-scanner",
     "componentPath": "./sfx-square-cone-scanner.vue",
     "imageUrl": "../../assets/images/四方视椎体.png"
   },
   {
-    "key": "special-effects-16",
+    "key": "special-effects-15",
     "title": "圆锥扫描特效",
     "fileName": "sfx-cone-effect",
     "componentPath": "./sfx-cone-effect.vue",
     "imageUrl": "../../assets/images/圆锥扫描特效.png"
   },
   {
-    "key": "special-effects-17",
+    "key": "special-effects-16",
     "title": "抛物面雷达",
     "fileName": "sfx-parabola-radar",
     "componentPath": "./sfx-parabola-radar.vue",
     "imageUrl": "../../assets/images/抛物面雷达.png"
   },
   {
-    "key": "special-effects-18",
-    "title": "扫描雷达",
-    "fileName": "sfx-scan-radar",
-    "componentPath": "./sfx-scan-radar.vue",
-    "imageUrl": "../../assets/images/login-bgc.png"
-  },
-  {
-    "key": "special-effects-19",
+    "key": "special-effects-17",
     "title": "环形雷达扫描",
     "fileName": "sfx-ring-radar",
     "componentPath": "./sfx-ring-radar.vue",
     "imageUrl": "../../assets/images/环形雷达扫描.png"
   },
   {
-    "key": "special-effects-20",
+    "key": "special-effects-18",
     "title": "火力范围",
     "fileName": "sfx-fire-range-effect",
     "componentPath": "./sfx-fire-range-effect.vue",
     "imageUrl": "../../assets/images/火力范围.png"
   },
   {
-    "key": "special-effects-21",
+    "key": "special-effects-19",
     "title": "扩散雷达",
     "fileName": "sfx-diffusion-radar",
     "componentPath": "./sfx-diffusion-radar.vue",
@@ -643,6 +636,13 @@
     "fileName": "fc",
     "componentPath": "./fc.vue",
     "imageUrl": "../../assets/images/login-bgc.png"
+  },
+  {
+    "key": "meteorology-hydrology-7",
+    "title": "雨雪雾",
+    "fileName": "qxyw-rain-snow-fog",
+    "componentPath": "./qxyw-rain-snow-fog.vue",
+    "imageUrl": "../../assets/images/雨雪雾.png"
   },
   {
     "key": "scene-1",
