@@ -78,7 +78,20 @@ const preferredOrder = {
     'PolylineVolumeCollection',
     'Overlay',
   ],
-  measure: ['Quantitative', 'MeasureType', 'AreaManager', 'Heatmap', 'PointAggregation', 'Trajectory', 'Mover'],
+  measure: [
+    'Quantitative',
+    'MeasureType',
+    'SlopeAnalyze',
+    'AspectAnalyze',
+    'TerrainProfileAnalyze',
+    'CutFillAnalyze',
+    'FloodAnalyze',
+    'AreaManager',
+    'Heatmap',
+    'PointAggregation',
+    'Trajectory',
+    'Mover',
+  ],
   effects: [
     'SpecialEffects',
     'RadiationCircle',
@@ -146,6 +159,8 @@ const preferredOrder = {
     'DEFAULT_HEATMAP_STYLE',
     'DEFAULT_HEATMAP_GRADIENT',
     'DEFAULT_POINT_AGGREGATION_STYLE',
+    'DEFAULT_SLOPE_GRADES',
+    'DEFAULT_ASPECT_GRADES',
     'MEASURE_POINT_RANGE',
     'h337',
     'turf',
@@ -168,6 +183,11 @@ const apiMeta = {
   MouseEvent: ['鼠标事件', '封装 Cesium ScreenSpaceEventHandler，提供点击、移动、滚轮、双击和拾取实体能力。'],
   Quantitative: ['测量', '提供距离、面积、高度等交互测量能力，并支持测量结果样式控制。'],
   MeasureType: ['测量类型', '测量能力使用的类型枚举。'],
+  SlopeAnalyze: ['坡度分析', '独立坡度分析类；矩形框选地形区域后按网格采样计算坡度，支持平滑贴图和网格色块两种渲染模式。'],
+  AspectAnalyze: ['坡向/坡面分析', '独立坡向/坡面分析类；矩形框选地形区域后按网格采样计算坡面朝向，支持平滑贴图和网格色块两种渲染模式。'],
+  TerrainProfileAnalyze: ['地形剖面分析', '独立地形剖面分析类；沿用户绘制折线采样地形高程，输出剖面采样点、统计结果和地图剖面线。'],
+  CutFillAnalyze: ['挖填方分析', '独立挖填方分析类；多边形框选地形区域后按基准高程统计挖方、填方体积，并支持网格单元着色展示。'],
+  FloodAnalyze: ['淹没分析', '独立淹没分析类；多边形框选地形区域后按水位统计淹没面积、蓄水体积和最大水深，并支持淹没单元着色展示。'],
   AreaManager: ['区域绘制管理', '统一管理点、线、面、圆、矩形等区域绘制发布流程。'],
   Heatmap: ['热力图', '基于 heatmap.js 在 Cesium 场景中创建、更新和清理热力图。'],
   PointAggregation: ['点聚合', '加载点数据或 GeoJSON，并在视距变化时显示聚合效果。'],
@@ -196,9 +216,19 @@ const apiMeta = {
   DEFAULT_HEATMAP_STYLE: ['热力图默认样式', 'Heatmap 默认样式配置。'],
   DEFAULT_HEATMAP_GRADIENT: ['热力图默认渐变', 'Heatmap 默认颜色渐变配置。'],
   DEFAULT_POINT_AGGREGATION_STYLE: ['点聚合默认样式', 'PointAggregation 默认点和聚合图形样式。'],
+  DEFAULT_SLOPE_GRADES: ['坡度默认色带', '坡度分析默认分级色带，可直接复用或复制后按业务调整。'],
+  DEFAULT_ASPECT_GRADES: ['坡向默认色带', '坡向/坡面分析默认方向色带，可直接复用或复制后按业务调整。'],
   MEASURE_POINT_RANGE: ['测量点范围', '测量模块使用的点范围默认配置。'],
   h337: ['Heatmap 模块实例', '内置 heatmap.js 模块引用。'],
   turf: ['Turf 模块实例', '内置 Turf 模块引用。'],
+}
+
+const extraRelatedTypes = {
+  SlopeAnalyze: ['SlopeGrade', 'SlopeRenderMode'],
+  AspectAnalyze: ['AspectGrade', 'AspectRenderMode'],
+  TerrainProfileAnalyze: ['TerrainProfilePoint', 'TerrainProfileResult', 'TerrainProfileStats'],
+  CutFillAnalyze: ['CutFillBaseHeightMode', 'CutFillCellKind', 'CutFillCell', 'CutFillResult', 'CutFillStats'],
+  FloodAnalyze: ['FloodWaterLevelMode', 'FloodCell', 'FloodResult', 'FloodStats'],
 }
 
 const drawNames = new Set(preferredOrder.draw)
@@ -1355,6 +1385,9 @@ function collectExpandedTypeRows(prefix, typeName, typeExports, depth = 0, visit
 function relatedTypes(apiName, typeExports) {
   const result = []
   const baseName = apiName.replace(/Collection$/, '')
+  for (const name of extraRelatedTypes[apiName] ?? []) {
+    if (typeExports.has(name)) result.push(name)
+  }
   for (const name of typeExports.keys()) {
     if (
       name === apiName ||
@@ -1503,6 +1536,23 @@ function usageFor(name, groupId) {
     return `const viewer = window.FastX.getLayer().viewer\nconst effect = new window.FastX.SpecialEffects.${name}(${constructorArgs})\nconst options = ${options}\neffect.add(${addArgs})`
   }
   if (groupId === 'weather') return `const viewer = window.FastX.getLayer().viewer\nconst weather = new window.FastX.SpecialEffects.${name}(viewer)\nweather.enable()`
+  if (name === 'SlopeAnalyze') {
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst slope = new window.FastX.SlopeAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  slope: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.35,\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\nslope.complete()`
+  }
+  if (name === 'AspectAnalyze') {
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst aspect = new window.FastX.AspectAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  aspect: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.25,\n    flatSlopeThreshold: 1,\n    flatColor: '#d1d5db',\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\naspect.complete()`
+  }
+  if (name === 'TerrainProfileAnalyze') {
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst profile = new window.FastX.TerrainProfileAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.39, 39.91, 0],\n    [116.44, 39.94, 0]\n  ],\n  terrainProfile: {\n    sampleCount: 120,\n    heightOffset: 2,\n    showProfileLine: true,\n    profileLineColor: '#59ff9b',\n    profileLineWidth: 3,\n    showSamplePoints: false,\n    samplePointEvery: 8,\n    samplePointColor: '#facc15',\n    samplePointSize: 5,\n    showStatsLabel: true,\n    onProfileChange: (result) => console.log(result)\n  }\n})\n\nprofile.complete()\nconst result = profile.getProfile()`
+  }
+  if (name === 'CutFillAnalyze') {
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})\n\ncutFill.complete()\nconst result = cutFill.getResult()`
+  }
+  if (name === 'FloodAnalyze') {
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})\n\nflood.complete()\nconst result = flood.getResult()`
+  }
+  if (name === 'DEFAULT_SLOPE_GRADES') return `const grades = window.FastX.DEFAULT_SLOPE_GRADES`
+  if (name === 'DEFAULT_ASPECT_GRADES') return `const grades = window.FastX.DEFAULT_ASPECT_GRADES`
   if (groupId === 'plugin' || groupId === 'tools') return `${name}()`
   return `window.FastX.${name}`
 }

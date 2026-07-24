@@ -2,23 +2,35 @@ import type { Viewer } from 'cesium'
 import {
   AltitudeInterceptMeasure,
   AreaAnalyze,
+  AspectAnalyze,
   AzimuthMeasure,
   ContourAnalyze,
   ContourShaderAnalyze,
   GroundDistanceMeasure,
   LineAnalyze,
   BufferAnalyze,
+  CutFillAnalyze,
+  FloodAnalyze,
   LineDistanceMeasure,
   MultiPointAnalyze,
   ProjectionAreaMeasure,
   ProjectionDistanceMeasure,
   SpaceAreaMeasure,
+  SlopeAnalyze,
+  TerrainProfileAnalyze,
   ViewShedAnalyze,
 } from './components'
 import { applyContourGlobeShader, clearContourGlobeShader } from './contourGlobeShader'
 import { MeasureTool } from './MeasureTool'
 import { mergeMeasureStyle } from './measureStyleDefaults'
-import type { MeasureStyle } from './types'
+import type {
+  AspectAnalyzeOptions,
+  MeasureStyle,
+  SlopeAnalyzeOptions,
+  TerrainProfileAnalyzeOptions,
+  CutFillAnalyzeOptions,
+  FloodAnalyzeOptions,
+} from './types'
 import type {
   IMeasure,
   MeasureCreateOptions,
@@ -47,6 +59,16 @@ export class Quantitative {
   contourGridSize = 30
   /** 缓冲区默认半径（米） */
   bufferWidth = 1000
+  /** 坡度分析默认参数 */
+  slopeOptions: SlopeAnalyzeOptions = {}
+  /** 坡向/坡面分析默认参数 */
+  aspectOptions: AspectAnalyzeOptions = {}
+  /** 地形剖面分析默认参数 */
+  terrainProfileOptions: TerrainProfileAnalyzeOptions = {}
+  /** 挖填方分析默认参数 */
+  cutFillOptions: CutFillAnalyzeOptions = {}
+  /** 淹没分析默认参数 */
+  floodOptions: FloodAnalyzeOptions = {}
 
   /**
    * @param options 系统选项
@@ -104,6 +126,11 @@ export class Quantitative {
       contourInterval: options.contourInterval ?? this.contourInterval,
       contourGridSize: options.contourGridSize ?? this.contourGridSize,
       bufferWidth: options.bufferWidth ?? this.bufferWidth,
+      slope: options.slope ?? this.slopeOptions,
+      aspect: options.aspect ?? this.aspectOptions,
+      terrainProfile: options.terrainProfile ?? this.terrainProfileOptions,
+      cutFill: options.cutFill ?? this.cutFillOptions,
+      flood: options.flood ?? this.floodOptions,
       onContourShaderChange: () => this.syncContourGlobeShader(),
       viewShed: options.viewShed,
     }
@@ -149,6 +176,21 @@ export class Quantitative {
         break
       case MeasureType.CONTOUR_ANALYZE_SHADER:
         measure = new ContourShaderAnalyze(full)
+        break
+      case MeasureType.SLOPE_ANALYZE:
+        measure = new SlopeAnalyze(full)
+        break
+      case MeasureType.ASPECT_ANALYZE:
+        measure = new AspectAnalyze(full)
+        break
+      case MeasureType.TERRAIN_PROFILE_ANALYZE:
+        measure = new TerrainProfileAnalyze(full)
+        break
+      case MeasureType.CUT_FILL_ANALYZE:
+        measure = new CutFillAnalyze(full)
+        break
+      case MeasureType.FLOOD_ANALYZE:
+        measure = new FloodAnalyze(full)
         break
       case MeasureType.POINT_BUFFER_ANALYZE:
       case MeasureType.LINE_BUFFER_ANALYZE:
@@ -262,9 +304,34 @@ export type {
   MeasureCreateOptions,
   MeasureStyle,
   BufferAnalyzeOptions,
+  AspectAnalyzeOptions,
+  AspectAnalyzeStats,
+  AspectGrade,
+  AspectRenderMode,
+  TerrainProfileAnalyzeOptions,
+  TerrainProfilePoint,
+  TerrainProfileResult,
+  TerrainProfileStats,
+  CutFillAnalyzeOptions,
+  CutFillBaseHeightMode,
+  CutFillCell,
+  CutFillCellKind,
+  CutFillResult,
+  CutFillStats,
+  FloodAnalyzeOptions,
+  FloodCell,
+  FloodResult,
+  FloodStats,
+  FloodWaterLevelMode,
+  SlopeAnalyzeOptions,
+  SlopeAnalyzeStats,
+  SlopeGrade,
+  SlopeRenderMode,
   IMeasure,
   LngLatHeightTuple,
 } from './types'
 export { MeasureTool } from './MeasureTool'
 export * from './measureMath'
 export * from './components'
+export { sampleTerrainGrid } from './terrainGrid'
+export type { TerrainGrid, TerrainGridPoint } from './terrainGrid'

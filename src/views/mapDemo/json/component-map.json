@@ -463,6 +463,41 @@
     "imageUrl": "../../assets/images/缓冲区分析.png"
   },
   {
+    "key": "quantitative-8",
+    "title": "坡度分析",
+    "fileName": "pdjcl",
+    "componentPath": "./pdjcl.vue",
+    "imageUrl": "../../assets/images/坡度分析.png"
+  },
+  {
+    "key": "quantitative-9",
+    "title": "坡向/坡面分析",
+    "fileName": "pxpmfx",
+    "componentPath": "./pxpmfx.vue",
+    "imageUrl": "../../assets/images/坡向、坡面分析.png"
+  },
+  {
+    "key": "quantitative-10",
+    "title": "地形剖面分析",
+    "fileName": "dxpmfx",
+    "componentPath": "./dxpmfx.vue",
+    "imageUrl": "../../assets/images/地形剖面分析.png"
+  },
+  {
+    "key": "quantitative-11",
+    "title": "挖填方分析",
+    "fileName": "wtffx",
+    "componentPath": "./wtffx.vue",
+    "imageUrl": "../../assets/images/坡度分析.png"
+  },
+  {
+    "key": "quantitative-12",
+    "title": "淹没分析",
+    "fileName": "ymfx",
+    "componentPath": "./ymfx.vue",
+    "imageUrl": "../../assets/images/坡度分析.png"
+  },
+  {
     "key": "special-effects-1",
     "title": "爆炸",
     "fileName": "sfx-explosion",

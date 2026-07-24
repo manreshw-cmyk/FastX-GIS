@@ -1,35 +1,37 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import {
-  DEFAULT_SLOPE_GRADES,
+  DEFAULT_ASPECT_GRADES,
   MeasureType,
-  type SlopeAnalyzeOptions,
-  type SlopeRenderMode,
+  type AspectAnalyzeOptions,
+  type AspectRenderMode,
 } from '../../FastX'
 import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
 import { useQuantitativeDemo } from './common/useQuantitativeDemo.ts'
 
 const TYPE_OPTIONS = [
   {
-    value: MeasureType.SLOPE_ANALYZE,
-    label: '坡度分析',
-    hint: '左键选择矩形对角两点，生成坡度分级贴图',
-    desc: '地形坡度分级',
+    value: MeasureType.ASPECT_ANALYZE,
+    label: '坡向/坡面分析',
+    hint: '左键选择矩形对角两点，生成坡向分级贴图',
+    desc: '地形坡面朝向分级',
   },
 ] as const
 
-const RENDER_MODE_OPTIONS: Array<{ label: string; value: SlopeRenderMode }> = [
+const RENDER_MODE_OPTIONS: Array<{ label: string; value: AspectRenderMode }> = [
   { label: '平滑贴图', value: 'raster' },
   { label: '网格色块', value: 'grid' },
 ]
 
-interface SlopeDemoForm {
-  renderMode: SlopeRenderMode
+interface AspectDemoForm {
+  renderMode: AspectRenderMode
   gridSize: number
   textureSize: number
   fillAlpha: number
   smooth: boolean
   shadeStrength: number
+  flatSlopeThreshold: number
+  flatColor: string
   heightOffset: number
   showGrid: boolean
   gridColor: string
@@ -38,13 +40,15 @@ interface SlopeDemoForm {
 }
 
 /** 示例页默认参数，与 API 手册示例保持一致。 */
-const DEFAULT_FORM: SlopeDemoForm = {
+const DEFAULT_FORM: AspectDemoForm = {
   renderMode: 'raster',
   gridSize: 48,
   textureSize: 768,
   fillAlpha: 0.58,
   smooth: true,
-  shadeStrength: 0.35,
+  shadeStrength: 0.25,
+  flatSlopeThreshold: 1,
+  flatColor: '#d1d5db',
   heightOffset: 1.5,
   showGrid: false,
   gridColor: '#ffffff',
@@ -52,13 +56,13 @@ const DEFAULT_FORM: SlopeDemoForm = {
   showStatsLabel: true,
 }
 
-const form = reactive<SlopeDemoForm>({ ...DEFAULT_FORM })
+const form = reactive<AspectDemoForm>({ ...DEFAULT_FORM })
 
 const { measuring, measureStyle, startMeasure, clearResults, currentHint } =
   useQuantitativeDemo([...TYPE_OPTIONS])
 
-/** 汇总页面参数并写入本次坡度分析。 */
-function buildSlopeOptions(): SlopeAnalyzeOptions {
+/** 汇总页面参数并写入本次坡向/坡面分析。 */
+function buildAspectOptions(): AspectAnalyzeOptions {
   return {
     renderMode: form.renderMode,
     gridSize: form.gridSize,
@@ -66,19 +70,21 @@ function buildSlopeOptions(): SlopeAnalyzeOptions {
     fillAlpha: form.fillAlpha,
     smooth: form.smooth,
     shadeStrength: form.shadeStrength,
+    flatSlopeThreshold: form.flatSlopeThreshold,
+    flatColor: form.flatColor,
     heightOffset: form.heightOffset,
     showGrid: form.showGrid,
     gridColor: form.gridColor,
     gridWidth: form.gridWidth,
     showStatsLabel: form.showStatsLabel,
-    grades: DEFAULT_SLOPE_GRADES,
+    grades: DEFAULT_ASPECT_GRADES,
   }
 }
 
-/** 开始分析前同步坡度专属参数。 */
+/** 开始分析前同步坡向专属参数。 */
 async function onStart(): Promise<void> {
   if (window.FastX?.Quantitative) {
-    window.FastX.Quantitative.slopeOptions = buildSlopeOptions()
+    window.FastX.Quantitative.aspectOptions = buildAspectOptions()
   }
   await startMeasure()
 }
@@ -87,8 +93,8 @@ async function onStart(): Promise<void> {
 <template>
   <QuantitativeDemoPanel
     v-model:measure-style="measureStyle"
-    title="坡度分析"
-    desc="框选地形区域后按坡度角生成连续分级覆盖层。"
+    title="坡向/坡面分析"
+    desc="框选地形区域后按坡面朝向生成连续分级覆盖层。"
     primary-label="开始分析"
     :measuring="measuring"
     :current-hint="currentHint()"
@@ -163,6 +169,23 @@ async function onStart(): Promise<void> {
     </div>
 
     <div class="qty-form-row">
+      <span class="map-tool-row-label">平地阈值(°)</span>
+      <a-input-number
+        v-model:value="form.flatSlopeThreshold"
+        :min="0"
+        :max="15"
+        :step="0.5"
+        size="small"
+        :disabled="measuring"
+      />
+    </div>
+
+    <div class="qty-form-row">
+      <span class="map-tool-row-label">平地颜色</span>
+      <input v-model="form.flatColor" class="aspect-color-input" type="color" :disabled="measuring" />
+    </div>
+
+    <div class="qty-form-row">
       <span class="map-tool-row-label">高程偏移(m)</span>
       <a-input-number
         v-model:value="form.heightOffset"
@@ -181,7 +204,7 @@ async function onStart(): Promise<void> {
 
     <div class="qty-form-row">
       <span class="map-tool-row-label">网格颜色</span>
-      <input v-model="form.gridColor" class="slope-color-input" type="color" :disabled="measuring || !form.showGrid" />
+      <input v-model="form.gridColor" class="aspect-color-input" type="color" :disabled="measuring || !form.showGrid" />
     </div>
 
     <div class="qty-form-row">
@@ -201,17 +224,21 @@ async function onStart(): Promise<void> {
       <a-switch v-model:checked="form.showStatsLabel" size="small" :disabled="measuring" />
     </div>
 
-    <div class="slope-legend">
-      <div v-for="grade in DEFAULT_SLOPE_GRADES" :key="grade.maxSlope" class="slope-legend__item">
-        <span class="slope-legend__swatch" :style="{ backgroundColor: grade.color }" />
-        <span class="slope-legend__label">{{ grade.label }}</span>
+    <div class="aspect-legend">
+      <div class="aspect-legend__item">
+        <span class="aspect-legend__swatch" :style="{ backgroundColor: form.flatColor }" />
+        <span class="aspect-legend__label">平地</span>
+      </div>
+      <div v-for="grade in DEFAULT_ASPECT_GRADES" :key="grade.label" class="aspect-legend__item">
+        <span class="aspect-legend__swatch" :style="{ backgroundColor: grade.color }" />
+        <span class="aspect-legend__label">{{ grade.label }}</span>
       </div>
     </div>
   </QuantitativeDemoPanel>
 </template>
 
 <style scoped lang="scss">
-.slope-color-input {
+.aspect-color-input {
   width: 72px;
   height: 24px;
   padding: 0;
@@ -220,12 +247,12 @@ async function onStart(): Promise<void> {
   cursor: pointer;
 }
 
-.slope-color-input:disabled {
+.aspect-color-input:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.slope-legend {
+.aspect-legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
@@ -236,14 +263,14 @@ async function onStart(): Promise<void> {
   border-radius: 8px;
 }
 
-.slope-legend__item {
+.aspect-legend__item {
   display: inline-flex;
   align-items: center;
   min-width: 0;
   gap: 6px;
 }
 
-.slope-legend__swatch {
+.aspect-legend__swatch {
   width: 14px;
   height: 14px;
   flex: 0 0 14px;
@@ -251,7 +278,7 @@ async function onStart(): Promise<void> {
   border-radius: 3px;
 }
 
-.slope-legend__label {
+.aspect-legend__label {
   min-width: 0;
   overflow: hidden;
   color: rgba(226, 238, 255, 0.78);

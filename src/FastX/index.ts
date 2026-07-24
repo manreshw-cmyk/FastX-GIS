@@ -42,7 +42,16 @@ import Tileset from "./Draw/Tileset";
 import Heatmap from "./Draw/Heatmap";
 import PointAggregation from "./Draw/PointAggregation";
 import AreaManager from "./areaManager";
-import { Quantitative } from "./Quantitative";
+import {
+  AspectAnalyze,
+  DEFAULT_ASPECT_GRADES,
+  DEFAULT_SLOPE_GRADES,
+  CutFillAnalyze,
+  FloodAnalyze,
+  Quantitative,
+  SlopeAnalyze,
+  TerrainProfileAnalyze,
+} from "./Quantitative";
 import Trajectory from "./Trajectory/Trajectory";
 import Mover from "./Trajectory/Mover";
 import { ensureVendorPlugins } from "./plugins";
@@ -199,11 +208,46 @@ export {
   Quantitative,
   MeasureType,
   MEASURE_POINT_RANGE,
+  AspectAnalyze,
+  DEFAULT_ASPECT_GRADES,
+  SlopeAnalyze,
+  DEFAULT_SLOPE_GRADES,
+  TerrainProfileAnalyze,
+  CutFillAnalyze,
+  FloodAnalyze,
 } from "./Quantitative";
 export type {
+  AspectAnalyzeCreateOptions,
+  AspectAnalyzeOptions,
+  AspectAnalyzeStats,
+  AspectGrade,
+  AspectRenderMode,
+  TerrainProfileAnalyzeCreateOptions,
+  TerrainProfileAnalyzeOptions,
+  TerrainProfilePoint,
+  TerrainProfileResult,
+  TerrainProfileStats,
+  CutFillAnalyzeCreateOptions,
+  CutFillAnalyzeOptions,
+  CutFillBaseHeightMode,
+  CutFillCell,
+  CutFillCellKind,
+  CutFillResult,
+  CutFillStats,
+  FloodAnalyzeCreateOptions,
+  FloodAnalyzeOptions,
+  FloodCell,
+  FloodResult,
+  FloodStats,
+  FloodWaterLevelMode,
   MeasureTypeKey,
   MeasureCreateOptions,
   MeasureStyle,
+  SlopeAnalyzeOptions,
+  SlopeAnalyzeStats,
+  SlopeGrade,
+  SlopeRenderMode,
+  SlopeAnalyzeCreateOptions,
   IMeasure,
   LngLatHeightTuple,
 } from "./Quantitative";
@@ -650,6 +694,13 @@ export const FastX = {
   Heatmap: heatmapApi,
   PointAggregation: pointAggregationApi,
   Quantitative: quantitativeApi,
+  AspectAnalyze,
+  DEFAULT_ASPECT_GRADES,
+  SlopeAnalyze,
+  DEFAULT_SLOPE_GRADES,
+  TerrainProfileAnalyze,
+  CutFillAnalyze,
+  FloodAnalyze,
   AreaManager: areaManagerApi,
   registerCesiumXVueComponents,
   /** 获取已按 `mapName` 注册的 `Layer`；未传名且仅有一个注册实例时返回该实例 */

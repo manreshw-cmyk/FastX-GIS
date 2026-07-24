@@ -25,6 +25,8 @@ const FIXED_COUNT_TYPES = new Set<MeasureTypeKey>([
   MeasureType.VIEWSHED_ANALYZE,
   MeasureType.CONTOUR_ANALYZE,
   MeasureType.CONTOUR_ANALYZE_SHADER,
+  MeasureType.SLOPE_ANALYZE,
+  MeasureType.ASPECT_ANALYZE,
   MeasureType.POINT_BUFFER_ANALYZE,
 ])
 
