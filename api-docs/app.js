@@ -846,6 +846,11 @@
       "stopInteractive",
       "notifyDrawFinish",
     ],
+    SlopeAnalyze: ["getSlopeOptions", "setSlopeOptions", "getStats", "setPositions", "update", "complete", "clear", "destroy"],
+    AspectAnalyze: ["getAspectOptions", "setAspectOptions", "getStats", "setPositions", "update", "complete", "clear", "destroy"],
+    TerrainProfileAnalyze: ["getTerrainProfileOptions", "setTerrainProfileOptions", "getProfile", "setPositions", "update", "complete", "clear", "destroy"],
+    CutFillAnalyze: ["getCutFillOptions", "setCutFillOptions", "getResult", "setPositions", "update", "complete", "clear", "destroy"],
+    FloodAnalyze: ["getFloodOptions", "setFloodOptions", "getResult", "setPositions", "update", "complete", "clear", "destroy"],
     AreaManager: ["getDrawApis", "publish", "unpublish", "start", "draw", "end", "cancel", "clearEvents"],
     Trajectory: [
       "getPositionProperty",
@@ -1232,8 +1237,13 @@
       drawApi("PolylineVolumeCollection", "批量体线", ["PolylineVolumeCollectionAddItem", "PolylineVolumeCollectionSnapshot", "PolylineVolumeCollectionUpdateEntry", "PolylineVolumeCollectionUpdateProps"]),
     ]),
     group("measure", [
-      api("Quantitative", "measure", "Quantitative", "测量", "提供距离、面积、高度等交互测量能力，并支持测量结果样式控制。", methodMap.Quantitative, ["MeasureTypeKey", "MeasureCreateOptions", "MeasureStyle", "IMeasure"], "FastX.Quantitative.bindViewer(viewer)\nFastX.Quantitative.startInteractive('distance')"),
+      api("Quantitative", "measure", "Quantitative", "测量", "提供距离、面积、高度等交互测量能力，并支持测量结果样式控制。", methodMap.Quantitative, ["MeasureTypeKey", "MeasureCreateOptions", "MeasureStyle", "IMeasure"], "FastX.Quantitative.bindViewer(viewer)\nFastX.Quantitative.startInteractive(FastX.MeasureType.LINE_DISTANCE)"),
       api("MeasureType", "measure", "MeasureType", "测量类型", "测量能力使用的类型枚举。", [], ["MeasureTypeKey"], "FastX.MeasureType"),
+      api("SlopeAnalyze", "measure", "SlopeAnalyze", "坡度分析", "独立坡度分析类；矩形框选地形区域后按网格采样计算坡度，支持平滑贴图和网格色块两种渲染模式。", methodMap.SlopeAnalyze, ["SlopeAnalyzeCreateOptions", "SlopeAnalyzeOptions", "SlopeAnalyzeStats", "SlopeGrade", "SlopeRenderMode"], "const viewer = window.FastX.getViewer('mapDemo')\nconst slope = new window.FastX.SlopeAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  slope: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.35,\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\nslope.complete()"),
+      api("AspectAnalyze", "measure", "AspectAnalyze", "坡向/坡面分析", "独立坡向/坡面分析类；矩形框选地形区域后按网格采样计算坡面朝向，支持平滑贴图和网格色块两种渲染模式。", methodMap.AspectAnalyze, ["AspectAnalyzeCreateOptions", "AspectAnalyzeOptions", "AspectAnalyzeStats", "AspectGrade", "AspectRenderMode"], "const viewer = window.FastX.getViewer('mapDemo')\nconst aspect = new window.FastX.AspectAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  aspect: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.25,\n    flatSlopeThreshold: 1,\n    flatColor: '#d1d5db',\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\naspect.complete()"),
+      api("TerrainProfileAnalyze", "measure", "TerrainProfileAnalyze", "地形剖面分析", "独立地形剖面分析类；沿用户绘制折线采样地形高程，输出剖面采样点、统计结果和地图剖面线。", methodMap.TerrainProfileAnalyze, ["TerrainProfileAnalyzeCreateOptions", "TerrainProfileAnalyzeOptions", "TerrainProfilePoint", "TerrainProfileResult", "TerrainProfileStats"], "const viewer = window.FastX.getViewer('mapDemo')\nconst profile = new window.FastX.TerrainProfileAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.39, 39.91, 0],\n    [116.44, 39.94, 0]\n  ],\n  terrainProfile: {\n    sampleCount: 120,\n    heightOffset: 2,\n    showProfileLine: true,\n    profileLineColor: '#59ff9b',\n    profileLineWidth: 3,\n    showSamplePoints: false,\n    samplePointEvery: 8,\n    samplePointColor: '#facc15',\n    samplePointSize: 5,\n    showStatsLabel: true,\n    onProfileChange: (result) => console.log(result)\n  }\n})\n\nprofile.complete()\nconst result = profile.getProfile()"),
+      api("CutFillAnalyze", "measure", "CutFillAnalyze", "挖填方分析", "独立挖填方分析类；多边形框选地形区域后按基准高程统计挖方、填方体积，并支持网格单元着色展示。", methodMap.CutFillAnalyze, ["CutFillAnalyzeCreateOptions", "CutFillAnalyzeOptions", "CutFillBaseHeightMode", "CutFillCellKind", "CutFillCell", "CutFillResult", "CutFillStats"], "const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})\n\ncutFill.complete()\nconst result = cutFill.getResult()"),
+      api("FloodAnalyze", "measure", "FloodAnalyze", "淹没分析", "独立淹没分析类；多边形框选地形区域后按水位统计淹没面积、蓄水体积和最大水深，并支持淹没单元着色展示。", methodMap.FloodAnalyze, ["FloodAnalyzeCreateOptions", "FloodAnalyzeOptions", "FloodWaterLevelMode", "FloodCell", "FloodResult", "FloodStats"], "const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})\n\nflood.complete()\nconst result = flood.getResult()"),
       api("AreaManager", "measure", "AreaManager", "区域绘制管理", "统一管理点、线、面、圆、矩形等区域绘制发布流程。", methodMap.AreaManager, ["AreaDrawStartParams", "AreaDrawDirectParams", "AreaDrawResult", "AreaManagerOptions"], "FastX.AreaManager.start({ viewer, type: 'polygon' })"),
       api("Heatmap", "measure", "Heatmap", "热力图", "基于 heatmap.js 在 Cesium 场景中创建、更新和清理热力图。", methodMap.Heatmap, ["HeatmapCreateOptions", "HeatmapStyle", "HeatmapSnapshot", "HeatmapUpdateOptions"], "FastX.Heatmap.create(viewer, options)"),
       api("PointAggregation", "measure", "PointAggregation", "点聚合", "加载点数据或 GeoJSON，并在视距变化时显示聚合效果。", methodMap.PointAggregation, ["PointAggregationLoadOptions", "PointAggregationGeoJsonOptions", "PointAggregationStyle", "PointAggregationSnapshot"], "FastX.PointAggregation.loadGeoJson(viewer, url, options)"),
@@ -1263,6 +1273,8 @@
       api("DEFAULT_HEATMAP_STYLE", "tools", "DEFAULT_HEATMAP_STYLE", "热力图默认样式", "Heatmap 默认样式配置。", [], ["HeatmapStyle"], "FastX.DEFAULT_HEATMAP_STYLE"),
       api("DEFAULT_HEATMAP_GRADIENT", "tools", "DEFAULT_HEATMAP_GRADIENT", "热力图默认渐变", "Heatmap 默认颜色渐变配置。", [], ["HeatmapColorStop"], "FastX.DEFAULT_HEATMAP_GRADIENT"),
       api("DEFAULT_POINT_AGGREGATION_STYLE", "tools", "DEFAULT_POINT_AGGREGATION_STYLE", "点聚合默认样式", "PointAggregation 默认点和聚合图形样式。", [], ["PointAggregationStyle"], "FastX.DEFAULT_POINT_AGGREGATION_STYLE"),
+      api("DEFAULT_SLOPE_GRADES", "tools", "DEFAULT_SLOPE_GRADES", "坡度默认色带", "坡度分析默认分级色带，可直接复用或复制后按业务调整。", [], ["SlopeGrade"], "const grades = window.FastX.DEFAULT_SLOPE_GRADES"),
+      api("DEFAULT_ASPECT_GRADES", "tools", "DEFAULT_ASPECT_GRADES", "坡向默认色带", "坡向/坡面分析默认方向色带，可直接复用或复制后按业务调整。", [], ["AspectGrade"], "const grades = window.FastX.DEFAULT_ASPECT_GRADES"),
     ]),
   ];
 
@@ -2117,6 +2129,61 @@
       return `const viewer = window.FastX.getViewer('mapDemo')\nconst mouse = new window.FastX.MouseEvent(viewer)\nmouse.${methodName}({\n  onLeftClick: (payload) => console.log(payload)\n})`;
     }
     if (doc.group === "measure") {
+      if (doc.name === "SlopeAnalyze") {
+        const setup = "const viewer = window.FastX.getViewer('mapDemo')\nconst slope = new window.FastX.SlopeAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  slope: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.35,\n    showGrid: false,\n    showStatsLabel: true\n  }\n})";
+        if (methodName === "setSlopeOptions") return `${setup}\n\nslope.setSlopeOptions({ gridSize: 36, fillAlpha: 0.7 })`;
+        if (methodName === "getSlopeOptions") return `${setup}\n\nconst options = slope.getSlopeOptions()`;
+        if (methodName === "getStats") return `${setup}\nslope.complete()\n\nconst stats = slope.getStats()`;
+        if (methodName === "setPositions") return `${setup}\n\nslope.setPositions([\n  [116.36, 39.88, 0],\n  [116.44, 39.94, 0]\n])`;
+        if (methodName === "update") return `${setup}\n\nslope.update([116.42, 39.92, 0])`;
+        if (methodName === "complete") return `${setup}\n\nslope.complete()`;
+        if (/^clear|^destroy/.test(methodName)) return `${setup}\nslope.complete()\n\nslope.${methodName}()`;
+        return `${setup}\n\nslope.${methodName}()`;
+      }
+      if (doc.name === "AspectAnalyze") {
+        const setup = "const viewer = window.FastX.getViewer('mapDemo')\nconst aspect = new window.FastX.AspectAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  aspect: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.25,\n    flatSlopeThreshold: 1,\n    flatColor: '#d1d5db',\n    showGrid: false,\n    showStatsLabel: true\n  }\n})";
+        if (methodName === "setAspectOptions") return `${setup}\n\naspect.setAspectOptions({ gridSize: 36, fillAlpha: 0.7 })`;
+        if (methodName === "getAspectOptions") return `${setup}\n\nconst options = aspect.getAspectOptions()`;
+        if (methodName === "getStats") return `${setup}\naspect.complete()\n\nconst stats = aspect.getStats()`;
+        if (methodName === "setPositions") return `${setup}\n\naspect.setPositions([\n  [116.36, 39.88, 0],\n  [116.44, 39.94, 0]\n])`;
+        if (methodName === "update") return `${setup}\n\naspect.update([116.42, 39.92, 0])`;
+        if (methodName === "complete") return `${setup}\n\naspect.complete()`;
+        if (/^clear|^destroy/.test(methodName)) return `${setup}\naspect.complete()\n\naspect.${methodName}()`;
+        return `${setup}\n\naspect.${methodName}()`;
+      }
+      if (doc.name === "TerrainProfileAnalyze") {
+        const setup = "const viewer = window.FastX.getViewer('mapDemo')\nconst profile = new window.FastX.TerrainProfileAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.39, 39.91, 0],\n    [116.44, 39.94, 0]\n  ],\n  terrainProfile: {\n    sampleCount: 120,\n    heightOffset: 2,\n    showProfileLine: true,\n    profileLineColor: '#59ff9b',\n    profileLineWidth: 3,\n    showSamplePoints: false,\n    samplePointEvery: 8,\n    samplePointColor: '#facc15',\n    samplePointSize: 5,\n    showStatsLabel: true,\n    onProfileChange: (result) => console.log(result)\n  }\n})";
+        if (methodName === "setTerrainProfileOptions") return `${setup}\n\nprofile.setTerrainProfileOptions({ sampleCount: 180, showSamplePoints: true })`;
+        if (methodName === "getTerrainProfileOptions") return `${setup}\n\nconst options = profile.getTerrainProfileOptions()`;
+        if (methodName === "getProfile") return `${setup}\nprofile.complete()\n\nconst result = profile.getProfile()`;
+        if (methodName === "setPositions") return `${setup}\n\nprofile.setPositions([\n  [116.36, 39.88, 0],\n  [116.39, 39.91, 0],\n  [116.44, 39.94, 0]\n])`;
+        if (methodName === "update") return `${setup}\n\nprofile.update([116.42, 39.92, 0])`;
+        if (methodName === "complete") return `${setup}\n\nprofile.complete()`;
+        if (/^clear|^destroy/.test(methodName)) return `${setup}\nprofile.complete()\n\nprofile.${methodName}()`;
+        return `${setup}\n\nprofile.${methodName}()`;
+      }
+      if (doc.name === "CutFillAnalyze") {
+        const setup = "const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})";
+        if (methodName === "setCutFillOptions") return `${setup}\n\ncutFill.setCutFillOptions({ baseHeightMode: 'custom', baseHeight: 1200 })`;
+        if (methodName === "getCutFillOptions") return `${setup}\n\nconst options = cutFill.getCutFillOptions()`;
+        if (methodName === "getResult") return `${setup}\ncutFill.complete()\n\nconst result = cutFill.getResult()`;
+        if (methodName === "setPositions") return `${setup}\n\ncutFill.setPositions([\n  [116.36, 39.88, 0],\n  [116.44, 39.88, 0],\n  [116.44, 39.94, 0],\n  [116.36, 39.94, 0]\n])`;
+        if (methodName === "update") return `${setup}\n\ncutFill.update([116.42, 39.92, 0])`;
+        if (methodName === "complete") return `${setup}\n\ncutFill.complete()`;
+        if (/^clear|^destroy/.test(methodName)) return `${setup}\ncutFill.complete()\n\ncutFill.${methodName}()`;
+        return `${setup}\n\ncutFill.${methodName}()`;
+      }
+      if (doc.name === "FloodAnalyze") {
+        const setup = "const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})";
+        if (methodName === "setFloodOptions") return `${setup}\n\nflood.setFloodOptions({ waterLevelMode: 'absolute', waterLevel: 1200 })`;
+        if (methodName === "getFloodOptions") return `${setup}\n\nconst options = flood.getFloodOptions()`;
+        if (methodName === "getResult") return `${setup}\nflood.complete()\n\nconst result = flood.getResult()`;
+        if (methodName === "setPositions") return `${setup}\n\nflood.setPositions([\n  [116.36, 39.88, 0],\n  [116.44, 39.88, 0],\n  [116.44, 39.94, 0],\n  [116.36, 39.94, 0]\n])`;
+        if (methodName === "update") return `${setup}\n\nflood.update([116.42, 39.92, 0])`;
+        if (methodName === "complete") return `${setup}\n\nflood.complete()`;
+        if (/^clear|^destroy/.test(methodName)) return `${setup}\nflood.complete()\n\nflood.${methodName}()`;
+        return `${setup}\n\nflood.${methodName}()`;
+      }
       if (/^bind/.test(methodName) || methodParamsOf(method).some((param) => param.name === "viewer")) {
         return `const viewer = window.FastX.getViewer('mapDemo')\n${methodCall(`window.FastX.${doc.name}`, methodName, method, doc)}`;
       }

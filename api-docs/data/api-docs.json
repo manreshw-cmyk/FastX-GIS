@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-22T06:20:04.150Z",
+  "generatedAt": "2026-07-24T08:16:49.463Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
@@ -8,6 +8,7 @@
     "AirRadar",
     "AirRadarCollection",
     "AreaManager",
+    "AspectAnalyze",
     "Billboard",
     "BillboardCollection",
     "Box",
@@ -22,12 +23,15 @@
     "Coordinates",
     "Corridor",
     "CorridorCollection",
+    "CutFillAnalyze",
     "Cylinder",
     "CylinderCollection",
+    "DEFAULT_ASPECT_GRADES",
     "DEFAULT_HEATMAP_GRADIENT",
     "DEFAULT_HEATMAP_STYLE",
     "DEFAULT_PLANE_VIDEO",
     "DEFAULT_POINT_AGGREGATION_STYLE",
+    "DEFAULT_SLOPE_GRADES",
     "DiffusionRadar",
     "DiffusionRadarCollection",
     "DoubleViewFrustum",
@@ -41,6 +45,7 @@
     "FastX",
     "FireRangeEffect",
     "FireRangeEffectCollection",
+    "FloodAnalyze",
     "FrameAnimationEffect",
     "GlobalFog",
     "GlobalRain",
@@ -93,9 +98,11 @@
     "SectorArcRadarScan",
     "SectorArcRadarScanCollection",
     "SectorCollection",
+    "SlopeAnalyze",
     "SpecialEffects",
     "SquareConeScanner",
     "SquareConeScannerCollection",
+    "TerrainProfileAnalyze",
     "Tileset",
     "Types",
     "Utils",
@@ -3608,6 +3615,7 @@
             "PointSnapshot",
             "PointStyleOptions",
             "ScreenPoint",
+            "TerrainProfilePoint",
             "UpdatePointProperties"
           ],
           "params": [
@@ -4985,6 +4993,7 @@
             "PointSnapshot",
             "PointStyleOptions",
             "ScreenPoint",
+            "TerrainProfilePoint",
             "UpdatePointProperties"
           ],
           "params": [
@@ -37609,19 +37618,445 @@
               "name": "createMeasure.options.buffer",
               "type": "BufferAnalyzeOptions",
               "defaultValue": "-",
-              "description": "缓冲分析专用样式（填充色、源要素色等）"
+              "description": "缓冲分析专用样式（填充色、源要素颜色等）"
+            },
+            {
+              "name": "createMeasure.options.slope",
+              "type": "SlopeAnalyzeOptions",
+              "defaultValue": "-",
+              "description": "坡度分析专用参数"
+            },
+            {
+              "name": "createMeasure.options.slope.gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，代表每行/列采样单元数量，默认 48"
+            },
+            {
+              "name": "createMeasure.options.slope.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "坡度覆盖层透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "createMeasure.options.slope.renderMode",
+              "type": "SlopeRenderMode",
+              "defaultValue": "-",
+              "description": "渲染模式：raster 为平滑贴图，grid 为网格色块，默认 raster"
+            },
+            {
+              "name": "createMeasure.options.slope.textureSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下的贴图分辨率（像素），默认 768"
+            },
+            {
+              "name": "createMeasure.options.slope.smooth",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "raster 模式下是否对采样值做平滑插值，默认 true"
+            },
+            {
+              "name": "createMeasure.options.slope.shadeStrength",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下地形明暗起伏强度 0~1，默认 0.35"
+            },
+            {
+              "name": "createMeasure.options.slope.showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示内部采样网格线；关闭时仅保留分析范围外轮廓，默认 false"
+            },
+            {
+              "name": "createMeasure.options.slope.gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "createMeasure.options.slope.gridWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样网格线宽度（像素），默认 1"
+            },
+            {
+              "name": "createMeasure.options.slope.heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格色块和轮廓线相对采样地形的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "createMeasure.options.slope.showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示最小/最大/平均坡度统计标注，默认 true"
+            },
+            {
+              "name": "createMeasure.options.slope.grades",
+              "type": "SlopeGrade[]",
+              "defaultValue": "-",
+              "description": "坡度分级色带，按 maxSlope 从小到大匹配"
+            },
+            {
+              "name": "createMeasure.options.aspect",
+              "type": "AspectAnalyzeOptions",
+              "defaultValue": "-",
+              "description": "坡向/坡面分析专用参数"
+            },
+            {
+              "name": "createMeasure.options.aspect.gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，代表每行/列采样单元数量，默认 48"
+            },
+            {
+              "name": "createMeasure.options.aspect.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "坡向覆盖层透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "createMeasure.options.aspect.renderMode",
+              "type": "AspectRenderMode",
+              "defaultValue": "-",
+              "description": "渲染模式：raster 为平滑贴图，grid 为网格色块，默认 raster"
+            },
+            {
+              "name": "createMeasure.options.aspect.textureSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下的贴图分辨率（像素），默认 768"
+            },
+            {
+              "name": "createMeasure.options.aspect.smooth",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "raster 模式下是否对采样值做平滑插值，默认 true"
+            },
+            {
+              "name": "createMeasure.options.aspect.shadeStrength",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下地形明暗起伏强度 0~1，默认 0.25"
+            },
+            {
+              "name": "createMeasure.options.aspect.showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示内部采样网格线；关闭时仅保留分析范围外轮廓，默认 false"
+            },
+            {
+              "name": "createMeasure.options.aspect.gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "createMeasure.options.aspect.gridWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样网格线宽度（像素），默认 1"
+            },
+            {
+              "name": "createMeasure.options.aspect.heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格色块和轮廓线相对采样地形的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "createMeasure.options.aspect.showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示平均坡向、主导坡向和平地数量统计标注，默认 true"
+            },
+            {
+              "name": "createMeasure.options.aspect.flatSlopeThreshold",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于等于该坡度角时按平地处理，不参与坡向统计，默认 1 度"
+            },
+            {
+              "name": "createMeasure.options.aspect.flatColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "平地颜色，默认 #d1d5db"
+            },
+            {
+              "name": "createMeasure.options.aspect.grades",
+              "type": "AspectGrade[]",
+              "defaultValue": "-",
+              "description": "坡向分级色带，按角度区间匹配"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile",
+              "type": "TerrainProfileAnalyzeOptions",
+              "defaultValue": "-",
+              "description": "地形剖面分析专用参数"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.sampleCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点数量，默认 120"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样线相对地形抬升高度，避免与地形闪烁，默认 2 米"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.showProfileLine",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制采样后的剖面线，默认 true"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.profileLineColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "剖面线颜色，默认 #59ff9b"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.profileLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "剖面线宽度（像素），默认 3"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.showSamplePoints",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样点，默认 false"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.samplePointEvery",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点抽稀间隔，每隔几个采样点显示一个，默认 8"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.samplePointColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样点颜色，默认 #facc15"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.samplePointSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点大小（像素），默认 5"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示剖面统计标注，默认 true"
+            },
+            {
+              "name": "createMeasure.options.terrainProfile.onProfileChange",
+              "type": "(result: TerrainProfileResult | null) => void",
+              "defaultValue": "-",
+              "description": "剖面结果变化回调；常用于示例页或业务面板绘制剖面曲线"
+            },
+            {
+              "name": "createMeasure.options.cutFill",
+              "type": "CutFillAnalyzeOptions",
+              "defaultValue": "-",
+              "description": "挖填方分析专用参数"
+            },
+            {
+              "name": "createMeasure.options.cutFill.gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，默认 36"
+            },
+            {
+              "name": "createMeasure.options.cutFill.baseHeightMode",
+              "type": "CutFillBaseHeightMode",
+              "defaultValue": "-",
+              "description": "基准高程模式，默认 average"
+            },
+            {
+              "name": "createMeasure.options.cutFill.baseHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "自定义基准高程；仅 baseHeightMode 为 custom 时生效"
+            },
+            {
+              "name": "createMeasure.options.cutFill.heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样面相对地形抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "createMeasure.options.cutFill.tolerance",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于该高差时视为平衡单元，默认 0.1 米"
+            },
+            {
+              "name": "createMeasure.options.cutFill.cutColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "挖方颜色，默认 #ef4444"
+            },
+            {
+              "name": "createMeasure.options.cutFill.fillColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "填方颜色，默认 #22c55e"
+            },
+            {
+              "name": "createMeasure.options.cutFill.flatColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "平衡单元颜色，默认 #94a3b8"
+            },
+            {
+              "name": "createMeasure.options.cutFill.fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单元填充透明度 0~1，默认 0.52"
+            },
+            {
+              "name": "createMeasure.options.cutFill.showCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制采样单元，默认 true"
+            },
+            {
+              "name": "createMeasure.options.cutFill.showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样单元网格轮廓，默认 true"
+            },
+            {
+              "name": "createMeasure.options.cutFill.gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样单元网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "createMeasure.options.cutFill.showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示统计标注，默认 true"
+            },
+            {
+              "name": "createMeasure.options.cutFill.onCutFillChange",
+              "type": "(result: CutFillResult | null) => void",
+              "defaultValue": "-",
+              "description": "挖填方结果变化回调"
+            },
+            {
+              "name": "createMeasure.options.flood",
+              "type": "FloodAnalyzeOptions",
+              "defaultValue": "-",
+              "description": "淹没分析专用参数"
+            },
+            {
+              "name": "createMeasure.options.flood.gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，默认 40"
+            },
+            {
+              "name": "createMeasure.options.flood.waterLevelMode",
+              "type": "FloodWaterLevelMode",
+              "defaultValue": "-",
+              "description": "水位解析模式，默认 relativeToMin"
+            },
+            {
+              "name": "createMeasure.options.flood.waterLevel",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水位值；absolute 为绝对高程，其余模式为相对高差，默认 30 米"
+            },
+            {
+              "name": "createMeasure.options.flood.tolerance",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于该水深时视为未淹没，默认 0 米"
+            },
+            {
+              "name": "createMeasure.options.flood.heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水面相对计算水位的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "createMeasure.options.flood.waterColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "淹没区域颜色，默认 #22d3ee"
+            },
+            {
+              "name": "createMeasure.options.flood.dryColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "未淹没区域颜色，默认 #f59e0b"
+            },
+            {
+              "name": "createMeasure.options.flood.waterAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "淹没区域透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "createMeasure.options.flood.dryAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "未淹没区域透明度 0~1，默认 0.2"
+            },
+            {
+              "name": "createMeasure.options.flood.showFloodedCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制淹没单元，默认 true"
+            },
+            {
+              "name": "createMeasure.options.flood.showDryCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制未淹没单元，默认 false"
+            },
+            {
+              "name": "createMeasure.options.flood.showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样单元网格轮廓，默认 false"
+            },
+            {
+              "name": "createMeasure.options.flood.gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样单元网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "createMeasure.options.flood.showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示统计标注，默认 true"
+            },
+            {
+              "name": "createMeasure.options.flood.onFloodChange",
+              "type": "(result: FloodResult | null) => void",
+              "defaultValue": "-",
+              "description": "淹没分析结果变化回调"
             },
             {
               "name": "createMeasure.options.contourInterval",
               "type": "number",
               "defaultValue": "-",
-              "description": "等高线间隔（米）"
+              "description": "等高线等高距（米）"
             },
             {
               "name": "createMeasure.options.contourGridSize",
               "type": "number",
               "defaultValue": "-",
-              "description": "等高线网格行列"
+              "description": "等高线网格行列数"
             },
             {
               "name": "createMeasure.options.onContourShaderChange",
@@ -37715,6 +38150,659 @@
           "params": [],
           "usage": "window.FastX.MeasureType",
           "access": "window.FastX.MeasureType",
+          "generated": true
+        },
+        {
+          "id": "SlopeAnalyze",
+          "kind": "api",
+          "group": "measure",
+          "name": "SlopeAnalyze",
+          "cn": "坡度分析",
+          "title": "SlopeAnalyze（坡度分析）",
+          "description": "独立坡度分析类；矩形框选地形区域后按网格采样计算坡度，支持平滑贴图和网格色块两种渲染模式。",
+          "methods": [],
+          "types": [
+            "SlopeAnalyzeCreateOptions",
+            "SlopeAnalyzeOptions",
+            "SlopeAnalyzeStats",
+            "SlopeGrade",
+            "SlopeRenderMode"
+          ],
+          "params": [
+            {
+              "name": "gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，代表每行/列采样单元数量，默认 48"
+            },
+            {
+              "name": "fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "坡度覆盖层透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "renderMode",
+              "type": "SlopeRenderMode",
+              "defaultValue": "-",
+              "description": "渲染模式：raster 为平滑贴图，grid 为网格色块，默认 raster"
+            },
+            {
+              "name": "textureSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下的贴图分辨率（像素），默认 768"
+            },
+            {
+              "name": "smooth",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "raster 模式下是否对采样值做平滑插值，默认 true"
+            },
+            {
+              "name": "shadeStrength",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下地形明暗起伏强度 0~1，默认 0.35"
+            },
+            {
+              "name": "showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示内部采样网格线；关闭时仅保留分析范围外轮廓，默认 false"
+            },
+            {
+              "name": "gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "gridWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样网格线宽度（像素），默认 1"
+            },
+            {
+              "name": "heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格色块和轮廓线相对采样地形的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示最小/最大/平均坡度统计标注，默认 true"
+            },
+            {
+              "name": "grades",
+              "type": "SlopeGrade[]",
+              "defaultValue": "-",
+              "description": "坡度分级色带，按 maxSlope 从小到大匹配"
+            },
+            {
+              "name": "minSlope",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "最小坡度角（度）"
+            },
+            {
+              "name": "maxSlope",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "最大坡度角（度）"
+            },
+            {
+              "name": "avgSlope",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "平均坡度角（度）"
+            },
+            {
+              "name": "cellCount",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "参与统计的网格单元数量"
+            },
+            {
+              "name": "minHeight",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "分析范围内最小高程（米）"
+            },
+            {
+              "name": "maxHeight",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "分析范围内最大高程（米）"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getViewer('mapDemo')\nconst slope = new window.FastX.SlopeAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  slope: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.35,\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\nslope.complete()",
+          "access": "window.FastX.SlopeAnalyze",
+          "generated": true
+        },
+        {
+          "id": "AspectAnalyze",
+          "kind": "api",
+          "group": "measure",
+          "name": "AspectAnalyze",
+          "cn": "坡向/坡面分析",
+          "title": "AspectAnalyze（坡向/坡面分析）",
+          "description": "独立坡向/坡面分析类；矩形框选地形区域后按网格采样计算坡面朝向，支持平滑贴图和网格色块两种渲染模式。",
+          "methods": [],
+          "types": [
+            "AspectAnalyzeCreateOptions",
+            "AspectAnalyzeOptions",
+            "AspectAnalyzeStats",
+            "AspectGrade",
+            "AspectRenderMode"
+          ],
+          "params": [
+            {
+              "name": "gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，代表每行/列采样单元数量，默认 48"
+            },
+            {
+              "name": "fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "坡向覆盖层透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "renderMode",
+              "type": "AspectRenderMode",
+              "defaultValue": "-",
+              "description": "渲染模式：raster 为平滑贴图，grid 为网格色块，默认 raster"
+            },
+            {
+              "name": "textureSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下的贴图分辨率（像素），默认 768"
+            },
+            {
+              "name": "smooth",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "raster 模式下是否对采样值做平滑插值，默认 true"
+            },
+            {
+              "name": "shadeStrength",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "raster 模式下地形明暗起伏强度 0~1，默认 0.25"
+            },
+            {
+              "name": "showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示内部采样网格线；关闭时仅保留分析范围外轮廓，默认 false"
+            },
+            {
+              "name": "gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "gridWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样网格线宽度（像素），默认 1"
+            },
+            {
+              "name": "heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "网格色块和轮廓线相对采样地形的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示平均坡向、主导坡向和平地数量统计标注，默认 true"
+            },
+            {
+              "name": "flatSlopeThreshold",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于等于该坡度角时按平地处理，不参与坡向统计，默认 1 度"
+            },
+            {
+              "name": "flatColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "平地颜色，默认 #d1d5db"
+            },
+            {
+              "name": "grades",
+              "type": "AspectGrade[]",
+              "defaultValue": "-",
+              "description": "坡向分级色带，按角度区间匹配"
+            },
+            {
+              "name": "cellCount",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "参与统计的网格单元数量"
+            },
+            {
+              "name": "flatCount",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "被平地阈值过滤的网格单元数量"
+            },
+            {
+              "name": "meanAspect",
+              "type": "number | null",
+              "defaultValue": "必填",
+              "description": "平均坡向角（度，0 为北、90 为东；无有效坡向时为 null）"
+            },
+            {
+              "name": "dominantAspect",
+              "type": "string | null",
+              "defaultValue": "必填",
+              "description": "出现次数最多的坡向分级名称"
+            },
+            {
+              "name": "minHeight",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "分析范围内最小高程（米）"
+            },
+            {
+              "name": "maxHeight",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "分析范围内最大高程（米）"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getViewer('mapDemo')\nconst aspect = new window.FastX.AspectAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.94, 0]\n  ],\n  aspect: {\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    gridSize: 48,\n    textureSize: 768,\n    fillAlpha: 0.58,\n    smooth: true,\n    shadeStrength: 0.25,\n    flatSlopeThreshold: 1,\n    flatColor: '#d1d5db',\n    showGrid: false,\n    showStatsLabel: true\n  }\n})\n\naspect.complete()",
+          "access": "window.FastX.AspectAnalyze",
+          "generated": true
+        },
+        {
+          "id": "TerrainProfileAnalyze",
+          "kind": "api",
+          "group": "measure",
+          "name": "TerrainProfileAnalyze",
+          "cn": "地形剖面分析",
+          "title": "TerrainProfileAnalyze（地形剖面分析）",
+          "description": "独立地形剖面分析类；沿用户绘制折线采样地形高程，输出剖面采样点、统计结果和地图剖面线。",
+          "methods": [],
+          "types": [
+            "TerrainProfileAnalyzeCreateOptions",
+            "TerrainProfileAnalyzeOptions",
+            "TerrainProfilePoint",
+            "TerrainProfileResult",
+            "TerrainProfileStats"
+          ],
+          "params": [
+            {
+              "name": "sampleCount",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点数量，默认 120"
+            },
+            {
+              "name": "heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样线相对地形抬升高度，避免与地形闪烁，默认 2 米"
+            },
+            {
+              "name": "showProfileLine",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制采样后的剖面线，默认 true"
+            },
+            {
+              "name": "profileLineColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "剖面线颜色，默认 #59ff9b"
+            },
+            {
+              "name": "profileLineWidth",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "剖面线宽度（像素），默认 3"
+            },
+            {
+              "name": "showSamplePoints",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样点，默认 false"
+            },
+            {
+              "name": "samplePointEvery",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点抽稀间隔，每隔几个采样点显示一个，默认 8"
+            },
+            {
+              "name": "samplePointColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样点颜色，默认 #facc15"
+            },
+            {
+              "name": "samplePointSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样点大小（像素），默认 5"
+            },
+            {
+              "name": "showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示剖面统计标注，默认 true"
+            },
+            {
+              "name": "onProfileChange",
+              "type": "(result: TerrainProfileResult | null) => void",
+              "defaultValue": "-",
+              "description": "剖面结果变化回调；常用于示例页或业务面板绘制剖面曲线"
+            },
+            {
+              "name": "longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "经度（度）"
+            },
+            {
+              "name": "latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "纬度（度）"
+            },
+            {
+              "name": "height",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "地形高程（米）"
+            },
+            {
+              "name": "distance",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "距起点的累计水平距离（米）"
+            },
+            {
+              "name": "slopeDegree",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "与前一个采样点之间的坡度角（度），首点为 0"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getViewer('mapDemo')\nconst profile = new window.FastX.TerrainProfileAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.39, 39.91, 0],\n    [116.44, 39.94, 0]\n  ],\n  terrainProfile: {\n    sampleCount: 120,\n    heightOffset: 2,\n    showProfileLine: true,\n    profileLineColor: '#59ff9b',\n    profileLineWidth: 3,\n    showSamplePoints: false,\n    samplePointEvery: 8,\n    samplePointColor: '#facc15',\n    samplePointSize: 5,\n    showStatsLabel: true,\n    onProfileChange: (result) => console.log(result)\n  }\n})\n\nprofile.complete()\nconst result = profile.getProfile()",
+          "access": "window.FastX.TerrainProfileAnalyze",
+          "generated": true
+        },
+        {
+          "id": "CutFillAnalyze",
+          "kind": "api",
+          "group": "measure",
+          "name": "CutFillAnalyze",
+          "cn": "挖填方分析",
+          "title": "CutFillAnalyze（挖填方分析）",
+          "description": "独立挖填方分析类；多边形框选地形区域后按基准高程统计挖方、填方体积，并支持网格单元着色展示。",
+          "methods": [],
+          "types": [
+            "CutFillAnalyzeCreateOptions",
+            "CutFillAnalyzeOptions",
+            "CutFillBaseHeightMode",
+            "CutFillCell",
+            "CutFillCellKind",
+            "CutFillResult",
+            "CutFillStats"
+          ],
+          "params": [
+            {
+              "name": "gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，默认 36"
+            },
+            {
+              "name": "baseHeightMode",
+              "type": "CutFillBaseHeightMode",
+              "defaultValue": "-",
+              "description": "基准高程模式，默认 average"
+            },
+            {
+              "name": "baseHeight",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "自定义基准高程；仅 baseHeightMode 为 custom 时生效"
+            },
+            {
+              "name": "heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "采样面相对地形抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "tolerance",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于该高差时视为平衡单元，默认 0.1 米"
+            },
+            {
+              "name": "cutColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "挖方颜色，默认 #ef4444"
+            },
+            {
+              "name": "fillColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "填方颜色，默认 #22c55e"
+            },
+            {
+              "name": "flatColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "平衡单元颜色，默认 #94a3b8"
+            },
+            {
+              "name": "fillAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单元填充透明度 0~1，默认 0.52"
+            },
+            {
+              "name": "showCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制采样单元，默认 true"
+            },
+            {
+              "name": "showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样单元网格轮廓，默认 true"
+            },
+            {
+              "name": "gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样单元网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示统计标注，默认 true"
+            },
+            {
+              "name": "onCutFillChange",
+              "type": "(result: CutFillResult | null) => void",
+              "defaultValue": "-",
+              "description": "挖填方结果变化回调"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})\n\ncutFill.complete()\nconst result = cutFill.getResult()",
+          "access": "window.FastX.CutFillAnalyze",
+          "generated": true
+        },
+        {
+          "id": "FloodAnalyze",
+          "kind": "api",
+          "group": "measure",
+          "name": "FloodAnalyze",
+          "cn": "淹没分析",
+          "title": "FloodAnalyze（淹没分析）",
+          "description": "独立淹没分析类；多边形框选地形区域后按水位统计淹没面积、蓄水体积和最大水深，并支持淹没单元着色展示。",
+          "methods": [],
+          "types": [
+            "FloodAnalyzeCreateOptions",
+            "FloodAnalyzeOptions",
+            "FloodCell",
+            "FloodResult",
+            "FloodStats",
+            "FloodWaterLevelMode"
+          ],
+          "params": [
+            {
+              "name": "gridSize",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "单边采样网格密度，默认 40"
+            },
+            {
+              "name": "waterLevelMode",
+              "type": "FloodWaterLevelMode",
+              "defaultValue": "-",
+              "description": "水位解析模式，默认 relativeToMin"
+            },
+            {
+              "name": "waterLevel",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水位值；absolute 为绝对高程，其余模式为相对高差，默认 30 米"
+            },
+            {
+              "name": "tolerance",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "小于该水深时视为未淹没，默认 0 米"
+            },
+            {
+              "name": "heightOffset",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "水面相对计算水位的抬升高度，避免与地形闪烁，默认 1.5 米"
+            },
+            {
+              "name": "waterColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "淹没区域颜色，默认 #22d3ee"
+            },
+            {
+              "name": "dryColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "未淹没区域颜色，默认 #f59e0b"
+            },
+            {
+              "name": "waterAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "淹没区域透明度 0~1，默认 0.58"
+            },
+            {
+              "name": "dryAlpha",
+              "type": "number",
+              "defaultValue": "-",
+              "description": "未淹没区域透明度 0~1，默认 0.2"
+            },
+            {
+              "name": "showFloodedCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制淹没单元，默认 true"
+            },
+            {
+              "name": "showDryCells",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否绘制未淹没单元，默认 false"
+            },
+            {
+              "name": "showGrid",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示采样单元网格轮廓，默认 false"
+            },
+            {
+              "name": "gridColor",
+              "type": "string",
+              "defaultValue": "-",
+              "description": "采样单元网格线颜色，默认 #ffffff"
+            },
+            {
+              "name": "showStatsLabel",
+              "type": "boolean",
+              "defaultValue": "-",
+              "description": "是否显示统计标注，默认 true"
+            },
+            {
+              "name": "onFloodChange",
+              "type": "(result: FloodResult | null) => void",
+              "defaultValue": "-",
+              "description": "淹没分析结果变化回调"
+            },
+            {
+              "name": "longitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "单元中心经度（度）"
+            },
+            {
+              "name": "latitude",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "单元中心纬度（度）"
+            },
+            {
+              "name": "terrainHeight",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "单元中心地形高程（米）"
+            },
+            {
+              "name": "waterDepth",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "当前单元水深（米），未淹没时为 0"
+            },
+            {
+              "name": "area",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "当前单元面积（平方米）"
+            },
+            {
+              "name": "volume",
+              "type": "number",
+              "defaultValue": "必填",
+              "description": "当前单元蓄水体积（立方米）"
+            },
+            {
+              "name": "flooded",
+              "type": "boolean",
+              "defaultValue": "必填",
+              "description": "当前单元是否被淹没"
+            }
+          ],
+          "usage": "const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})\n\nflood.complete()\nconst result = flood.getResult()",
+          "access": "window.FastX.FloodAnalyze",
           "generated": true
         },
         {
@@ -60285,6 +61373,36 @@
           "params": [],
           "usage": "DEFAULT_POINT_AGGREGATION_STYLE()",
           "access": "import { DEFAULT_POINT_AGGREGATION_STYLE } from 'fastx-sdk'",
+          "generated": true
+        },
+        {
+          "id": "DEFAULT_SLOPE_GRADES",
+          "kind": "api",
+          "group": "tools",
+          "name": "DEFAULT_SLOPE_GRADES",
+          "cn": "坡度默认色带",
+          "title": "DEFAULT_SLOPE_GRADES（坡度默认色带）",
+          "description": "坡度分析默认分级色带，可直接复用或复制后按业务调整。",
+          "methods": [],
+          "types": [],
+          "params": [],
+          "usage": "const grades = window.FastX.DEFAULT_SLOPE_GRADES",
+          "access": "import { DEFAULT_SLOPE_GRADES } from 'fastx-sdk'",
+          "generated": true
+        },
+        {
+          "id": "DEFAULT_ASPECT_GRADES",
+          "kind": "api",
+          "group": "tools",
+          "name": "DEFAULT_ASPECT_GRADES",
+          "cn": "坡向默认色带",
+          "title": "DEFAULT_ASPECT_GRADES（坡向默认色带）",
+          "description": "坡向/坡面分析默认方向色带，可直接复用或复制后按业务调整。",
+          "methods": [],
+          "types": [],
+          "params": [],
+          "usage": "const grades = window.FastX.DEFAULT_ASPECT_GRADES",
+          "access": "import { DEFAULT_ASPECT_GRADES } from 'fastx-sdk'",
           "generated": true
         },
         {
