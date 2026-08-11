@@ -29,6 +29,20 @@ import type PolyLine from '../Draw/PolyLine'
 import type PolyLineCollection from '../Draw/PolyLine/PolyLineCollection'
 import type Polygon from '../Draw/Polygon'
 import type PolygonCollection from '../Draw/Polygon/PolygonCollection'
+import type StraightArrow from '../Draw/StraightArrow'
+import type StraightArrowCollection from '../Draw/StraightArrow/StraightArrowCollection'
+import type FineStraightArrow from '../Draw/FineStraightArrow'
+import type FineStraightArrowCollection from '../Draw/FineStraightArrow/FineStraightArrowCollection'
+import type CurveArrow from '../Draw/CurveArrow'
+import type CurveArrowCollection from '../Draw/CurveArrow/CurveArrowCollection'
+import type AttackDirectionArrow from '../Draw/AttackDirectionArrow'
+import type AttackDirectionArrowCollection from '../Draw/AttackDirectionArrow/AttackDirectionArrowCollection'
+import type DoubleArrow from '../Draw/DoubleArrow'
+import type DoubleArrowCollection from '../Draw/DoubleArrow/DoubleArrowCollection'
+import type SwallowtailAttackArrow from '../Draw/SwallowtailAttackArrow'
+import type SwallowtailAttackArrowCollection from '../Draw/SwallowtailAttackArrow/SwallowtailAttackArrowCollection'
+import type PincerArrow from '../Draw/PincerArrow'
+import type PincerArrowCollection from '../Draw/PincerArrow/PincerArrowCollection'
 import type Circle from '../Draw/Circle'
 import type CircleCollection from '../Draw/Circle/CircleCollection'
 import type Rectangle from '../Draw/Rectangle'
@@ -2150,6 +2164,182 @@ export interface PolygonSnapshot {
   description?: string
 }
 
+// --- Draw / PlotArrow 共享类型（直箭头、曲线箭头、进攻方向等面状箭头） ---
+
+export type PlotArrowKind =
+  | 'straight'
+  | 'fineStraight'
+  | 'curve'
+  | 'attackDirection'
+  | 'double'
+  | 'swallowtailAttack'
+  | 'pincer'
+
+export type PlotArrowLngLatTuple = readonly [lng: number, lat: number, height?: number]
+export type PlotArrowVertexInput = Cartesian3 | LngLatHeight | PlotArrowLngLatTuple
+
+export interface PlotArrowStyleOptions {
+  /** 为 true（默认）时，按计算后的顶点高程绘制 */
+  perPositionHeight?: boolean
+  arcType?: Cesium.ArcType
+  granularity?: number
+  shadows?: Cesium.ShadowMode
+  distanceDisplayCondition?: Cesium.DistanceDisplayCondition
+  classificationType?: Cesium.ClassificationType
+  zIndex?: number
+}
+
+export interface PlotArrowShapeOptions {
+  /** 箭身基础宽度（米）；不传时按整体长度自动估算 */
+  width?: number
+  /** 箭头宽度相对基础宽度比例 */
+  headWidthRatio?: number
+  /** 箭头长度相对整体长度比例 */
+  headLengthRatio?: number
+  /** 箭颈宽度相对基础宽度比例 */
+  neckWidthRatio?: number
+  /** 箭尾宽度相对基础宽度比例 */
+  tailWidthRatio?: number
+  /** 燕尾凹口深度相对基础宽度比例 */
+  swallowTailRatio?: number
+  /** 曲线控制点平滑采样密度 */
+  curveSegments?: number
+  /** 曲线外扩强度，双箭头/钳击箭头用于拉开左右翼 */
+  curveTension?: number
+}
+
+export interface AddPlotArrowOptions extends PlotArrowShapeOptions {
+  id?: string
+  /** 箭头控制点（度 / 米），不同箭头类型的最少点数不同 */
+  positions: PlotArrowVertexInput[] | number[][]
+  /** 空域管理鼠标绘制草稿：放宽顶点数校验，取消时 `remove(id)` 即可不留痕 */
+  areaDraft?: boolean
+  /** 固定绘制高度（米）；不传时使用控制点自身高度 */
+  height?: number
+  /** 是否贴地，默认 false；贴地时会走 GroundPrimitive/贴地 Entity 语义 */
+  clampToGround?: boolean
+  style?: PlotArrowStyleOptions
+  color?: string
+  alpha?: number
+  showFill?: boolean
+  outline?: boolean
+  outlineColor?: string
+  outlineAlpha?: number
+  outlineWidth?: number
+  show?: boolean
+  description?: string
+  targetData?: Record<string, unknown>
+}
+
+export interface UpdatePlotArrowProperties extends PlotArrowShapeOptions {
+  positions?: PlotArrowVertexInput[] | number[][]
+  /** 传 false 且原为草稿时，提交为正式箭头 */
+  areaDraft?: boolean
+  height?: number
+  clampToGround?: boolean
+  color?: string | Color
+  alpha?: number
+  showFill?: boolean
+  outline?: boolean
+  outlineColor?: string | Color
+  outlineAlpha?: number
+  outlineWidth?: number
+  show?: boolean
+  description?: string
+  targetData?: Record<string, unknown>
+  style?: PlotArrowStyleOptions
+}
+
+export interface PlotArrowSnapshot {
+  id: string
+  kind: PlotArrowKind
+  /** 原始控制点 [lng, lat, h?][] */
+  positions: number[][]
+  /** 当前箭头面顶点；复杂箭头可能包含多个面 */
+  polygons: number[][][]
+  vertexCount: number
+  colorCss?: string
+  showFill: boolean
+  outline?: boolean
+  outlineColorCss?: string
+  outlineWidth?: number
+  height?: number
+  clampToGround: boolean
+  show: boolean
+  targetData: Record<string, unknown>
+  description?: string
+}
+
+export interface PlotArrowCollectionAddItem extends AddPlotArrowOptions {
+  kind?: PlotArrowKind
+}
+
+export interface PlotArrowCollectionUpdateProps extends UpdatePlotArrowProperties {
+  kind?: PlotArrowKind
+}
+
+export interface PlotArrowCollectionUpdateEntry extends PlotArrowCollectionUpdateProps {
+  id: string
+}
+
+export interface PlotArrowCollectionSnapshot extends PlotArrowSnapshot {}
+
+export type AddStraightArrowOptions = AddPlotArrowOptions
+export type UpdateStraightArrowProperties = UpdatePlotArrowProperties
+export type StraightArrowSnapshot = PlotArrowSnapshot
+export type StraightArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type StraightArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type StraightArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type StraightArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddFineStraightArrowOptions = AddPlotArrowOptions
+export type UpdateFineStraightArrowProperties = UpdatePlotArrowProperties
+export type FineStraightArrowSnapshot = PlotArrowSnapshot
+export type FineStraightArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type FineStraightArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type FineStraightArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type FineStraightArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddCurveArrowOptions = AddPlotArrowOptions
+export type UpdateCurveArrowProperties = UpdatePlotArrowProperties
+export type CurveArrowSnapshot = PlotArrowSnapshot
+export type CurveArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type CurveArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type CurveArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type CurveArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddAttackDirectionArrowOptions = AddPlotArrowOptions
+export type UpdateAttackDirectionArrowProperties = UpdatePlotArrowProperties
+export type AttackDirectionArrowSnapshot = PlotArrowSnapshot
+export type AttackDirectionArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type AttackDirectionArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type AttackDirectionArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type AttackDirectionArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddDoubleArrowOptions = AddPlotArrowOptions
+export type UpdateDoubleArrowProperties = UpdatePlotArrowProperties
+export type DoubleArrowSnapshot = PlotArrowSnapshot
+export type DoubleArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type DoubleArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type DoubleArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type DoubleArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddSwallowtailAttackArrowOptions = AddPlotArrowOptions
+export type UpdateSwallowtailAttackArrowProperties = UpdatePlotArrowProperties
+export type SwallowtailAttackArrowSnapshot = PlotArrowSnapshot
+export type SwallowtailAttackArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type SwallowtailAttackArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type SwallowtailAttackArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type SwallowtailAttackArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
+export type AddPincerArrowOptions = AddPlotArrowOptions
+export type UpdatePincerArrowProperties = UpdatePlotArrowProperties
+export type PincerArrowSnapshot = PlotArrowSnapshot
+export type PincerArrowCollectionAddItem = PlotArrowCollectionAddItem
+export type PincerArrowCollectionUpdateProps = PlotArrowCollectionUpdateProps
+export type PincerArrowCollectionUpdateEntry = PlotArrowCollectionUpdateEntry
+export type PincerArrowCollectionSnapshot = PlotArrowCollectionSnapshot
+
 // --- Draw / PolylineVolume / PolylineVolumeCollection (Draw/PolylineVolume/PolylineVolumeCollection.ts) ---
 
 export interface PolylineVolumeCollectionAddItem {
@@ -2989,6 +3179,13 @@ export type AreaDrawShapeType =
   | 'model'
   | 'polyline'
   | 'polygon'
+  | 'straightArrow'
+  | 'fineStraightArrow'
+  | 'curveArrow'
+  | 'attackDirectionArrow'
+  | 'doubleArrow'
+  | 'swallowtailAttackArrow'
+  | 'pincerArrow'
   | 'rectangle'
   | 'circle'
   | 'sector'
@@ -3103,6 +3300,13 @@ export interface AreaManagerEntityApis {
   model: Model
   polyLine: PolyLine
   polygon: Polygon
+  straightArrow: StraightArrow
+  fineStraightArrow: FineStraightArrow
+  curveArrow: CurveArrow
+  attackDirectionArrow: AttackDirectionArrow
+  doubleArrow: DoubleArrow
+  swallowtailAttackArrow: SwallowtailAttackArrow
+  pincerArrow: PincerArrow
   circle: Circle
   rectangle: Rectangle
   sector: Sector
@@ -3125,6 +3329,13 @@ export interface AreaManagerPrimitiveApis {
   modelCollection: ModelCollection
   polyLineCollection: PolyLineCollection
   polygonCollection: PolygonCollection
+  straightArrowCollection: StraightArrowCollection
+  fineStraightArrowCollection: FineStraightArrowCollection
+  curveArrowCollection: CurveArrowCollection
+  attackDirectionArrowCollection: AttackDirectionArrowCollection
+  doubleArrowCollection: DoubleArrowCollection
+  swallowtailAttackArrowCollection: SwallowtailAttackArrowCollection
+  pincerArrowCollection: PincerArrowCollection
   circleCollection: CircleCollection
   rectangleCollection: RectangleCollection
   sectorCollection: SectorCollection

@@ -21,6 +21,20 @@ import PolyLine from '../Draw/PolyLine'
 import PolyLineCollection from '../Draw/PolyLine/PolyLineCollection'
 import Polygon from '../Draw/Polygon'
 import PolygonCollection from '../Draw/Polygon/PolygonCollection'
+import StraightArrow from '../Draw/StraightArrow'
+import StraightArrowCollection from '../Draw/StraightArrow/StraightArrowCollection'
+import FineStraightArrow from '../Draw/FineStraightArrow'
+import FineStraightArrowCollection from '../Draw/FineStraightArrow/FineStraightArrowCollection'
+import CurveArrow from '../Draw/CurveArrow'
+import CurveArrowCollection from '../Draw/CurveArrow/CurveArrowCollection'
+import AttackDirectionArrow from '../Draw/AttackDirectionArrow'
+import AttackDirectionArrowCollection from '../Draw/AttackDirectionArrow/AttackDirectionArrowCollection'
+import DoubleArrow from '../Draw/DoubleArrow'
+import DoubleArrowCollection from '../Draw/DoubleArrow/DoubleArrowCollection'
+import SwallowtailAttackArrow from '../Draw/SwallowtailAttackArrow'
+import SwallowtailAttackArrowCollection from '../Draw/SwallowtailAttackArrow/SwallowtailAttackArrowCollection'
+import PincerArrow from '../Draw/PincerArrow'
+import PincerArrowCollection from '../Draw/PincerArrow/PincerArrowCollection'
 import Circle from '../Draw/Circle'
 import CircleCollection from '../Draw/Circle/CircleCollection'
 import Rectangle from '../Draw/Rectangle'
@@ -57,10 +71,15 @@ import type {
   AddBoxOptions,
   AddCircleOptions,
   AddCorridorOptions,
+  AddAttackDirectionArrowOptions,
   AddCylinderOptions,
+  AddCurveArrowOptions,
+  AddDoubleArrowOptions,
   AddEllipsoidOptions,
+  AddFineStraightArrowOptions,
   AddLabelOptions,
   AddModelOptions,
+  AddPincerArrowOptions,
   AddPathOptions,
   AddPlaneOptions,
   AddPointOptions,
@@ -70,6 +89,8 @@ import type {
   AddRectangleOptions,
   AddRunwayOptions,
   AddSectorOptions,
+  AddStraightArrowOptions,
+  AddSwallowtailAttackArrowOptions,
   AddWallOptions,
   AreaDrawDirectParams,
   AreaDrawOutput,
@@ -103,6 +124,13 @@ const SHAPE_RULES: Record<AreaDrawShapeType, AreaShapeInteractionRule> = {
   model: { mode: 'single', minPoints: 1, interactive: true, supportsPrimitive: false },
   polyline: { mode: 'polyline', minPoints: 2, interactive: true, supportsPrimitive: true },
   polygon: { mode: 'polyline', minPoints: 3, interactive: true, supportsPrimitive: true },
+  straightArrow: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
+  fineStraightArrow: { mode: 'twoClick', minPoints: 2, interactive: true, supportsPrimitive: true },
+  curveArrow: { mode: 'polyline', minPoints: 2, interactive: true, supportsPrimitive: true },
+  attackDirectionArrow: { mode: 'polyline', minPoints: 3, interactive: true, supportsPrimitive: true },
+  doubleArrow: { mode: 'polyline', minPoints: 3, interactive: true, supportsPrimitive: true },
+  swallowtailAttackArrow: { mode: 'polyline', minPoints: 3, interactive: true, supportsPrimitive: true },
+  pincerArrow: { mode: 'polyline', minPoints: 3, interactive: true, supportsPrimitive: true },
   corridor: { mode: 'polyline', minPoints: 2, interactive: true, supportsPrimitive: true },
   wall: { mode: 'polyline', minPoints: 2, interactive: true, supportsPrimitive: false },
   polylineVolume: { mode: 'polyline', minPoints: 2, interactive: true, supportsPrimitive: true },
@@ -288,6 +316,13 @@ function toCollectionItem(shapeType: AreaDrawShapeType, params: AreaDrawDirectPa
     }
     case 'polyline':
     case 'polygon':
+    case 'straightArrow':
+    case 'fineStraightArrow':
+    case 'curveArrow':
+    case 'attackDirectionArrow':
+    case 'doubleArrow':
+    case 'swallowtailAttackArrow':
+    case 'pincerArrow':
     case 'corridor':
     case 'wall':
     case 'polylineVolume': {
@@ -408,6 +443,20 @@ function drawWithEntity(
       return apis.polyLine.add(viewer, opts as AddPolylineOptions)
     case 'polygon':
       return apis.polygon.add(viewer, opts as AddPolygonOptions)
+    case 'straightArrow':
+      return apis.straightArrow.add(viewer, opts as AddStraightArrowOptions)
+    case 'fineStraightArrow':
+      return apis.fineStraightArrow.add(viewer, opts as AddFineStraightArrowOptions)
+    case 'curveArrow':
+      return apis.curveArrow.add(viewer, opts as AddCurveArrowOptions)
+    case 'attackDirectionArrow':
+      return apis.attackDirectionArrow.add(viewer, opts as AddAttackDirectionArrowOptions)
+    case 'doubleArrow':
+      return apis.doubleArrow.add(viewer, opts as AddDoubleArrowOptions)
+    case 'swallowtailAttackArrow':
+      return apis.swallowtailAttackArrow.add(viewer, opts as AddSwallowtailAttackArrowOptions)
+    case 'pincerArrow':
+      return apis.pincerArrow.add(viewer, opts as AddPincerArrowOptions)
     case 'rectangle':
       return apis.rectangle.add(viewer, opts as AddRectangleOptions)
     case 'circle':
@@ -475,6 +524,20 @@ function drawWithPrimitive(
       return firstPrimitiveId(apis.polyLineCollection.addPolylines(viewer, [withId as never]), id)
     case 'polygon':
       return firstPrimitiveId(apis.polygonCollection.addPolygons(viewer, [withId as never]), id)
+    case 'straightArrow':
+      return firstPrimitiveId(apis.straightArrowCollection.addStraightArrows(viewer, [withId as never]), id)
+    case 'fineStraightArrow':
+      return firstPrimitiveId(apis.fineStraightArrowCollection.addFineStraightArrows(viewer, [withId as never]), id)
+    case 'curveArrow':
+      return firstPrimitiveId(apis.curveArrowCollection.addCurveArrows(viewer, [withId as never]), id)
+    case 'attackDirectionArrow':
+      return firstPrimitiveId(apis.attackDirectionArrowCollection.addAttackDirectionArrows(viewer, [withId as never]), id)
+    case 'doubleArrow':
+      return firstPrimitiveId(apis.doubleArrowCollection.addDoubleArrows(viewer, [withId as never]), id)
+    case 'swallowtailAttackArrow':
+      return firstPrimitiveId(apis.swallowtailAttackArrowCollection.addSwallowtailAttackArrows(viewer, [withId as never]), id)
+    case 'pincerArrow':
+      return firstPrimitiveId(apis.pincerArrowCollection.addPincerArrows(viewer, [withId as never]), id)
     case 'circle':
       return firstPrimitiveId(apis.circleCollection.addCircles(viewer, [withId as never]), id)
     case 'rectangle':
@@ -516,6 +579,20 @@ function createDefaultDrawApis(): AreaManagerDrawApis {
     polyLineCollection: new PolyLineCollection(),
     polygon: new Polygon(),
     polygonCollection: new PolygonCollection(),
+    straightArrow: new StraightArrow(),
+    straightArrowCollection: new StraightArrowCollection(),
+    fineStraightArrow: new FineStraightArrow(),
+    fineStraightArrowCollection: new FineStraightArrowCollection(),
+    curveArrow: new CurveArrow(),
+    curveArrowCollection: new CurveArrowCollection(),
+    attackDirectionArrow: new AttackDirectionArrow(),
+    attackDirectionArrowCollection: new AttackDirectionArrowCollection(),
+    doubleArrow: new DoubleArrow(),
+    doubleArrowCollection: new DoubleArrowCollection(),
+    swallowtailAttackArrow: new SwallowtailAttackArrow(),
+    swallowtailAttackArrowCollection: new SwallowtailAttackArrowCollection(),
+    pincerArrow: new PincerArrow(),
+    pincerArrowCollection: new PincerArrowCollection(),
     circle: new Circle(),
     circleCollection: new CircleCollection(),
     rectangle: new Rectangle(),

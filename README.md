@@ -148,6 +148,7 @@ npm run build:Electron:linux:rpm    # 打包 rpm 全架构
 | PolyLine 线（虚线 / 发光 / 箭头 / 贴地 / 流动 / 渐变等） | ✅          | ✅             |
 | Circle 圆                                                | ✅          | ✅             |
 | Polygon 多边形                                           | ✅          | ✅             |
+| 军事箭头标绘（直箭头 / 双箭头 / 钳击箭头等）             | ✅          | ✅             |
 | Sector 扇形                                              | ✅          | ✅             |
 | Rectangle 矩形                                           | ✅          | ✅             |
 | Cylinder 圆锥 / 圆柱                                     | ✅          | ✅             |

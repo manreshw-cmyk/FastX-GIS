@@ -10,10 +10,15 @@ import type {
   AddBoxOptions,
   AddCircleOptions,
   AddCorridorOptions,
+  AddAttackDirectionArrowOptions,
   AddCylinderOptions,
+  AddCurveArrowOptions,
+  AddDoubleArrowOptions,
   AddEllipsoidOptions,
+  AddFineStraightArrowOptions,
   AddLabelOptions,
   AddModelOptions,
+  AddPincerArrowOptions,
   AddPlaneOptions,
   AddPointOptions,
   AddPolygonOptions,
@@ -22,6 +27,8 @@ import type {
   AddRectangleOptions,
   AddRunwayOptions,
   AddSectorOptions,
+  AddStraightArrowOptions,
+  AddSwallowtailAttackArrowOptions,
   AddWallOptions,
   AreaDrawShapeType,
   AreaDrawStartParams,
@@ -48,6 +55,13 @@ export const DRAFT_ID_PREFIX: Partial<Record<AreaDrawShapeType, string>> = {
   model: 'md',
   polyline: 'pl',
   polygon: 'poly',
+  straightArrow: 'sta',
+  fineStraightArrow: 'fsa',
+  curveArrow: 'cua',
+  attackDirectionArrow: 'ada',
+  doubleArrow: 'dba',
+  swallowtailAttackArrow: 'saa',
+  pincerArrow: 'pca',
   circle: 'cir',
   sector: 'sec',
   rectangle: 'rect',
@@ -83,6 +97,27 @@ function lngLatAtGround(p: LngLatHeight): LngLatHeight {
 }
 
 /** 将 targetData 中的材质/样式字段提升到顶层，保证 syncShapeDraft / finish 每次都能带上 */
+const PLOT_ARROW_HOIST_KEYS = [
+  'color',
+  'alpha',
+  'showFill',
+  'outline',
+  'outlineColor',
+  'outlineAlpha',
+  'outlineWidth',
+  'height',
+  'clampToGround',
+  'width',
+  'headWidthRatio',
+  'headLengthRatio',
+  'neckWidthRatio',
+  'tailWidthRatio',
+  'swallowTailRatio',
+  'curveSegments',
+  'curveTension',
+  'style',
+] as const
+
 const MATERIAL_HOIST_KEYS: Partial<Record<AreaDrawShapeType, readonly string[]>> = {
   wall: [
     'materialType',
@@ -126,6 +161,13 @@ const MATERIAL_HOIST_KEYS: Partial<Record<AreaDrawShapeType, readonly string[]>>
     'outlineAlpha',
     'outlineWidth',
   ],
+  straightArrow: PLOT_ARROW_HOIST_KEYS,
+  fineStraightArrow: PLOT_ARROW_HOIST_KEYS,
+  curveArrow: PLOT_ARROW_HOIST_KEYS,
+  attackDirectionArrow: PLOT_ARROW_HOIST_KEYS,
+  doubleArrow: PLOT_ARROW_HOIST_KEYS,
+  swallowtailAttackArrow: PLOT_ARROW_HOIST_KEYS,
+  pincerArrow: PLOT_ARROW_HOIST_KEYS,
 }
 
 function hoistMaterialFields(
@@ -182,6 +224,21 @@ export function buildShapeDrawOptions(
     case 'polygon': {
       if (pts.length < 1) return null
       return { ...base, areaDraft, positions: pts.map(cartesianToLngLat) }
+    }
+    case 'straightArrow':
+    case 'fineStraightArrow':
+    case 'curveArrow':
+    case 'attackDirectionArrow':
+    case 'doubleArrow':
+    case 'swallowtailAttackArrow':
+    case 'pincerArrow': {
+      if (pts.length < 1) return null
+      return {
+        ...base,
+        areaDraft,
+        positions: toPolylineTuples(pts),
+        draftCartesians: pts.map((p) => Cesium.Cartesian3.clone(p)),
+      }
     }
     case 'rectangle': {
       if (pts.length < 1) return null
@@ -363,6 +420,62 @@ export function resolveDraftOps(shapeType: AreaDrawShapeType, apis: AreaManagerD
         remove: (id) => apis.polygon.remove(id),
         getEntity: (id) => apis.polygon.getEntity(id),
         getTargetData: (id) => apis.polygon.getTargetData(id),
+      }
+    case 'straightArrow':
+      return {
+        add: (v, o) => apis.straightArrow.add(v, draftOpts<AddStraightArrowOptions>(o)),
+        update: (id, o) => apis.straightArrow.updateStraightArrow(id, o),
+        remove: (id) => apis.straightArrow.remove(id),
+        getEntity: (id) => apis.straightArrow.getEntity(id),
+        getTargetData: (id) => apis.straightArrow.getTargetData(id),
+      }
+    case 'fineStraightArrow':
+      return {
+        add: (v, o) => apis.fineStraightArrow.add(v, draftOpts<AddFineStraightArrowOptions>(o)),
+        update: (id, o) => apis.fineStraightArrow.updateFineStraightArrow(id, o),
+        remove: (id) => apis.fineStraightArrow.remove(id),
+        getEntity: (id) => apis.fineStraightArrow.getEntity(id),
+        getTargetData: (id) => apis.fineStraightArrow.getTargetData(id),
+      }
+    case 'curveArrow':
+      return {
+        add: (v, o) => apis.curveArrow.add(v, draftOpts<AddCurveArrowOptions>(o)),
+        update: (id, o) => apis.curveArrow.updateCurveArrow(id, o),
+        remove: (id) => apis.curveArrow.remove(id),
+        getEntity: (id) => apis.curveArrow.getEntity(id),
+        getTargetData: (id) => apis.curveArrow.getTargetData(id),
+      }
+    case 'attackDirectionArrow':
+      return {
+        add: (v, o) => apis.attackDirectionArrow.add(v, draftOpts<AddAttackDirectionArrowOptions>(o)),
+        update: (id, o) => apis.attackDirectionArrow.updateAttackDirectionArrow(id, o),
+        remove: (id) => apis.attackDirectionArrow.remove(id),
+        getEntity: (id) => apis.attackDirectionArrow.getEntity(id),
+        getTargetData: (id) => apis.attackDirectionArrow.getTargetData(id),
+      }
+    case 'doubleArrow':
+      return {
+        add: (v, o) => apis.doubleArrow.add(v, draftOpts<AddDoubleArrowOptions>(o)),
+        update: (id, o) => apis.doubleArrow.updateDoubleArrow(id, o),
+        remove: (id) => apis.doubleArrow.remove(id),
+        getEntity: (id) => apis.doubleArrow.getEntity(id),
+        getTargetData: (id) => apis.doubleArrow.getTargetData(id),
+      }
+    case 'swallowtailAttackArrow':
+      return {
+        add: (v, o) => apis.swallowtailAttackArrow.add(v, draftOpts<AddSwallowtailAttackArrowOptions>(o)),
+        update: (id, o) => apis.swallowtailAttackArrow.updateSwallowtailAttackArrow(id, o),
+        remove: (id) => apis.swallowtailAttackArrow.remove(id),
+        getEntity: (id) => apis.swallowtailAttackArrow.getEntity(id),
+        getTargetData: (id) => apis.swallowtailAttackArrow.getTargetData(id),
+      }
+    case 'pincerArrow':
+      return {
+        add: (v, o) => apis.pincerArrow.add(v, draftOpts<AddPincerArrowOptions>(o)),
+        update: (id, o) => apis.pincerArrow.updatePincerArrow(id, o),
+        remove: (id) => apis.pincerArrow.remove(id),
+        getEntity: (id) => apis.pincerArrow.getEntity(id),
+        getTargetData: (id) => apis.pincerArrow.getTargetData(id),
       }
     case 'circle':
       return {

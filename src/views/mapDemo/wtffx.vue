@@ -4,6 +4,7 @@ import {
   MeasureType,
   type CutFillAnalyzeOptions,
   type CutFillBaseHeightMode,
+  type CutFillRenderMode,
   type CutFillResult,
 } from '../../FastX'
 import QuantitativeDemoPanel from './components/QuantitativeDemoPanel.vue'
@@ -18,6 +19,11 @@ const TYPE_OPTIONS = [
   },
 ] as const
 
+const RENDER_MODE_OPTIONS: Array<{ label: string; value: CutFillRenderMode }> = [
+  { label: '平滑贴图', value: 'raster' },
+  { label: '网格色块', value: 'grid' },
+]
+
 const BASE_HEIGHT_MODE_OPTIONS: Array<{ label: string; value: CutFillBaseHeightMode }> = [
   { label: '平均', value: 'average' },
   { label: '最低', value: 'min' },
@@ -27,6 +33,10 @@ const BASE_HEIGHT_MODE_OPTIONS: Array<{ label: string; value: CutFillBaseHeightM
 
 interface CutFillDemoForm {
   gridSize: number
+  renderMode: CutFillRenderMode
+  textureSize: number
+  smooth: boolean
+  clipToPolygon: boolean
   baseHeightMode: CutFillBaseHeightMode
   baseHeight: number
   heightOffset: number
@@ -41,9 +51,13 @@ interface CutFillDemoForm {
   showStatsLabel: boolean
 }
 
-/** 示例页默认参数，与 API 手册示例保持一致。 */
+/** 示例页默认参数，与 API 手册示例代码保持一致。 */
 const DEFAULT_FORM: CutFillDemoForm = {
   gridSize: 36,
+  renderMode: 'raster',
+  textureSize: 768,
+  smooth: true,
+  clipToPolygon: true,
   baseHeightMode: 'average',
   baseHeight: 0,
   heightOffset: 1.5,
@@ -65,6 +79,8 @@ const { measuring, measureStyle, startMeasure, clearResults, currentHint } =
   useQuantitativeDemo([...TYPE_OPTIONS])
 
 const stats = computed(() => cutFillResult.value?.stats)
+const showGridControls = computed(() => form.renderMode === 'grid')
+const resultVisibleLabel = computed(() => (form.renderMode === 'raster' ? '显示贴图' : '采样单元'))
 
 /** 格式化面积。 */
 function formatArea(area: number): string {
@@ -89,6 +105,10 @@ function formatHeight(height: number): string {
 function buildCutFillOptions(): CutFillAnalyzeOptions {
   return {
     gridSize: form.gridSize,
+    renderMode: form.renderMode,
+    textureSize: form.textureSize,
+    smooth: form.smooth,
+    clipToPolygon: form.clipToPolygon,
     baseHeightMode: form.baseHeightMode,
     baseHeight: form.baseHeight,
     heightOffset: form.heightOffset,
@@ -145,6 +165,44 @@ function onClear(): void {
         :disabled="measuring"
       />
     </div>
+
+    <div class="qty-form-row">
+      <span class="map-tool-row-label">渲染模式</span>
+      <a-radio-group
+        v-model:value="form.renderMode"
+        size="small"
+        button-style="solid"
+        :disabled="measuring"
+      >
+        <a-radio-button v-for="item in RENDER_MODE_OPTIONS" :key="item.value" :value="item.value">
+          {{ item.label }}
+        </a-radio-button>
+      </a-radio-group>
+    </div>
+
+    <template v-if="form.renderMode === 'raster'">
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">贴图分辨率</span>
+        <a-input-number
+          v-model:value="form.textureSize"
+          :min="128"
+          :max="2048"
+          :step="128"
+          size="small"
+          :disabled="measuring"
+        />
+      </div>
+
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">平滑插值</span>
+        <a-switch v-model:checked="form.smooth" size="small" :disabled="measuring" />
+      </div>
+
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">范围裁剪</span>
+        <a-switch v-model:checked="form.clipToPolygon" size="small" :disabled="measuring" />
+      </div>
+    </template>
 
     <div class="qty-form-row">
       <span class="map-tool-row-label">基准高程</span>
@@ -222,16 +280,16 @@ function onClear(): void {
     </div>
 
     <div class="qty-form-row">
-      <span class="map-tool-row-label">采样单元</span>
+      <span class="map-tool-row-label">{{ resultVisibleLabel }}</span>
       <a-switch v-model:checked="form.showCells" size="small" :disabled="measuring" />
     </div>
 
-    <div class="qty-form-row">
+    <div v-if="showGridControls" class="qty-form-row">
       <span class="map-tool-row-label">单元网格</span>
       <a-switch v-model:checked="form.showGrid" size="small" :disabled="measuring || !form.showCells" />
     </div>
 
-    <div class="qty-form-row">
+    <div v-if="showGridControls" class="qty-form-row">
       <span class="map-tool-row-label">网格颜色</span>
       <input
         v-model="form.gridColor"

@@ -8,12 +8,14 @@ import {
   type TerrainGrid,
   type TerrainGridPoint,
 } from '../terrainGrid'
+import { createTerrainRasterOverlay, removeTerrainRasterOverlay } from '../terrainRasterOverlay'
 import {
   MeasureType,
   type CutFillAnalyzeOptions,
   type CutFillBaseHeightMode,
   type CutFillCell,
   type CutFillCellKind,
+  type CutFillRenderMode,
   type CutFillResult,
   type CutFillStats,
   type LngLatHeightTuple,
@@ -34,10 +36,18 @@ type ResolvedCutFillOptions = Required<
   onCutFillChange?: CutFillAnalyzeOptions['onCutFillChange']
 }
 
+/** 0~255 RGB 颜色 */
+interface RgbColor {
+  r: number
+  g: number
+  b: number
+}
+
+/** 单个挖填方采样单元几何信息 */
 interface CutFillCellGeometry {
-  /** 单元四角点 */
+  /** 单元四角采样点 */
   corners: [TerrainGridPoint, TerrainGridPoint, TerrainGridPoint, TerrainGridPoint]
-  /** 单元中心点 */
+  /** 单元中心采样点 */
   center: TerrainGridPoint
   /** 单元面积（平方米） */
   area: number
@@ -45,6 +55,10 @@ interface CutFillCellGeometry {
 
 const DEFAULT_CUT_FILL_OPTIONS: ResolvedCutFillOptions = {
   gridSize: 36,
+  renderMode: 'grid',
+  textureSize: 768,
+  smooth: true,
+  clipToPolygon: true,
   baseHeightMode: 'average',
   baseHeight: undefined,
   heightOffset: 1.5,
@@ -59,6 +73,8 @@ const DEFAULT_CUT_FILL_OPTIONS: ResolvedCutFillOptions = {
   showStatsLabel: true,
   onCutFillChange: undefined,
 }
+
+const COLOR_CACHE = new Map<string, RgbColor>()
 
 /** 限制数值范围。 */
 function clampNumber(value: number, min: number, max: number): number {
@@ -76,10 +92,19 @@ function resolveBaseHeightMode(mode?: CutFillBaseHeightMode): CutFillBaseHeightM
   return mode === 'min' || mode === 'max' || mode === 'custom' ? mode : 'average'
 }
 
+/** 解析渲染模式，未知值回退到网格色块，兼容旧默认效果。 */
+function resolveRenderMode(mode?: CutFillRenderMode): CutFillRenderMode {
+  return mode === 'raster' ? 'raster' : 'grid'
+}
+
 /** 合并挖填方参数并限制安全范围。 */
 function resolveCutFillOptions(options?: CutFillAnalyzeOptions): ResolvedCutFillOptions {
   return {
     gridSize: clampInteger(options?.gridSize, DEFAULT_CUT_FILL_OPTIONS.gridSize, 4, 100),
+    renderMode: resolveRenderMode(options?.renderMode),
+    textureSize: clampInteger(options?.textureSize, DEFAULT_CUT_FILL_OPTIONS.textureSize, 128, 2048),
+    smooth: options?.smooth ?? DEFAULT_CUT_FILL_OPTIONS.smooth,
+    clipToPolygon: options?.clipToPolygon ?? DEFAULT_CUT_FILL_OPTIONS.clipToPolygon,
     baseHeightMode: resolveBaseHeightMode(options?.baseHeightMode),
     baseHeight: Number.isFinite(options?.baseHeight) ? options!.baseHeight : undefined,
     heightOffset: clampNumber(options?.heightOffset ?? DEFAULT_CUT_FILL_OPTIONS.heightOffset, 0, 200),
@@ -112,12 +137,16 @@ function formatVolume(volume: number): string {
 
 /**
  * 挖填方分析：多边形框选地形区域，按采样网格和基准高程统计挖方/填方体积。
+ * - grid：逐格 Entity 色块，便于查看采样单元，边缘以单元中心点判断是否纳入。
+ * - raster：单张平滑贴图，视觉连续，并可裁剪到绘制多边形边界。
  */
 export class CutFillAnalyze extends MeasureBase {
   /** 当前挖填方参数 */
   private cutFillOptions: ResolvedCutFillOptions
   /** 最近一次挖填方分析结果 */
   private result: CutFillResult | null = null
+  /** raster 模式生成的影像图层 */
+  private rasterLayer: Cesium.ImageryLayer | null = null
   /** 异步采样版本号，用于丢弃过期结果 */
   private buildVersion = 0
 
@@ -181,6 +210,7 @@ export class CutFillAnalyze extends MeasureBase {
   /** 移除全部挖填方分析结果。 */
   clear(): void {
     this.buildVersion++
+    this.removeRasterLayer()
     this.result = null
     this.emitResult(null)
     super.clear()
@@ -208,7 +238,9 @@ export class CutFillAnalyze extends MeasureBase {
       const baseHeight = this.resolveBaseHeight(geometries)
       const result = this.computeCutFillResult(polygon, geometries, baseHeight)
       this.result = result
-      this.drawCutFillResult(result, geometries)
+      await this.drawCutFillResult(result, grid, geometries, version)
+      if (this.isStale(version)) return
+
       this.emitResult(result)
       this.requestRender()
     } catch (error) {
@@ -396,15 +428,93 @@ export class CutFillAnalyze extends MeasureBase {
     return { polygon, cells, stats }
   }
 
-  /** 绘制挖填方结果。 */
-  private drawCutFillResult(result: CutFillResult, geometries: CutFillCellGeometry[]): void {
+  /**
+   * 绘制挖填方结果。
+   * @param result 分析结果
+   * @param grid 地形采样网格
+   * @param geometries 参与统计的采样单元
+   * @param version 当前异步版本号
+   */
+  private async drawCutFillResult(
+    result: CutFillResult,
+    grid: TerrainGrid,
+    geometries: CutFillCellGeometry[],
+    version: number,
+  ): Promise<void> {
     if (this.cutFillOptions.showCells) {
-      for (let i = 0; i < geometries.length; i++) {
-        this.drawCutFillCell(geometries[i]!, result.cells[i]!)
+      if (this.cutFillOptions.renderMode === 'raster') {
+        await this.drawCutFillRaster(grid, result, version)
+      } else {
+        for (let i = 0; i < geometries.length; i++) {
+          this.drawCutFillCell(geometries[i]!, result.cells[i]!)
+        }
       }
     }
     this.drawPolygonOutline(result.polygon)
     this.drawStatsLabel(result)
+  }
+
+  /**
+   * raster 模式：生成连续色带 canvas 并贴到地形上。
+   * @param grid 地形采样网格
+   * @param result 分析结果
+   * @param version 当前异步版本号
+   */
+  private async drawCutFillRaster(grid: TerrainGrid, result: CutFillResult, version: number): Promise<void> {
+    const layer = await createTerrainRasterOverlay(
+      this.viewer,
+      this.createCutFillRasterCanvas(grid, result),
+      this.createGridRectangle(grid),
+    )
+
+    if (this.isStale(version)) {
+      removeTerrainRasterOverlay(this.viewer, layer)
+      return
+    }
+    this.rasterLayer = layer
+  }
+
+  /** 生成挖填方平滑贴图。 */
+  private createCutFillRasterCanvas(grid: TerrainGrid, result: CutFillResult): HTMLCanvasElement {
+    const size = this.cutFillOptions.textureSize
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const context = canvas.getContext('2d')
+    if (!context) return canvas
+
+    const imageData = context.createImageData(size, size)
+    const data = imageData.data
+    const rectangle = this.getGridRectangleDegrees(grid)
+    const orientation = this.getGridTextureOrientation(grid)
+
+    for (let y = 0; y < size; y++) {
+      const imageV = this.normalizePixel(y, size)
+      const gridV = orientation.flipY ? 1 - imageV : imageV
+      const lat = this.lerp(rectangle.north, rectangle.south, imageV)
+      for (let x = 0; x < size; x++) {
+        const imageU = this.normalizePixel(x, size)
+        const gridU = orientation.flipX ? 1 - imageU : imageU
+        const lon = this.lerp(rectangle.west, rectangle.east, imageU)
+        const index = (y * size + x) * 4
+
+        if (this.cutFillOptions.clipToPolygon && !this.isPointInPolygon(lon, lat, result.polygon)) {
+          data[index + 3] = 0
+          continue
+        }
+
+        const height = this.sampleGridHeight(grid, gridU, gridV)
+        const kind = this.resolveKindByHeight(height, result.stats.baseHeight)
+        const color = this.parseCssColor(this.colorForKind(kind))
+        data[index] = color.r
+        data[index + 1] = color.g
+        data[index + 2] = color.b
+        data[index + 3] = Math.round(this.cutFillOptions.fillAlpha * 255)
+      }
+    }
+
+    context.putImageData(imageData, 0, 0)
+    return canvas
   }
 
   /** 绘制单个挖填方采样单元。 */
@@ -466,19 +576,100 @@ export class CutFillAnalyze extends MeasureBase {
     return [sum[0] / count, sum[1] / count, sum[2] / count]
   }
 
-  /** 按单元分类取色。 */
+  /** 按单元分类取颜色。 */
   private colorForKind(kind: CutFillCellKind): string {
     if (kind === 'cut') return this.cutFillOptions.cutColor
     if (kind === 'fill') return this.cutFillOptions.fillColor
     return this.cutFillOptions.flatColor
   }
 
+  /** 按高程和基准高程判断当前像素分类。 */
+  private resolveKindByHeight(height: number, baseHeight: number): CutFillCellKind {
+    const diff = height - baseHeight
+    if (Math.abs(diff) <= this.cutFillOptions.tolerance) return 'flat'
+    return diff > 0 ? 'cut' : 'fill'
+  }
+
+  /** 读取采样网格内指定归一化坐标的高程。 */
+  private sampleGridHeight(grid: TerrainGrid, u: number, v: number): number {
+    const maxCol = Math.max(grid.cols - 1, 0)
+    const maxRow = Math.max(grid.rows - 1, 0)
+    const x = clampNumber(u, 0, 1) * maxCol
+    const y = clampNumber(v, 0, 1) * maxRow
+
+    if (!this.cutFillOptions.smooth) {
+      return grid.points[Math.round(y)]![Math.round(x)]!.height
+    }
+
+    const c0 = Math.floor(x)
+    const r0 = Math.floor(y)
+    const c1 = Math.min(c0 + 1, maxCol)
+    const r1 = Math.min(r0 + 1, maxRow)
+    const tx = x - c0
+    const ty = y - r0
+    const h00 = grid.points[r0]![c0]!.height
+    const h10 = grid.points[r0]![c1]!.height
+    const h01 = grid.points[r1]![c0]!.height
+    const h11 = grid.points[r1]![c1]!.height
+    return this.lerp(this.lerp(h00, h10, tx), this.lerp(h01, h11, tx), ty)
+  }
+
+  /** 获取采样范围对应的 Cesium 矩形。 */
+  private createGridRectangle(grid: TerrainGrid): Cesium.Rectangle {
+    const bounds = this.getGridRectangleDegrees(grid)
+    return Cesium.Rectangle.fromDegrees(bounds.west, bounds.south, bounds.east, bounds.north)
+  }
+
+  /** 获取采样范围经纬度边界。 */
+  private getGridRectangleDegrees(grid: TerrainGrid): { west: number; east: number; south: number; north: number } {
+    let west = Infinity
+    let east = -Infinity
+    let south = Infinity
+    let north = -Infinity
+
+    for (const row of grid.points) {
+      for (const point of row) {
+        west = Math.min(west, point.lon)
+        east = Math.max(east, point.lon)
+        south = Math.min(south, point.lat)
+        north = Math.max(north, point.lat)
+      }
+    }
+
+    return { west, east, south, north }
+  }
+
+  /** 将 CSS 颜色解析为 0~255 RGB。 */
+  private parseCssColor(cssColor: string, fallback = '#94a3b8'): RgbColor {
+    const cached = COLOR_CACHE.get(cssColor)
+    if (cached) return cached
+    try {
+      const color = Cesium.Color.fromCssColorString(cssColor)
+      const parsed = {
+        r: Math.round(clampNumber(color.red, 0, 1) * 255),
+        g: Math.round(clampNumber(color.green, 0, 1) * 255),
+        b: Math.round(clampNumber(color.blue, 0, 1) * 255),
+      }
+      COLOR_CACHE.set(cssColor, parsed)
+      return parsed
+    } catch {
+      return this.parseCssColor(fallback)
+    }
+  }
+
   /** 清理分析结果，不清理关键点和预览几何。 */
   private clearAnalysisResult(): void {
+    this.removeRasterLayer()
     this.clearSegmentEntities()
     this.clearMeasureLabel()
     this.result = null
     this.emitResult(null)
+  }
+
+  /** 移除当前挖填方栅格贴图。 */
+  private removeRasterLayer(): void {
+    removeTerrainRasterOverlay(this.viewer, this.rasterLayer)
+    this.rasterLayer = null
   }
 
   /** 通知外部挖填方结果变化。 */
@@ -498,5 +689,26 @@ export class CutFillAnalyze extends MeasureBase {
   /** 判断异步采样结果是否已过期。 */
   private isStale(version: number): boolean {
     return version !== this.buildVersion
+  }
+
+  /** 计算贴图坐标相对采样网格是否需要翻转。 */
+  private getGridTextureOrientation(grid: TerrainGrid): { flipX: boolean; flipY: boolean } {
+    const firstPoint = grid.points[0]![0]!
+    const lastRowPoint = grid.points[grid.rows - 1]![0]!
+    const lastColPoint = grid.points[0]![grid.cols - 1]!
+    return {
+      flipX: firstPoint.lon > lastColPoint.lon,
+      flipY: firstPoint.lat < lastRowPoint.lat,
+    }
+  }
+
+  /** 像素坐标归一化到 0~1。 */
+  private normalizePixel(pixel: number, size: number): number {
+    return size > 1 ? pixel / (size - 1) : 0
+  }
+
+  /** 线性插值。 */
+  private lerp(from: number, to: number, t: number): number {
+    return from + (to - from) * t
   }
 }

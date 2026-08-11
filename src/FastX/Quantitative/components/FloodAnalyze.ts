@@ -8,10 +8,12 @@ import {
   type TerrainGrid,
   type TerrainGridPoint,
 } from '../terrainGrid'
+import { createTerrainRasterOverlay, removeTerrainRasterOverlay } from '../terrainRasterOverlay'
 import {
   MeasureType,
   type FloodAnalyzeOptions,
   type FloodCell,
+  type FloodRenderMode,
   type FloodResult,
   type FloodStats,
   type FloodWaterLevelMode,
@@ -30,6 +32,14 @@ type ResolvedFloodOptions = Required<Omit<FloodAnalyzeOptions, 'onFloodChange'>>
   onFloodChange?: FloodAnalyzeOptions['onFloodChange']
 }
 
+/** 0~255 RGB 颜色 */
+interface RgbColor {
+  r: number
+  g: number
+  b: number
+}
+
+/** 单个淹没分析采样单元几何信息 */
 interface FloodCellGeometry {
   /** 单元四角采样点 */
   corners: [TerrainGridPoint, TerrainGridPoint, TerrainGridPoint, TerrainGridPoint]
@@ -41,6 +51,10 @@ interface FloodCellGeometry {
 
 const DEFAULT_FLOOD_OPTIONS: ResolvedFloodOptions = {
   gridSize: 40,
+  renderMode: 'grid',
+  textureSize: 768,
+  smooth: true,
+  clipToPolygon: true,
   waterLevelMode: 'relativeToMin',
   waterLevel: 30,
   tolerance: 0,
@@ -56,6 +70,8 @@ const DEFAULT_FLOOD_OPTIONS: ResolvedFloodOptions = {
   showStatsLabel: true,
   onFloodChange: undefined,
 }
+
+const COLOR_CACHE = new Map<string, RgbColor>()
 
 /** 限制数值范围。 */
 function clampNumber(value: number, min: number, max: number): number {
@@ -79,10 +95,19 @@ function resolveWaterLevelMode(mode?: FloodWaterLevelMode): FloodWaterLevelMode 
   return mode === 'absolute' || mode === 'relativeToAverage' ? mode : 'relativeToMin'
 }
 
+/** 解析渲染模式，未知值回退到网格色块，兼容旧默认效果。 */
+function resolveRenderMode(mode?: FloodRenderMode): FloodRenderMode {
+  return mode === 'raster' ? 'raster' : 'grid'
+}
+
 /** 合并淹没分析参数并限制安全范围。 */
 function resolveFloodOptions(options?: FloodAnalyzeOptions): ResolvedFloodOptions {
   return {
     gridSize: clampInteger(options?.gridSize, DEFAULT_FLOOD_OPTIONS.gridSize, 4, 100),
+    renderMode: resolveRenderMode(options?.renderMode),
+    textureSize: clampInteger(options?.textureSize, DEFAULT_FLOOD_OPTIONS.textureSize, 128, 2048),
+    smooth: options?.smooth ?? DEFAULT_FLOOD_OPTIONS.smooth,
+    clipToPolygon: options?.clipToPolygon ?? DEFAULT_FLOOD_OPTIONS.clipToPolygon,
     waterLevelMode: resolveWaterLevelMode(options?.waterLevelMode),
     waterLevel: finiteNumber(options?.waterLevel, DEFAULT_FLOOD_OPTIONS.waterLevel, -11_000, 100_000),
     tolerance: finiteNumber(options?.tolerance, DEFAULT_FLOOD_OPTIONS.tolerance, 0, 10_000),
@@ -116,12 +141,16 @@ function formatVolume(volume: number): string {
 
 /**
  * 淹没分析：多边形框选地形区域，根据水位高程统计淹没面积、蓄水体积和最大水深。
+ * - grid：逐格 Entity 面片，便于核对采样单元。
+ * - raster：单张平滑贴图，视觉连续，并可裁剪到绘制多边形边界。
  */
 export class FloodAnalyze extends MeasureBase {
   /** 当前淹没分析参数 */
   private floodOptions: ResolvedFloodOptions
   /** 最近一次淹没分析结果 */
   private result: FloodResult | null = null
+  /** raster 模式生成的影像图层 */
+  private rasterLayer: Cesium.ImageryLayer | null = null
   /** 异步采样版本号，用于丢弃过期结果 */
   private buildVersion = 0
 
@@ -185,6 +214,7 @@ export class FloodAnalyze extends MeasureBase {
   /** 移除全部淹没分析结果。 */
   clear(): void {
     this.buildVersion++
+    this.removeRasterLayer()
     this.result = null
     this.emitResult(null)
     super.clear()
@@ -212,7 +242,9 @@ export class FloodAnalyze extends MeasureBase {
       const waterLevel = this.resolveWaterLevel(geometries)
       const result = this.computeFloodResult(polygon, geometries, waterLevel)
       this.result = result
-      this.drawFloodResult(result, geometries)
+      await this.drawFloodResult(result, grid, geometries, version)
+      if (this.isStale(version)) return
+
       this.emitResult(result)
       this.requestRender()
     } catch (error) {
@@ -393,18 +425,109 @@ export class FloodAnalyze extends MeasureBase {
     return { polygon, cells, stats }
   }
 
-  /** 绘制淹没分析结果。 */
-  private drawFloodResult(result: FloodResult, geometries: FloodCellGeometry[]): void {
-    for (let i = 0; i < geometries.length; i++) {
-      const cell = result.cells[i]!
-      if (cell.flooded && this.floodOptions.showFloodedCells) {
-        this.drawFloodCell(geometries[i]!, result.stats.waterLevel, this.floodOptions.waterColor, this.floodOptions.waterAlpha)
-      } else if (!cell.flooded && this.floodOptions.showDryCells) {
-        this.drawDryCell(geometries[i]!)
+  /**
+   * 绘制淹没分析结果。
+   * @param result 分析结果
+   * @param grid 地形采样网格
+   * @param geometries 参与统计的采样单元
+   * @param version 当前异步版本号
+   */
+  private async drawFloodResult(
+    result: FloodResult,
+    grid: TerrainGrid,
+    geometries: FloodCellGeometry[],
+    version: number,
+  ): Promise<void> {
+    if (this.floodOptions.renderMode === 'raster') {
+      await this.drawFloodRaster(grid, result, version)
+    } else {
+      for (let i = 0; i < geometries.length; i++) {
+        const cell = result.cells[i]!
+        if (cell.flooded && this.floodOptions.showFloodedCells) {
+          this.drawFloodCell(geometries[i]!, result.stats.waterLevel, this.floodOptions.waterColor, this.floodOptions.waterAlpha)
+        } else if (!cell.flooded && this.floodOptions.showDryCells) {
+          this.drawDryCell(geometries[i]!)
+        }
       }
     }
     this.drawPolygonOutline(result.polygon)
     this.drawStatsLabel(result)
+  }
+
+  /**
+   * raster 模式：生成连续水深贴图并贴到地形上。
+   * @param grid 地形采样网格
+   * @param result 分析结果
+   * @param version 当前异步版本号
+   */
+  private async drawFloodRaster(grid: TerrainGrid, result: FloodResult, version: number): Promise<void> {
+    const layer = await createTerrainRasterOverlay(
+      this.viewer,
+      this.createFloodRasterCanvas(grid, result),
+      this.createGridRectangle(grid),
+    )
+
+    if (this.isStale(version)) {
+      removeTerrainRasterOverlay(this.viewer, layer)
+      return
+    }
+    this.rasterLayer = layer
+  }
+
+  /** 生成淹没分析平滑贴图。 */
+  private createFloodRasterCanvas(grid: TerrainGrid, result: FloodResult): HTMLCanvasElement {
+    const size = this.floodOptions.textureSize
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const context = canvas.getContext('2d')
+    if (!context) return canvas
+
+    const imageData = context.createImageData(size, size)
+    const data = imageData.data
+    const rectangle = this.getGridRectangleDegrees(grid)
+    const orientation = this.getGridTextureOrientation(grid)
+    const waterColor = this.parseCssColor(this.floodOptions.waterColor)
+    const dryColor = this.parseCssColor(this.floodOptions.dryColor)
+
+    for (let y = 0; y < size; y++) {
+      const imageV = this.normalizePixel(y, size)
+      const gridV = orientation.flipY ? 1 - imageV : imageV
+      const lat = this.lerp(rectangle.north, rectangle.south, imageV)
+      for (let x = 0; x < size; x++) {
+        const imageU = this.normalizePixel(x, size)
+        const gridU = orientation.flipX ? 1 - imageU : imageU
+        const lon = this.lerp(rectangle.west, rectangle.east, imageU)
+        const index = (y * size + x) * 4
+
+        if (this.floodOptions.clipToPolygon && !this.isPointInPolygon(lon, lat, result.polygon)) {
+          data[index + 3] = 0
+          continue
+        }
+
+        const height = this.sampleGridHeight(grid, gridU, gridV)
+        const waterDepth = Math.max(result.stats.waterLevel - height, 0)
+        const flooded = waterDepth > this.floodOptions.tolerance
+        if (flooded && this.floodOptions.showFloodedCells) {
+          this.writeRasterPixel(data, index, waterColor, this.floodOptions.waterAlpha)
+        } else if (!flooded && this.floodOptions.showDryCells) {
+          this.writeRasterPixel(data, index, dryColor, this.floodOptions.dryAlpha)
+        } else {
+          data[index + 3] = 0
+        }
+      }
+    }
+
+    context.putImageData(imageData, 0, 0)
+    return canvas
+  }
+
+  /** 写入单个贴图像素。 */
+  private writeRasterPixel(data: Uint8ClampedArray, index: number, color: RgbColor, alpha: number): void {
+    data[index] = color.r
+    data[index + 1] = color.g
+    data[index + 2] = color.b
+    data[index + 3] = Math.round(clampNumber(alpha, 0, 1) * 255)
   }
 
   /** 绘制被淹没的水面单元。 */
@@ -490,12 +613,86 @@ export class FloodAnalyze extends MeasureBase {
     return [sum[0] / count, sum[1] / count, sum[2] / count]
   }
 
+  /** 读取采样网格内指定归一化坐标的高程。 */
+  private sampleGridHeight(grid: TerrainGrid, u: number, v: number): number {
+    const maxCol = Math.max(grid.cols - 1, 0)
+    const maxRow = Math.max(grid.rows - 1, 0)
+    const x = clampNumber(u, 0, 1) * maxCol
+    const y = clampNumber(v, 0, 1) * maxRow
+
+    if (!this.floodOptions.smooth) {
+      return grid.points[Math.round(y)]![Math.round(x)]!.height
+    }
+
+    const c0 = Math.floor(x)
+    const r0 = Math.floor(y)
+    const c1 = Math.min(c0 + 1, maxCol)
+    const r1 = Math.min(r0 + 1, maxRow)
+    const tx = x - c0
+    const ty = y - r0
+    const h00 = grid.points[r0]![c0]!.height
+    const h10 = grid.points[r0]![c1]!.height
+    const h01 = grid.points[r1]![c0]!.height
+    const h11 = grid.points[r1]![c1]!.height
+    return this.lerp(this.lerp(h00, h10, tx), this.lerp(h01, h11, tx), ty)
+  }
+
+  /** 获取采样范围对应的 Cesium 矩形。 */
+  private createGridRectangle(grid: TerrainGrid): Cesium.Rectangle {
+    const bounds = this.getGridRectangleDegrees(grid)
+    return Cesium.Rectangle.fromDegrees(bounds.west, bounds.south, bounds.east, bounds.north)
+  }
+
+  /** 获取采样范围经纬度边界。 */
+  private getGridRectangleDegrees(grid: TerrainGrid): { west: number; east: number; south: number; north: number } {
+    let west = Infinity
+    let east = -Infinity
+    let south = Infinity
+    let north = -Infinity
+
+    for (const row of grid.points) {
+      for (const point of row) {
+        west = Math.min(west, point.lon)
+        east = Math.max(east, point.lon)
+        south = Math.min(south, point.lat)
+        north = Math.max(north, point.lat)
+      }
+    }
+
+    return { west, east, south, north }
+  }
+
+  /** 将 CSS 颜色解析为 0~255 RGB。 */
+  private parseCssColor(cssColor: string, fallback = '#22d3ee'): RgbColor {
+    const cached = COLOR_CACHE.get(cssColor)
+    if (cached) return cached
+    try {
+      const color = Cesium.Color.fromCssColorString(cssColor)
+      const parsed = {
+        r: Math.round(clampNumber(color.red, 0, 1) * 255),
+        g: Math.round(clampNumber(color.green, 0, 1) * 255),
+        b: Math.round(clampNumber(color.blue, 0, 1) * 255),
+      }
+      COLOR_CACHE.set(cssColor, parsed)
+      return parsed
+    } catch {
+      return this.parseCssColor(fallback)
+    }
+  }
+
   /** 清理分析结果，不清理关键点和预览几何。 */
   private clearAnalysisResult(): void {
+    this.removeRasterLayer()
     this.clearSegmentEntities()
     this.clearMeasureLabel()
     this.result = null
     this.emitResult(null)
+  }
+
+  /** 移除当前淹没分析栅格贴图。 */
+  private removeRasterLayer(): void {
+    removeTerrainRasterOverlay(this.viewer, this.rasterLayer)
+    this.rasterLayer = null
   }
 
   /** 通知外部淹没结果变化。 */
@@ -515,5 +712,26 @@ export class FloodAnalyze extends MeasureBase {
   /** 判断异步采样结果是否已过期。 */
   private isStale(version: number): boolean {
     return version !== this.buildVersion
+  }
+
+  /** 计算贴图坐标相对采样网格是否需要翻转。 */
+  private getGridTextureOrientation(grid: TerrainGrid): { flipX: boolean; flipY: boolean } {
+    const firstPoint = grid.points[0]![0]!
+    const lastRowPoint = grid.points[grid.rows - 1]![0]!
+    const lastColPoint = grid.points[0]![grid.cols - 1]!
+    return {
+      flipX: firstPoint.lon > lastColPoint.lon,
+      flipY: firstPoint.lat < lastRowPoint.lat,
+    }
+  }
+
+  /** 像素坐标归一化到 0~1。 */
+  private normalizePixel(pixel: number, size: number): number {
+    return size > 1 ? pixel / (size - 1) : 0
+  }
+
+  /** 线性插值。 */
+  private lerp(from: number, to: number, t: number): number {
+    return from + (to - from) * t
   }
 }

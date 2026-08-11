@@ -51,6 +51,20 @@ const preferredOrder = {
     'PolyLineCollection',
     'Polygon',
     'PolygonCollection',
+    'StraightArrow',
+    'StraightArrowCollection',
+    'FineStraightArrow',
+    'FineStraightArrowCollection',
+    'CurveArrow',
+    'CurveArrowCollection',
+    'AttackDirectionArrow',
+    'AttackDirectionArrowCollection',
+    'DoubleArrow',
+    'DoubleArrowCollection',
+    'SwallowtailAttackArrow',
+    'SwallowtailAttackArrowCollection',
+    'PincerArrow',
+    'PincerArrowCollection',
     'Circle',
     'CircleCollection',
     'Rectangle',
@@ -186,8 +200,8 @@ const apiMeta = {
   SlopeAnalyze: ['坡度分析', '独立坡度分析类；矩形框选地形区域后按网格采样计算坡度，支持平滑贴图和网格色块两种渲染模式。'],
   AspectAnalyze: ['坡向/坡面分析', '独立坡向/坡面分析类；矩形框选地形区域后按网格采样计算坡面朝向，支持平滑贴图和网格色块两种渲染模式。'],
   TerrainProfileAnalyze: ['地形剖面分析', '独立地形剖面分析类；沿用户绘制折线采样地形高程，输出剖面采样点、统计结果和地图剖面线。'],
-  CutFillAnalyze: ['挖填方分析', '独立挖填方分析类；多边形框选地形区域后按基准高程统计挖方、填方体积，并支持网格单元着色展示。'],
-  FloodAnalyze: ['淹没分析', '独立淹没分析类；多边形框选地形区域后按水位统计淹没面积、蓄水体积和最大水深，并支持淹没单元着色展示。'],
+  CutFillAnalyze: ['挖填方分析', '独立挖填方分析类；多边形框选地形区域后按基准高程统计挖方、填方体积，支持平滑贴图和网格色块两种渲染模式。'],
+  FloodAnalyze: ['淹没分析', '独立淹没分析类；多边形框选地形区域后按水位统计淹没面积、蓄水体积和最大水深，支持平滑贴图和网格色块两种渲染模式。'],
   AreaManager: ['区域绘制管理', '统一管理点、线、面、圆、矩形等区域绘制发布流程。'],
   Heatmap: ['热力图', '基于 heatmap.js 在 Cesium 场景中创建、更新和清理热力图。'],
   PointAggregation: ['点聚合', '加载点数据或 GeoJSON，并在视距变化时显示聚合效果。'],
@@ -227,13 +241,79 @@ const extraRelatedTypes = {
   SlopeAnalyze: ['SlopeGrade', 'SlopeRenderMode'],
   AspectAnalyze: ['AspectGrade', 'AspectRenderMode'],
   TerrainProfileAnalyze: ['TerrainProfilePoint', 'TerrainProfileResult', 'TerrainProfileStats'],
-  CutFillAnalyze: ['CutFillBaseHeightMode', 'CutFillCellKind', 'CutFillCell', 'CutFillResult', 'CutFillStats'],
-  FloodAnalyze: ['FloodWaterLevelMode', 'FloodCell', 'FloodResult', 'FloodStats'],
+  CutFillAnalyze: ['CutFillBaseHeightMode', 'CutFillRenderMode', 'CutFillCellKind', 'CutFillCell', 'CutFillResult', 'CutFillStats'],
+  FloodAnalyze: ['FloodWaterLevelMode', 'FloodRenderMode', 'FloodCell', 'FloodResult', 'FloodStats'],
+  StraightArrow: ['AddStraightArrowOptions', 'UpdateStraightArrowProperties', 'StraightArrowSnapshot'],
+  StraightArrowCollection: [
+    'StraightArrowCollectionAddItem',
+    'StraightArrowCollectionUpdateProps',
+    'StraightArrowCollectionUpdateEntry',
+    'StraightArrowCollectionSnapshot',
+  ],
+  FineStraightArrow: ['AddFineStraightArrowOptions', 'UpdateFineStraightArrowProperties', 'FineStraightArrowSnapshot'],
+  FineStraightArrowCollection: [
+    'FineStraightArrowCollectionAddItem',
+    'FineStraightArrowCollectionUpdateProps',
+    'FineStraightArrowCollectionUpdateEntry',
+    'FineStraightArrowCollectionSnapshot',
+  ],
+  CurveArrow: ['AddCurveArrowOptions', 'UpdateCurveArrowProperties', 'CurveArrowSnapshot'],
+  CurveArrowCollection: [
+    'CurveArrowCollectionAddItem',
+    'CurveArrowCollectionUpdateProps',
+    'CurveArrowCollectionUpdateEntry',
+    'CurveArrowCollectionSnapshot',
+  ],
+  AttackDirectionArrow: [
+    'AddAttackDirectionArrowOptions',
+    'UpdateAttackDirectionArrowProperties',
+    'AttackDirectionArrowSnapshot',
+  ],
+  AttackDirectionArrowCollection: [
+    'AttackDirectionArrowCollectionAddItem',
+    'AttackDirectionArrowCollectionUpdateProps',
+    'AttackDirectionArrowCollectionUpdateEntry',
+    'AttackDirectionArrowCollectionSnapshot',
+  ],
+  DoubleArrow: ['AddDoubleArrowOptions', 'UpdateDoubleArrowProperties', 'DoubleArrowSnapshot'],
+  DoubleArrowCollection: [
+    'DoubleArrowCollectionAddItem',
+    'DoubleArrowCollectionUpdateProps',
+    'DoubleArrowCollectionUpdateEntry',
+    'DoubleArrowCollectionSnapshot',
+  ],
+  SwallowtailAttackArrow: [
+    'AddSwallowtailAttackArrowOptions',
+    'UpdateSwallowtailAttackArrowProperties',
+    'SwallowtailAttackArrowSnapshot',
+  ],
+  SwallowtailAttackArrowCollection: [
+    'SwallowtailAttackArrowCollectionAddItem',
+    'SwallowtailAttackArrowCollectionUpdateProps',
+    'SwallowtailAttackArrowCollectionUpdateEntry',
+    'SwallowtailAttackArrowCollectionSnapshot',
+  ],
+  PincerArrow: ['AddPincerArrowOptions', 'UpdatePincerArrowProperties', 'PincerArrowSnapshot'],
+  PincerArrowCollection: [
+    'PincerArrowCollectionAddItem',
+    'PincerArrowCollectionUpdateProps',
+    'PincerArrowCollectionUpdateEntry',
+    'PincerArrowCollectionSnapshot',
+  ],
 }
 
 const drawNames = new Set(preferredOrder.draw)
 const effectNames = new Set(preferredOrder.effects)
 const weatherNames = new Set(preferredOrder.weather)
+const plotArrowNames = new Set([
+  'StraightArrow',
+  'FineStraightArrow',
+  'CurveArrow',
+  'AttackDirectionArrow',
+  'DoubleArrow',
+  'SwallowtailAttackArrow',
+  'PincerArrow',
+])
 for (const name of preferredOrder.draw) {
   const cn = {
     Point: '点',
@@ -247,6 +327,20 @@ for (const name of preferredOrder.draw) {
     PolyLineCollection: '批量线',
     Polygon: '面',
     PolygonCollection: '批量面',
+    StraightArrow: '直箭头',
+    StraightArrowCollection: '批量直箭头',
+    FineStraightArrow: '细直箭头',
+    FineStraightArrowCollection: '批量细直箭头',
+    CurveArrow: '曲线箭头',
+    CurveArrowCollection: '批量曲线箭头',
+    AttackDirectionArrow: '进攻方向箭头',
+    AttackDirectionArrowCollection: '批量进攻方向箭头',
+    DoubleArrow: '双箭头',
+    DoubleArrowCollection: '批量双箭头',
+    SwallowtailAttackArrow: '燕尾攻击箭头',
+    SwallowtailAttackArrowCollection: '批量燕尾攻击箭头',
+    PincerArrow: '钳击箭头',
+    PincerArrowCollection: '批量钳击箭头',
     Circle: '圆',
     CircleCollection: '批量圆',
     Rectangle: '矩形',
@@ -1217,6 +1311,23 @@ function enrichSpecialEffectMethods(apiName, methods, types) {
   return dedupeMethods(enriched, apiName)
 }
 
+function enrichDrawMethods(apiName, methods) {
+  if (!drawNames.has(apiName)) return methods
+  const baseName = apiName.replace(/Collection$/, '')
+  if (!plotArrowNames.has(baseName)) return methods
+
+  const enriched = [...methods]
+  const cn = apiMeta[apiName]?.[0] ?? apiName
+  addMethodIfMissing(enriched, createSyntheticMethod('getCount', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'number', `获取${cn}数量。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('getAllIds', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'string[]', `获取全部${cn} id。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('setSpecifyVisibility', [createSyntheticParam('id', 'string'), createSyntheticParam('show', 'boolean')], 'boolean | void', `设置指定${cn}显隐。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('setAllVisibility', [createSyntheticParam('show', 'boolean'), createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'void', `批量设置${cn}显隐。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('remove', [createSyntheticParam('id', 'string')], 'boolean | void', `删除指定${cn}。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('clear', [createSyntheticParam('viewer', 'Cesium.Viewer', false)], 'void', `清空${cn}。`))
+  addMethodIfMissing(enriched, createSyntheticMethod('destroy', [], 'void', `销毁当前${cn}管理实例。`))
+  return dedupeMethods(enriched, apiName)
+}
+
 function collectFastXObjectMethod(name) {
   const source = readSource(indexFile)
   const methods = []
@@ -1388,6 +1499,7 @@ function relatedTypes(apiName, typeExports) {
   for (const name of extraRelatedTypes[apiName] ?? []) {
     if (typeExports.has(name)) result.push(name)
   }
+  if (plotArrowNames.has(baseName)) return [...new Set(result)].sort()
   for (const name of typeExports.keys()) {
     if (
       name === apiName ||
@@ -1481,6 +1593,39 @@ function usageFor(name, groupId) {
   if (name === 'installFastXToWindow') return "import { installFastXToWindow } from 'fastx-sdk'\ninstallFastXToWindow({ cesiumBaseUrl: '/Cesium/' })"
   if (name === 'Layer') return "const layer = new FastX.Layer()\nawait layer.initMap('map', { mapName: 'mapDemo' })"
   if (drawNames.has(name)) {
+    const baseName = name.replace(/Collection$/, '')
+    if (plotArrowNames.has(baseName)) {
+      const isCollection = name.endsWith('Collection')
+      const method = isCollection ? `add${baseName}s` : 'add'
+      const options = `{
+  positions: [
+    [120.90, 23.70, 0],
+    [120.96, 23.76, 0],
+    [121.02, 23.72, 0]
+  ],
+  color: '#ffcc33',
+  alpha: 0.55,
+  showFill: true,
+  outline: true,
+  outlineColor: '#ffffff',
+  outlineAlpha: 1,
+  outlineWidth: 2,
+  width: 0,
+  headWidthRatio: 2.4,
+  headLengthRatio: 0.24,
+  neckWidthRatio: 0.82,
+  tailWidthRatio: 0.72,
+  swallowTailRatio: 0.85,
+  curveSegments: 12,
+  curveTension: 0.32,
+  height: 0,
+  clampToGround: false,
+  show: true
+}`
+      return `const viewer = window.FastX.getLayer().viewer
+const options = ${options}
+window.FastX.${name}.${method}(viewer, ${isCollection ? '[options]' : 'options'})`
+    }
     const addMethod = name.endsWith('Collection') ? `add${name.replace('Collection', 's')}` : 'add'
     const call = `window.FastX.${name}.${addMethod}(viewer, options)`
     return `const viewer = window.FastX.getLayer().viewer\n${name === 'Tileset' ? `await ${call}` : call}`
@@ -1546,10 +1691,10 @@ function usageFor(name, groupId) {
     return `const viewer = window.FastX.getViewer('mapDemo')\nconst profile = new window.FastX.TerrainProfileAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.39, 39.91, 0],\n    [116.44, 39.94, 0]\n  ],\n  terrainProfile: {\n    sampleCount: 120,\n    heightOffset: 2,\n    showProfileLine: true,\n    profileLineColor: '#59ff9b',\n    profileLineWidth: 3,\n    showSamplePoints: false,\n    samplePointEvery: 8,\n    samplePointColor: '#facc15',\n    samplePointSize: 5,\n    showStatsLabel: true,\n    onProfileChange: (result) => console.log(result)\n  }\n})\n\nprofile.complete()\nconst result = profile.getProfile()`
   }
   if (name === 'CutFillAnalyze') {
-    return `const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})\n\ncutFill.complete()\nconst result = cutFill.getResult()`
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst cutFill = new window.FastX.CutFillAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  cutFill: {\n    gridSize: 36,\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    textureSize: 768,\n    smooth: true,\n    clipToPolygon: true,\n    baseHeightMode: 'average',\n    baseHeight: 0,\n    heightOffset: 1.5,\n    tolerance: 0.1,\n    cutColor: '#ef4444',\n    fillColor: '#22c55e',\n    flatColor: '#94a3b8',\n    fillAlpha: 0.52,\n    showCells: true,\n    showGrid: true,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onCutFillChange: (result) => console.log(result)\n  }\n})\n\ncutFill.complete()\nconst result = cutFill.getResult()`
   }
   if (name === 'FloodAnalyze') {
-    return `const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})\n\nflood.complete()\nconst result = flood.getResult()`
+    return `const viewer = window.FastX.getViewer('mapDemo')\nconst flood = new window.FastX.FloodAnalyze({\n  viewer,\n  positions: [\n    [116.36, 39.88, 0],\n    [116.44, 39.88, 0],\n    [116.44, 39.94, 0],\n    [116.36, 39.94, 0]\n  ],\n  flood: {\n    gridSize: 40,\n    // raster：平滑贴图；grid：网格色块\n    renderMode: 'raster',\n    textureSize: 768,\n    smooth: true,\n    clipToPolygon: true,\n    waterLevelMode: 'relativeToMin',\n    waterLevel: 30,\n    tolerance: 0,\n    heightOffset: 1.5,\n    waterColor: '#22d3ee',\n    dryColor: '#f59e0b',\n    waterAlpha: 0.58,\n    dryAlpha: 0.2,\n    showFloodedCells: true,\n    showDryCells: false,\n    showGrid: false,\n    gridColor: '#ffffff',\n    showStatsLabel: true,\n    onFloodChange: (result) => console.log(result)\n  }\n})\n\nflood.complete()\nconst result = flood.getResult()`
   }
   if (name === 'DEFAULT_SLOPE_GRADES') return `const grades = window.FastX.DEFAULT_SLOPE_GRADES`
   if (name === 'DEFAULT_ASPECT_GRADES') return `const grades = window.FastX.DEFAULT_ASPECT_GRADES`
@@ -1587,7 +1732,7 @@ function buildDocs() {
     const meta = apiMeta[name] ?? [name, `${name} 是 fastx-sdk 对外暴露的 API。`]
     const record = records.get(name) ?? (entryExports.types.has(name) ? entryExports.types.get(name) : null)
     const types = relatedTypes(name, entryExports.types)
-    const methods = enrichSpecialEffectMethods(name, collectMethods(name, record), types)
+    const methods = enrichDrawMethods(name, enrichSpecialEffectMethods(name, collectMethods(name, record), types))
     const params = parameterRows(name, methods, types, entryExports.types)
     groupMap.get(groupId).items.push({
       id: name,

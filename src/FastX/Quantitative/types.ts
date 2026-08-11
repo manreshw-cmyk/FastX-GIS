@@ -345,6 +345,9 @@ export interface TerrainProfileAnalyzeOptions {
 /** 挖填方基准高程模式 */
 export type CutFillBaseHeightMode = 'min' | 'max' | 'average' | 'custom'
 
+/** 挖填方渲染模式：raster 为平滑贴图，grid 为网格色块 */
+export type CutFillRenderMode = 'raster' | 'grid'
+
 /** 挖填方单元类型 */
 export type CutFillCellKind = 'cut' | 'fill' | 'flat'
 
@@ -406,6 +409,14 @@ export interface CutFillResult {
 export interface CutFillAnalyzeOptions {
   /** 单边采样网格密度，默认 36 */
   gridSize?: number
+  /** 渲染模式：raster 为平滑贴图，grid 为网格色块，默认 grid */
+  renderMode?: CutFillRenderMode
+  /** raster 模式下的贴图分辨率（像素），默认 768 */
+  textureSize?: number
+  /** raster 模式下是否对采样高程做平滑插值，默认 true */
+  smooth?: boolean
+  /** raster 模式下是否裁剪到用户绘制范围内，默认 true */
+  clipToPolygon?: boolean
   /** 基准高程模式，默认 average */
   baseHeightMode?: CutFillBaseHeightMode
   /** 自定义基准高程；仅 baseHeightMode 为 custom 时生效 */
@@ -436,6 +447,9 @@ export interface CutFillAnalyzeOptions {
 
 /** 淹没分析水位解析模式 */
 export type FloodWaterLevelMode = 'absolute' | 'relativeToMin' | 'relativeToAverage'
+
+/** 淹没分析渲染模式：raster 为平滑贴图，grid 为网格色块 */
+export type FloodRenderMode = 'raster' | 'grid'
 
 /** 淹没分析采样单元 */
 export interface FloodCell {
@@ -497,6 +511,14 @@ export interface FloodResult {
 export interface FloodAnalyzeOptions {
   /** 单边采样网格密度，默认 40 */
   gridSize?: number
+  /** 渲染模式：raster 为平滑贴图，grid 为网格色块，默认 grid */
+  renderMode?: FloodRenderMode
+  /** raster 模式下的贴图分辨率（像素），默认 768 */
+  textureSize?: number
+  /** raster 模式下是否对水深做平滑插值，默认 true */
+  smooth?: boolean
+  /** raster 模式下是否裁剪到用户绘制范围内，默认 true */
+  clipToPolygon?: boolean
   /** 水位解析模式，默认 relativeToMin */
   waterLevelMode?: FloodWaterLevelMode
   /** 水位值；absolute 为绝对高程，其余模式为相对高差，默认 30 米 */

@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import {
   MeasureType,
   type FloodAnalyzeOptions,
+  type FloodRenderMode,
   type FloodResult,
   type FloodWaterLevelMode,
 } from '../../FastX'
@@ -18,6 +19,11 @@ const TYPE_OPTIONS = [
   },
 ] as const
 
+const RENDER_MODE_OPTIONS: Array<{ label: string; value: FloodRenderMode }> = [
+  { label: '平滑贴图', value: 'raster' },
+  { label: '网格色块', value: 'grid' },
+]
+
 const WATER_LEVEL_MODE_OPTIONS: Array<{ label: string; value: FloodWaterLevelMode }> = [
   { label: '最低点抬升', value: 'relativeToMin' },
   { label: '均值抬升', value: 'relativeToAverage' },
@@ -26,6 +32,10 @@ const WATER_LEVEL_MODE_OPTIONS: Array<{ label: string; value: FloodWaterLevelMod
 
 interface FloodDemoForm {
   gridSize: number
+  renderMode: FloodRenderMode
+  textureSize: number
+  smooth: boolean
+  clipToPolygon: boolean
   waterLevelMode: FloodWaterLevelMode
   waterLevel: number
   tolerance: number
@@ -41,9 +51,13 @@ interface FloodDemoForm {
   showStatsLabel: boolean
 }
 
-/** 示例页默认参数，与 API 手册示例保持一致。 */
+/** 示例页默认参数，与 API 手册示例代码保持一致。 */
 const DEFAULT_FORM: FloodDemoForm = {
   gridSize: 40,
+  renderMode: 'raster',
+  textureSize: 768,
+  smooth: true,
+  clipToPolygon: true,
   waterLevelMode: 'relativeToMin',
   waterLevel: 30,
   tolerance: 0,
@@ -66,6 +80,7 @@ const { measuring, measureStyle, startMeasure, clearResults, currentHint } =
   useQuantitativeDemo([...TYPE_OPTIONS])
 
 const stats = computed(() => floodResult.value?.stats)
+const showGridControls = computed(() => form.renderMode === 'grid')
 
 /** 格式化面积。 */
 function formatArea(area: number): string {
@@ -90,6 +105,10 @@ function formatHeight(height: number): string {
 function buildFloodOptions(): FloodAnalyzeOptions {
   return {
     gridSize: form.gridSize,
+    renderMode: form.renderMode,
+    textureSize: form.textureSize,
+    smooth: form.smooth,
+    clipToPolygon: form.clipToPolygon,
     waterLevelMode: form.waterLevelMode,
     waterLevel: form.waterLevel,
     tolerance: form.tolerance,
@@ -149,6 +168,44 @@ function onClear(): void {
     </div>
 
     <div class="qty-form-row">
+      <span class="map-tool-row-label">渲染模式</span>
+      <a-radio-group
+        v-model:value="form.renderMode"
+        size="small"
+        button-style="solid"
+        :disabled="measuring"
+      >
+        <a-radio-button v-for="item in RENDER_MODE_OPTIONS" :key="item.value" :value="item.value">
+          {{ item.label }}
+        </a-radio-button>
+      </a-radio-group>
+    </div>
+
+    <template v-if="form.renderMode === 'raster'">
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">贴图分辨率</span>
+        <a-input-number
+          v-model:value="form.textureSize"
+          :min="128"
+          :max="2048"
+          :step="128"
+          size="small"
+          :disabled="measuring"
+        />
+      </div>
+
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">平滑插值</span>
+        <a-switch v-model:checked="form.smooth" size="small" :disabled="measuring" />
+      </div>
+
+      <div class="qty-form-row">
+        <span class="map-tool-row-label">范围裁剪</span>
+        <a-switch v-model:checked="form.clipToPolygon" size="small" :disabled="measuring" />
+      </div>
+    </template>
+
+    <div class="qty-form-row">
       <span class="map-tool-row-label">水位模式</span>
       <a-radio-group
         v-model:value="form.waterLevelMode"
@@ -156,7 +213,7 @@ function onClear(): void {
         button-style="solid"
         :disabled="measuring"
       >
-        <a-radio-button v-for="item in WATER_LEVEL_MODE_OPTIONS" :key="item.value" :value="item.value">
+        <a-radio-button v-for="item in WATER_LEVEL_MODE_OPTIONS" :key="item.value" :value="item.value" style="font-size: 12px">
           {{ item.label }}
         </a-radio-button>
       </a-radio-group>
@@ -231,21 +288,21 @@ function onClear(): void {
     </div>
 
     <div class="qty-form-row">
-      <span class="map-tool-row-label">淹没单元</span>
+      <span class="map-tool-row-label">显示淹没</span>
       <a-switch v-model:checked="form.showFloodedCells" size="small" :disabled="measuring" />
     </div>
 
     <div class="qty-form-row">
-      <span class="map-tool-row-label">未淹没单元</span>
+      <span class="map-tool-row-label">显示未淹没</span>
       <a-switch v-model:checked="form.showDryCells" size="small" :disabled="measuring" />
     </div>
 
-    <div class="qty-form-row">
+    <div v-if="showGridControls" class="qty-form-row">
       <span class="map-tool-row-label">单元网格</span>
       <a-switch v-model:checked="form.showGrid" size="small" :disabled="measuring" />
     </div>
 
-    <div class="qty-form-row">
+    <div v-if="showGridControls" class="qty-form-row">
       <span class="map-tool-row-label">网格颜色</span>
       <input
         v-model="form.gridColor"

@@ -13,6 +13,20 @@ import Circle from "./Draw/Circle";
 import CircleCollection from "./Draw/Circle/CircleCollection";
 import Polygon from "./Draw/Polygon";
 import PolygonCollection from "./Draw/Polygon/PolygonCollection";
+import StraightArrow from "./Draw/StraightArrow";
+import StraightArrowCollection from "./Draw/StraightArrow/StraightArrowCollection";
+import FineStraightArrow from "./Draw/FineStraightArrow";
+import FineStraightArrowCollection from "./Draw/FineStraightArrow/FineStraightArrowCollection";
+import CurveArrow from "./Draw/CurveArrow";
+import CurveArrowCollection from "./Draw/CurveArrow/CurveArrowCollection";
+import AttackDirectionArrow from "./Draw/AttackDirectionArrow";
+import AttackDirectionArrowCollection from "./Draw/AttackDirectionArrow/AttackDirectionArrowCollection";
+import DoubleArrow from "./Draw/DoubleArrow";
+import DoubleArrowCollection from "./Draw/DoubleArrow/DoubleArrowCollection";
+import SwallowtailAttackArrow from "./Draw/SwallowtailAttackArrow";
+import SwallowtailAttackArrowCollection from "./Draw/SwallowtailAttackArrow/SwallowtailAttackArrowCollection";
+import PincerArrow from "./Draw/PincerArrow";
+import PincerArrowCollection from "./Draw/PincerArrow/PincerArrowCollection";
 import Sector from "./Draw/Sector";
 import SectorCollection from "./Draw/Sector/SectorCollection";
 import Rectangle from "./Draw/Rectangle";
@@ -122,6 +136,20 @@ export { default as Circle } from "./Draw/Circle";
 export { default as CircleCollection } from "./Draw/Circle/CircleCollection";
 export { default as Polygon } from "./Draw/Polygon";
 export { default as PolygonCollection } from "./Draw/Polygon/PolygonCollection";
+export { default as StraightArrow } from "./Draw/StraightArrow";
+export { default as StraightArrowCollection } from "./Draw/StraightArrow/StraightArrowCollection";
+export { default as FineStraightArrow } from "./Draw/FineStraightArrow";
+export { default as FineStraightArrowCollection } from "./Draw/FineStraightArrow/FineStraightArrowCollection";
+export { default as CurveArrow } from "./Draw/CurveArrow";
+export { default as CurveArrowCollection } from "./Draw/CurveArrow/CurveArrowCollection";
+export { default as AttackDirectionArrow } from "./Draw/AttackDirectionArrow";
+export { default as AttackDirectionArrowCollection } from "./Draw/AttackDirectionArrow/AttackDirectionArrowCollection";
+export { default as DoubleArrow } from "./Draw/DoubleArrow";
+export { default as DoubleArrowCollection } from "./Draw/DoubleArrow/DoubleArrowCollection";
+export { default as SwallowtailAttackArrow } from "./Draw/SwallowtailAttackArrow";
+export { default as SwallowtailAttackArrowCollection } from "./Draw/SwallowtailAttackArrow/SwallowtailAttackArrowCollection";
+export { default as PincerArrow } from "./Draw/PincerArrow";
+export { default as PincerArrowCollection } from "./Draw/PincerArrow/PincerArrowCollection";
 export { default as Sector } from "./Draw/Sector";
 export { default as SectorCollection } from "./Draw/Sector/SectorCollection";
 export { default as Rectangle } from "./Draw/Rectangle";
@@ -230,12 +258,14 @@ export type {
   CutFillAnalyzeCreateOptions,
   CutFillAnalyzeOptions,
   CutFillBaseHeightMode,
+  CutFillRenderMode,
   CutFillCell,
   CutFillCellKind,
   CutFillResult,
   CutFillStats,
   FloodAnalyzeCreateOptions,
   FloodAnalyzeOptions,
+  FloodRenderMode,
   FloodCell,
   FloodResult,
   FloodStats,
@@ -372,6 +402,83 @@ export type {
   PolygonCollectionSnapshot,
   PolygonCollectionStoredData,
 } from "./Draw/Polygon/PolygonCollection";
+export type {
+  AddStraightArrowOptions,
+  StraightArrowSnapshot,
+  UpdateStraightArrowProperties,
+} from "./Draw/StraightArrow";
+export type {
+  StraightArrowCollectionAddItem,
+  StraightArrowCollectionSnapshot,
+  StraightArrowCollectionUpdateEntry,
+  StraightArrowCollectionUpdateProps,
+} from "./Draw/StraightArrow/StraightArrowCollection";
+export type {
+  AddFineStraightArrowOptions,
+  FineStraightArrowSnapshot,
+  UpdateFineStraightArrowProperties,
+} from "./Draw/FineStraightArrow";
+export type {
+  FineStraightArrowCollectionAddItem,
+  FineStraightArrowCollectionSnapshot,
+  FineStraightArrowCollectionUpdateEntry,
+  FineStraightArrowCollectionUpdateProps,
+} from "./Draw/FineStraightArrow/FineStraightArrowCollection";
+export type {
+  AddCurveArrowOptions,
+  CurveArrowSnapshot,
+  UpdateCurveArrowProperties,
+} from "./Draw/CurveArrow";
+export type {
+  CurveArrowCollectionAddItem,
+  CurveArrowCollectionSnapshot,
+  CurveArrowCollectionUpdateEntry,
+  CurveArrowCollectionUpdateProps,
+} from "./Draw/CurveArrow/CurveArrowCollection";
+export type {
+  AddAttackDirectionArrowOptions,
+  AttackDirectionArrowSnapshot,
+  UpdateAttackDirectionArrowProperties,
+} from "./Draw/AttackDirectionArrow";
+export type {
+  AttackDirectionArrowCollectionAddItem,
+  AttackDirectionArrowCollectionSnapshot,
+  AttackDirectionArrowCollectionUpdateEntry,
+  AttackDirectionArrowCollectionUpdateProps,
+} from "./Draw/AttackDirectionArrow/AttackDirectionArrowCollection";
+export type {
+  AddDoubleArrowOptions,
+  DoubleArrowSnapshot,
+  UpdateDoubleArrowProperties,
+} from "./Draw/DoubleArrow";
+export type {
+  DoubleArrowCollectionAddItem,
+  DoubleArrowCollectionSnapshot,
+  DoubleArrowCollectionUpdateEntry,
+  DoubleArrowCollectionUpdateProps,
+} from "./Draw/DoubleArrow/DoubleArrowCollection";
+export type {
+  AddSwallowtailAttackArrowOptions,
+  SwallowtailAttackArrowSnapshot,
+  UpdateSwallowtailAttackArrowProperties,
+} from "./Draw/SwallowtailAttackArrow";
+export type {
+  SwallowtailAttackArrowCollectionAddItem,
+  SwallowtailAttackArrowCollectionSnapshot,
+  SwallowtailAttackArrowCollectionUpdateEntry,
+  SwallowtailAttackArrowCollectionUpdateProps,
+} from "./Draw/SwallowtailAttackArrow/SwallowtailAttackArrowCollection";
+export type {
+  AddPincerArrowOptions,
+  PincerArrowSnapshot,
+  UpdatePincerArrowProperties,
+} from "./Draw/PincerArrow";
+export type {
+  PincerArrowCollectionAddItem,
+  PincerArrowCollectionSnapshot,
+  PincerArrowCollectionUpdateEntry,
+  PincerArrowCollectionUpdateProps,
+} from "./Draw/PincerArrow/PincerArrowCollection";
 export type {
   AddSectorOptions,
   SectorSnapshot,
@@ -568,6 +675,20 @@ const circleApi = new Circle();
 const circleCollectionApi = new CircleCollection();
 const polygonApi = new Polygon();
 const polygonCollectionApi = new PolygonCollection();
+const straightArrowApi = new StraightArrow();
+const straightArrowCollectionApi = new StraightArrowCollection();
+const fineStraightArrowApi = new FineStraightArrow();
+const fineStraightArrowCollectionApi = new FineStraightArrowCollection();
+const curveArrowApi = new CurveArrow();
+const curveArrowCollectionApi = new CurveArrowCollection();
+const attackDirectionArrowApi = new AttackDirectionArrow();
+const attackDirectionArrowCollectionApi = new AttackDirectionArrowCollection();
+const doubleArrowApi = new DoubleArrow();
+const doubleArrowCollectionApi = new DoubleArrowCollection();
+const swallowtailAttackArrowApi = new SwallowtailAttackArrow();
+const swallowtailAttackArrowCollectionApi = new SwallowtailAttackArrowCollection();
+const pincerArrowApi = new PincerArrow();
+const pincerArrowCollectionApi = new PincerArrowCollection();
 const sectorApi = new Sector();
 const sectorCollectionApi = new SectorCollection();
 const rectangleApi = new Rectangle();
@@ -610,6 +731,20 @@ const areaManagerApi = new AreaManager({
   polyLineCollection: polyLineCollectionApi,
   polygon: polygonApi,
   polygonCollection: polygonCollectionApi,
+  straightArrow: straightArrowApi,
+  straightArrowCollection: straightArrowCollectionApi,
+  fineStraightArrow: fineStraightArrowApi,
+  fineStraightArrowCollection: fineStraightArrowCollectionApi,
+  curveArrow: curveArrowApi,
+  curveArrowCollection: curveArrowCollectionApi,
+  attackDirectionArrow: attackDirectionArrowApi,
+  attackDirectionArrowCollection: attackDirectionArrowCollectionApi,
+  doubleArrow: doubleArrowApi,
+  doubleArrowCollection: doubleArrowCollectionApi,
+  swallowtailAttackArrow: swallowtailAttackArrowApi,
+  swallowtailAttackArrowCollection: swallowtailAttackArrowCollectionApi,
+  pincerArrow: pincerArrowApi,
+  pincerArrowCollection: pincerArrowCollectionApi,
   circle: circleApi,
   circleCollection: circleCollectionApi,
   rectangle: rectangleApi,
@@ -665,6 +800,20 @@ export const FastX = {
   CircleCollection: circleCollectionApi,
   Polygon: polygonApi,
   PolygonCollection: polygonCollectionApi,
+  StraightArrow: straightArrowApi,
+  StraightArrowCollection: straightArrowCollectionApi,
+  FineStraightArrow: fineStraightArrowApi,
+  FineStraightArrowCollection: fineStraightArrowCollectionApi,
+  CurveArrow: curveArrowApi,
+  CurveArrowCollection: curveArrowCollectionApi,
+  AttackDirectionArrow: attackDirectionArrowApi,
+  AttackDirectionArrowCollection: attackDirectionArrowCollectionApi,
+  DoubleArrow: doubleArrowApi,
+  DoubleArrowCollection: doubleArrowCollectionApi,
+  SwallowtailAttackArrow: swallowtailAttackArrowApi,
+  SwallowtailAttackArrowCollection: swallowtailAttackArrowCollectionApi,
+  PincerArrow: pincerArrowApi,
+  PincerArrowCollection: pincerArrowCollectionApi,
   Sector: sectorApi,
   SectorCollection: sectorCollectionApi,
   Rectangle: rectangleApi,

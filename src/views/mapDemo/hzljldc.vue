@@ -940,28 +940,63 @@ const columns: TableColumnType<RowRecord>[] = [
   { title: '操作', key: 'action', width: 48, align: 'center', fixed: 'right' },
 ]
 
+async function waitViewerSafely(): Promise<Viewer | null> {
+  try {
+    return await waitForMapViewer()
+  } catch (err) {
+    console.error('[hzljldc] 地图初始化等待失败', err)
+    return null
+  }
+}
+
+/** 恢复已有路径失败时，只跳过恢复流程，不影响页面继续绘制新路径。 */
+async function restoreExistingSessionsSafely(): Promise<void> {
+  if (tableData.value.length === 0) return
+  try {
+    await ensureAllSessions()
+    pickPlaybackMaster()
+    await restartGlobalPlayback()
+  } catch (err) {
+    console.error('[hzljldc] 已有路径恢复失败', err)
+    resetPlaybackProgress()
+    stopGlobalMover()
+    message.warning('已有路径恢复失败，可清空后重新标绘')
+  }
+}
+
+function bindMouseSafely(viewer: Viewer): void {
+  try {
+    bindMouse(viewer)
+  } catch (err) {
+    console.error('[hzljldc] 鼠标事件绑定失败', err)
+    message.error('路径标绘鼠标事件绑定失败')
+  }
+}
+
+function initTableObservers(): void {
+  if (typeof ResizeObserver === 'undefined') return
+  tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
+  if (tableShellRef.value) tableResizeObserver.observe(tableShellRef.value)
+  keyframeResizeObserver = new ResizeObserver(() => updateKeyframeScrollY())
+  if (keyframeShellRef.value) keyframeResizeObserver.observe(keyframeShellRef.value)
+}
+
 onMounted(async () => {
   initDefaultPlayClock()
-  const v = await waitForMapViewer()
+  const v = await waitViewerSafely()
   if (!v) {
     message.warning('地图未能在预期时间内就绪')
     return
   }
   viewerRef = v
+  window.FastX?.Path?.pruneInvalid?.()
   refreshTable()
-  if (tableData.value.length > 0) {
-    await ensureAllSessions()
-    pickPlaybackMaster()
-    await restartGlobalPlayback()
-  }
-  bindMouse(v)
+  await restoreExistingSessionsSafely()
+  bindMouseSafely(v)
   await nextTick()
   updateTableScrollY()
   updateKeyframeScrollY()
-  tableResizeObserver = new ResizeObserver(() => updateTableScrollY())
-  if (tableShellRef.value) tableResizeObserver.observe(tableShellRef.value)
-  keyframeResizeObserver = new ResizeObserver(() => updateKeyframeScrollY())
-  if (keyframeShellRef.value) keyframeResizeObserver.observe(keyframeShellRef.value)
+  initTableObservers()
 })
 
 onBeforeUnmount(() => {

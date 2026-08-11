@@ -351,6 +351,13 @@
     "imageUrl": "../../assets/images/点聚合.png"
   },
   {
+    "key": "draw-22",
+    "title": "军事箭头标绘",
+    "fileName": "hzjtbldc",
+    "componentPath": "./hzjtbldc.vue",
+    "imageUrl": "../../assets/images/军事箭头标绘.png"
+  },
+  {
     "key": "layer-1",
     "title": "WMTS图层",
     "fileName": "layer-wmts",
@@ -411,7 +418,7 @@
     "title": "自定义近景天空盒",
     "fileName": "layer-near-skybox",
     "componentPath": "./layer-near-skybox.vue",
-    "imageUrl": "../../assets/images/自定义全局地球天空盒.png"
+    "imageUrl": "../../assets/images/自定义近景天空盒.png"
   },
   {
     "key": "quantitative-1",

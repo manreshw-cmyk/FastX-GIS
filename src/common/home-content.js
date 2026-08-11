@@ -73,6 +73,7 @@ const menuDefinitions = [
       "绘制3D Tiles（Tileset）类",
       "2/3维热力图",
       "点聚合",
+      "军事箭头标绘",
     ],
   },
   {
