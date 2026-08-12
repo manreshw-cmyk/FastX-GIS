@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-11T06:55:06.267Z",
+  "generatedAt": "2026-08-12T03:35:41.001Z",
   "source": "src/FastX/build/entry.ts",
   "packageNamedExports": [
     "AimEffect",
