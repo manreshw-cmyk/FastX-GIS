@@ -44,35 +44,35 @@ const KIND_DEFAULTS: Partial<Record<PlotArrowKind, Partial<ResolvedShapeOptions>
     curveSegments: 16,
   },
   attackDirection: {
-    headWidthRatio: 2.6,
-    headLengthRatio: 0.26,
-    neckWidthRatio: 0.92,
-    tailWidthRatio: 0.62,
-    curveSegments: 14,
+    headWidthRatio: 2.75,
+    headLengthRatio: 0.28,
+    neckWidthRatio: 0.96,
+    tailWidthRatio: 0.58,
+    curveSegments: 18,
   },
   double: {
-    headWidthRatio: 2,
+    headWidthRatio: 2.15,
     headLengthRatio: 0.24,
-    neckWidthRatio: 0.72,
-    tailWidthRatio: 0.44,
-    curveSegments: 14,
-    curveTension: 0.4,
+    neckWidthRatio: 0.78,
+    tailWidthRatio: 0.38,
+    curveSegments: 18,
+    curveTension: 0.42,
   },
   swallowtailAttack: {
     headWidthRatio: 2.7,
     headLengthRatio: 0.26,
     neckWidthRatio: 0.9,
-    tailWidthRatio: 0.86,
-    swallowTailRatio: 0.9,
-    curveSegments: 14,
+    tailWidthRatio: 0.82,
+    swallowTailRatio: 0.95,
+    curveSegments: 18,
   },
   pincer: {
-    headWidthRatio: 1.85,
+    headWidthRatio: 1.95,
     headLengthRatio: 0.22,
-    neckWidthRatio: 0.68,
-    tailWidthRatio: 0.42,
-    curveSegments: 16,
-    curveTension: 0.42,
+    neckWidthRatio: 0.72,
+    tailWidthRatio: 0.36,
+    curveSegments: 18,
+    curveTension: 0.5,
   },
 }
 
@@ -115,6 +115,10 @@ function sub(a: Vec2, b: Vec2): Vec2 {
   return { x: a.x - b.x, y: a.y - b.y }
 }
 
+function cross(a: Vec2, b: Vec2): number {
+  return a.x * b.y - a.y * b.x
+}
+
 function mul(a: Vec2, k: number): Vec2 {
   return { x: a.x * k, y: a.y * k }
 }
@@ -147,6 +151,10 @@ function uniquePoints(points: Vec2[]): Vec2[] {
     if (!prev || distance(prev, point) > 0.1) out.push(point)
   }
   return out
+}
+
+function signedSide(point: Vec2, origin: Vec2, axisDir: Vec2): 1 | -1 {
+  return cross(axisDir, sub(point, origin)) >= 0 ? 1 : -1
 }
 
 function pathLength(points: readonly Vec2[]): number {
@@ -226,6 +234,28 @@ function autoWidth(total: number, requested: number, factor = 0.08): number {
   return Math.max(total * factor, 1)
 }
 
+function buildBranchPath(
+  start: Vec2,
+  end: Vec2,
+  axisDir: Vec2,
+  side: 1 | -1,
+  outerFactor: number,
+  innerFactor: number,
+): Vec2[] {
+  const span = Math.max(distance(start, end), 1)
+  const normal = mul(perp(axisDir), side)
+  const outer = mul(normal, span * outerFactor)
+  const middle = mul(normal, span * (outerFactor * 0.58 + innerFactor * 0.42))
+  const inner = mul(normal, span * innerFactor)
+  return [
+    start,
+    add(lerp(start, end, 0.24), outer),
+    add(lerp(start, end, 0.54), middle),
+    add(lerp(start, end, 0.8), inner),
+    end,
+  ]
+}
+
 function buildArrowAlongPath(points: Vec2[], options: ResolvedShapeOptions, opts: { swallowTail?: boolean; widthFactor?: number } = {}): Vec2[] {
   const path = uniquePoints(points)
   if (path.length < 2) return []
@@ -257,18 +287,11 @@ function buildArrowAlongPath(points: Vec2[], options: ResolvedShapeOptions, opts
   if (opts.swallowTail) {
     const tail = bodyPath[0]!
     const tailDir = normalize(sub(bodyPath[1] ?? tip, tail))
-    const notch = add(tail, mul(tailDir, width * options.swallowTailRatio))
+    const notch = add(tail, mul(tailDir, -width * options.swallowTailRatio))
     ring.push(notch)
   }
 
   return uniquePoints(ring)
-}
-
-function withCurveBulge(start: Vec2, end: Vec2, sign: 1 | -1, tension: number): Vec2[] {
-  const mid = lerp(start, end, 0.5)
-  const d = distance(start, end)
-  const n = perp(normalize(sub(end, start)))
-  return [start, add(mid, mul(n, sign * d * tension)), end]
 }
 
 function buildStraight(points: Vec2[], options: ResolvedShapeOptions, fine = false): Vec2[][] {
@@ -288,8 +311,19 @@ function buildDouble(points: Vec2[], options: ResolvedShapeOptions): Vec2[][] {
   const tail = points[2]!
   const baseWidth = Math.max(distance(leftHead, rightHead) * 0.16, 1)
   const merged = { ...options, width: options.width || baseWidth }
-  const left = buildArrowAlongPath(smoothPath(withCurveBulge(tail, leftHead, -1, merged.curveTension), merged.curveSegments), merged, { widthFactor: 0.045 })
-  const right = buildArrowAlongPath(smoothPath(withCurveBulge(tail, rightHead, 1, merged.curveTension), merged.curveSegments), merged, { widthFactor: 0.045 })
+  const axisDir = normalize(sub(lerp(leftHead, rightHead, 0.5), tail))
+  const outerFactor = 0.16 + merged.curveTension * 0.12
+  const innerFactor = 0.06 + merged.curveTension * 0.05
+  const left = buildArrowAlongPath(
+    smoothPath(buildBranchPath(tail, leftHead, axisDir, signedSide(leftHead, tail, axisDir), outerFactor, innerFactor), merged.curveSegments),
+    merged,
+    { widthFactor: 0.045 },
+  )
+  const right = buildArrowAlongPath(
+    smoothPath(buildBranchPath(tail, rightHead, axisDir, signedSide(rightHead, tail, axisDir), outerFactor, innerFactor), merged.curveSegments),
+    merged,
+    { widthFactor: 0.045 },
+  )
   return [left, right]
 }
 
@@ -299,10 +333,23 @@ function buildPincer(points: Vec2[], options: ResolvedShapeOptions): Vec2[][] {
   const rightStart = points[1]!
   const leftTarget = points[2]!
   const rightTarget = points[3] ?? points[2]!
-  const span = Math.max(distance(leftStart, rightStart), distance(leftTarget, rightTarget), 1)
+  const startCenter = lerp(leftStart, rightStart, 0.5)
+  const targetCenter = lerp(leftTarget, rightTarget, 0.5)
+  const span = Math.max(distance(leftStart, rightStart), distance(leftTarget, rightTarget), distance(startCenter, targetCenter), 1)
   const merged = { ...options, width: options.width || span * 0.12 }
-  const left = buildArrowAlongPath(smoothPath(withCurveBulge(leftStart, leftTarget, -1, merged.curveTension), merged.curveSegments), merged, { widthFactor: 0.045 })
-  const right = buildArrowAlongPath(smoothPath(withCurveBulge(rightStart, rightTarget, 1, merged.curveTension), merged.curveSegments), merged, { widthFactor: 0.045 })
+  const axisDir = normalize(sub(targetCenter, startCenter))
+  const outerFactor = 0.24 + merged.curveTension * 0.16
+  const innerFactor = 0.1 + merged.curveTension * 0.08
+  const left = buildArrowAlongPath(
+    smoothPath(buildBranchPath(leftStart, leftTarget, axisDir, signedSide(leftStart, startCenter, axisDir), outerFactor, innerFactor), merged.curveSegments),
+    merged,
+    { widthFactor: 0.045 },
+  )
+  const right = buildArrowAlongPath(
+    smoothPath(buildBranchPath(rightStart, rightTarget, axisDir, signedSide(rightStart, startCenter, axisDir), outerFactor, innerFactor), merged.curveSegments),
+    merged,
+    { widthFactor: 0.045 },
+  )
   return [left, right]
 }
 
